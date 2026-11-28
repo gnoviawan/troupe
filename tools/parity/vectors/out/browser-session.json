@@ -1,0 +1,1173 @@
+[
+ {
+  "store": "browser-session",
+  "name": "tab_lifecycle_zoom_and_viewport",
+  "initial": {
+   "tabs": {},
+   "recentUrls": []
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createTab",
+     "args": [
+      "b1",
+      "http://localhost:3000/app"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "b1",
+     "url": "http://localhost:3000/app",
+     "title": "",
+     "loading": true,
+     "canGoBack": false,
+     "canGoForward": false,
+     "zoomFactor": 1,
+     "viewportPreset": "desktop",
+     "viewportOrientation": "portrait",
+     "loadError": null
+    },
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app",
+       "title": "",
+       "loading": true,
+       "canGoBack": false,
+       "canGoForward": false,
+       "zoomFactor": 1,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "setNavCapabilities",
+     "args": [
+      "b1",
+      true,
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app",
+       "title": "",
+       "loading": true,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 1,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "applyView",
+     "args": [
+      {
+       "tabId": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 1,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "stepZoom",
+     "args": [
+      "b1",
+      "in"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": 1.1,
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 1.1,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "stepZoom",
+     "args": [
+      "b1",
+      "in"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": 1.25,
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 1.25,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "stepZoom",
+     "args": [
+      "b1",
+      "out"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": 1.1,
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 1.1,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "resetZoom",
+     "args": [
+      "b1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 1,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "setZoomFactor",
+     "args": [
+      "b1",
+      5
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "portrait",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "cycleViewportPreset",
+     "args": [
+      "b1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "tablet",
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "tablet",
+       "viewportOrientation": "portrait",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "toggleViewportOrientation",
+     "args": [
+      "b1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "tablet",
+       "viewportOrientation": "landscape",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "setCustomViewportWidth",
+     "args": [
+      "b1",
+      820
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "tablet",
+       "viewportOrientation": "landscape",
+       "loadError": null,
+       "agentControlled": false,
+       "customViewportWidth": 820,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "cycleViewportPreset",
+     "args": [
+      "b1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "mobile",
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "mobile",
+       "viewportOrientation": "landscape",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "setViewportPreset",
+     "args": [
+      "b1",
+      "desktop"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "http://localhost:3000/app?tab=1",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "landscape",
+       "loadError": null,
+       "agentControlled": false,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "updateUrl",
+     "args": [
+      "b1",
+      "https://example.com/docs"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "https://example.com/docs",
+       "title": "Local App",
+       "loading": true,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "landscape",
+       "loadError": null,
+       "agentControlled": false,
+       "previousUrl": "http://localhost:3000/app?tab=1",
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "https://example.com/docs",
+       "host": "example.com",
+       "path": "/docs",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "setLoadError",
+     "args": [
+      "b1",
+      {
+       "code": "ERR_CONNECTION_REFUSED",
+       "host": "127.0.0.1:9999",
+       "port": 9999,
+       "message": "Connection refused"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "https://example.com/docs",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "landscape",
+       "loadError": {
+        "code": "ERR_CONNECTION_REFUSED",
+        "host": "127.0.0.1:9999",
+        "port": 9999,
+        "message": "Connection refused"
+       },
+       "agentControlled": false,
+       "previousUrl": "http://localhost:3000/app?tab=1",
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "https://example.com/docs",
+       "host": "example.com",
+       "path": "/docs",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "bumpStopGeneration",
+     "args": [
+      "b1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "https://example.com/docs",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "landscape",
+       "loadError": {
+        "code": "ERR_CONNECTION_REFUSED",
+        "host": "127.0.0.1:9999",
+        "port": 9999,
+        "message": "Connection refused"
+       },
+       "agentControlled": false,
+       "previousUrl": "http://localhost:3000/app?tab=1",
+       "stopGeneration": 1,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "https://example.com/docs",
+       "host": "example.com",
+       "path": "/docs",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "setAgentControlled",
+     "args": [
+      "b1",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "https://example.com/docs",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "landscape",
+       "loadError": {
+        "code": "ERR_CONNECTION_REFUSED",
+        "host": "127.0.0.1:9999",
+        "port": 9999,
+        "message": "Connection refused"
+       },
+       "agentControlled": true,
+       "previousUrl": "http://localhost:3000/app?tab=1",
+       "stopGeneration": 1,
+       "epoch": 2
+      }
+     },
+     "recentUrls": [
+      {
+       "url": "https://example.com/docs",
+       "host": "example.com",
+       "path": "/docs",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app?tab=1",
+       "host": "localhost:3000",
+       "path": "/app?tab=1",
+       "visitedAt": 0
+      },
+      {
+       "url": "http://localhost:3000/app",
+       "host": "localhost:3000",
+       "path": "/app",
+       "visitedAt": 0
+      }
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "clearRecentUrls",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {
+      "b1": {
+       "id": "b1",
+       "url": "https://example.com/docs",
+       "title": "Local App",
+       "loading": false,
+       "canGoBack": true,
+       "canGoForward": false,
+       "zoomFactor": 2,
+       "viewportPreset": "desktop",
+       "viewportOrientation": "landscape",
+       "loadError": {
+        "code": "ERR_CONNECTION_REFUSED",
+        "host": "127.0.0.1:9999",
+        "port": 9999,
+        "message": "Connection refused"
+       },
+       "agentControlled": true,
+       "previousUrl": "http://localhost:3000/app?tab=1",
+       "stopGeneration": 1,
+       "epoch": 2
+      }
+     },
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "removeTab",
+     "args": [
+      "b1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   }
+  ]
+ },
+ {
+  "store": "browser-session",
+  "name": "url_and_viewport_helpers",
+  "initial": {
+   "tabs": {},
+   "recentUrls": []
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "normalizeBrowserInputUrl",
+     "args": [
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "normalizeBrowserInputUrl",
+     "args": [
+      ":3000/api"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://localhost:3000/api",
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "normalizeBrowserInputUrl",
+     "args": [
+      "localhost:5173/test"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://localhost:5173/test",
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "normalizeBrowserInputUrl",
+     "args": [
+      "127.0.0.1:8199"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://127.0.0.1:8199",
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "normalizeBrowserInputUrl",
+     "args": [
+      "example.com/path"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "https://example.com/path",
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "normalizeBrowserInputUrl",
+     "args": [
+      "https://troupe.dev/docs"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "https://troupe.dev/docs",
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "splitDisplayUrl",
+     "args": [
+      "https://example.com/a/b?x=1"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "scheme": "https://",
+     "host": "example.com",
+     "path": "/a/b?x=1",
+     "isHttps": true
+    },
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "splitDisplayUrl",
+     "args": [
+      "http://localhost:3000/"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "scheme": "http://",
+     "host": "localhost:3000",
+     "path": "",
+     "isHttps": false
+    },
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "displayHost",
+     "args": [
+      "http://127.0.0.1:8199/foo"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "127.0.0.1:8199",
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "parseLocalhostPort",
+     "args": [
+      "http://localhost:3000/foo"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "host": "localhost:3000",
+     "port": 3000
+    },
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "parseLocalhostPort",
+     "args": [
+      "https://example.com"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "clampBrowserZoom",
+     "args": [
+      0.1
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.5,
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "clampBrowserZoom",
+     "args": [
+      1.254
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 1.25,
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "nextZoomStep",
+     "args": [
+      1,
+      "in"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 1.1,
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "nextZoomStep",
+     "args": [
+      1,
+      "out"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.9,
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "resolveViewportDimensions",
+     "args": [
+      "desktop",
+      "portrait",
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "targetWidth": null,
+     "targetHeight": null
+    },
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "resolveViewportDimensions",
+     "args": [
+      "tablet",
+      "landscape",
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "targetWidth": 1024,
+     "targetHeight": 768
+    },
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   },
+   {
+    "event": {
+     "action": "resolveViewportDimensions",
+     "args": [
+      "mobile",
+      "portrait",
+      412
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "targetWidth": 412,
+     "targetHeight": 844
+    },
+    "state": {
+     "tabs": {},
+     "recentUrls": []
+    }
+   }
+  ]
+ }
+]

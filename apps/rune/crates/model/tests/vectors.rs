@@ -3,8 +3,9 @@
 //! with the recorded ones after every step. A second test fails when a
 //! store's TypeScript source changed after its vectors were recorded.
 
-mod bug_report;
 mod automations;
+mod browser;
+mod bug_report;
 mod common;
 mod git;
 mod github;
@@ -345,6 +346,8 @@ fn replays_every_vector() {
                 "automation-routes" => replay::<automations::RoutesStore>(vector),
                 "subagents" => settings::replay_subagents(vector),
                 "provider-usage" => settings::replay_accounts(vector),
+                "browser-session" => replay::<browser::BrowserSession>(vector),
+                "browser-control" => replay::<browser::BrowserControl>(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

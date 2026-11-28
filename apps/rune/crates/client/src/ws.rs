@@ -57,6 +57,13 @@ pub enum Command {
         payload: Value,
         ledgered: bool,
     },
+    /// Send one unledgered request whose `type` name is not in `WsRequestType`
+    /// (for example the browser host's `browser_tab_*` pane requests).
+    RawCall {
+        call: CallId,
+        kind: String,
+        payload: Value,
+    },
 }
 
 /// What the machine hands the app.
@@ -102,6 +109,13 @@ pub enum Output {
     },
     /// A frame this machine does not own (canvas calls).
     Unhandled(Box<WsServerFrame>),
+    /// A server event whose `type` is not yet in `WsEventType` (browser pane/agent events).
+    RawEvent {
+        sid: Option<String>,
+        seq: u64,
+        kind: String,
+        payload: Value,
+    },
 }
 
 type Fx = Effects<Effect<Output>>;
@@ -153,6 +167,7 @@ enum Purpose {
     Watch(WatchKey),
     Unwatch,
     Call(CallId),
+    RawCall(CallId, String),
 }
 
 pub struct WsClient {
@@ -362,6 +377,45 @@ impl WsClient {
                 }
                 self.flush_calls(now, fx);
             }
+            Command::RawCall {
+                call,
+                kind,
+                payload,
+            } => {
+                let Some(socket) = self.link.live() else {
+                    let error = WsError {
+                        code: "closed".into(),
+                        message: format!("the socket is not live for {kind}"),
+                        details: None,
+                    };
+                    return fx.push(Effect::Output(Output::Reply {
+                        call,
+                        result: Err(error),
+                    }));
+                };
+                self.next_request += 1;
+                let id = format!("r{}", self.next_request);
+                let frame = json!({ "id": id, "type": kind, "payload": payload });
+                match serde_json::to_string(&frame) {
+                    Ok(text) => {
+                        self.inflight
+                            .insert(id, Purpose::RawCall(call, kind));
+                        fx.push(Effect::Send { socket, text });
+                    }
+                    Err(e) => {
+                        log::error!("[client] could not encode {kind}: {e}");
+                        let error = WsError {
+                            code: "encode_failed".into(),
+                            message: e.to_string(),
+                            details: None,
+                        };
+                        fx.push(Effect::Output(Output::Reply {
+                            call,
+                            result: Err(error),
+                        }));
+                    }
+                }
+            }
         }
     }
 
@@ -406,7 +460,20 @@ impl WsClient {
     }
 
     fn down(&mut self, fx: &mut Fx) {
-        self.inflight.clear();
+        let inflight = std::mem::take(&mut self.inflight);
+        for purpose in inflight.into_values() {
+            if let Purpose::RawCall(call, kind) = purpose {
+                let error = WsError {
+                    code: "closed".into(),
+                    message: format!("the socket closed before {kind} was answered"),
+                    details: None,
+                };
+                fx.push(Effect::Output(Output::Reply {
+                    call,
+                    result: Err(error),
+                }));
+            }
+        }
         for session in self.sessions.values_mut() {
             session.sync = Sync::Offline;
         }
@@ -432,6 +499,9 @@ impl WsClient {
         let frame = match serde_json::from_str::<WsServerFrame>(text) {
             Ok(frame) => frame,
             Err(e) => {
+                if self.raw_event_frame(text, fx) {
+                    return;
+                }
                 log::warn!("[client] unreadable /ws frame ({} bytes): {e}", text.len());
                 return;
             }
@@ -451,6 +521,62 @@ impl WsClient {
                 fx.push(Effect::Output(Output::Unhandled(Box::new(other))));
             }
         }
+    }
+
+    /// Fallback for `/ws` frames whose event `type` is outside `WsEventType` (such as
+    /// `browser_agent_tab`, `browser_stop_changed`, `browser_tab_updated`, `browser_tab_closed`).
+    /// Also handles `"events"` batches that mix known and raw events without dropping the batch.
+    fn raw_event_frame(&mut self, text: &str, fx: &mut Fx) -> bool {
+        let Ok(value) = serde_json::from_str::<Value>(text) else {
+            return false;
+        };
+        if value.get("type").and_then(Value::as_str) == Some("events")
+            && let Some(events) = value.get("events").and_then(Value::as_array)
+        {
+            for item in events {
+                if let Ok(event) = serde_json::from_value::<WsEvent>(item.clone()) {
+                    self.event(event, fx);
+                } else {
+                    self.emit_raw_event(item, fx);
+                }
+            }
+            return true;
+        }
+        self.emit_raw_event(&value, fx)
+    }
+
+    fn emit_raw_event(&mut self, value: &Value, fx: &mut Fx) -> bool {
+        let Some(kind) = value.get("type").and_then(Value::as_str) else {
+            return false;
+        };
+        let Some(payload) = value.get("payload").cloned() else {
+            return false;
+        };
+        let sid = value.get("sid").and_then(Value::as_str).map(str::to_owned);
+        let seq = value.get("seq").and_then(Value::as_u64).unwrap_or(0);
+        if let Some(session_id) = sid.as_deref()
+            && seq > 0
+            && let Some(session) = self.sessions.get_mut(session_id)
+            && matches!(session.sync, Sync::Live)
+        {
+            match session.cursor.judge(seq) {
+                Verdict::Duplicate => return true,
+                Verdict::Apply => session.cursor.last_seq = seq,
+                Verdict::Gap => {
+                    if let Some(socket) = self.link.live() {
+                        self.recover(socket, session_id, Held::default(), fx);
+                        return true;
+                    }
+                }
+            }
+        }
+        fx.push(Effect::Output(Output::RawEvent {
+            sid,
+            seq,
+            kind: kind.to_owned(),
+            payload,
+        }));
+        true
     }
 
     fn reply(&mut self, reply: WsReply, now: f64, fx: &mut Fx) {
@@ -523,6 +649,9 @@ impl WsClient {
                 } else if self.ledger.take(call).is_some() {
                     fx.push(Effect::Output(Output::Reply { call, result }));
                 }
+            }
+            Purpose::RawCall(call, _) => {
+                fx.push(Effect::Output(Output::Reply { call, result }));
             }
         }
     }

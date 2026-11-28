@@ -1,0 +1,233 @@
+[
+ {
+  "store": "browser-control",
+  "name": "track_stop_and_forget_sessions",
+  "initial": {
+   "tabSessions": {},
+   "stoppedSessions": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "trackAgentTab",
+     "args": [
+      "tab-1",
+      "sess-1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-1": "sess-1"
+     },
+     "stoppedSessions": {}
+    }
+   },
+   {
+    "event": {
+     "action": "trackAgentTab",
+     "args": [
+      "tab-1",
+      "sess-1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-1": "sess-1"
+     },
+     "stoppedSessions": {}
+    }
+   },
+   {
+    "event": {
+     "action": "trackAgentTab",
+     "args": [
+      "tab-2",
+      "sess-1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-1": "sess-1",
+      "tab-2": "sess-1"
+     },
+     "stoppedSessions": {}
+    }
+   },
+   {
+    "event": {
+     "action": "trackAgentTab",
+     "args": [
+      "tab-3",
+      "sess-2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-1": "sess-1",
+      "tab-2": "sess-1",
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {}
+    }
+   },
+   {
+    "event": {
+     "action": "setStopped",
+     "args": [
+      "sess-1",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-1": "sess-1",
+      "tab-2": "sess-1",
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {
+      "sess-1": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setStopped",
+     "args": [
+      "sess-1",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-1": "sess-1",
+      "tab-2": "sess-1",
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {
+      "sess-1": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "untrackAgentTab",
+     "args": [
+      "tab-1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-2": "sess-1",
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {
+      "sess-1": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "untrackAgentTab",
+     "args": [
+      "tab-missing"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-2": "sess-1",
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {
+      "sess-1": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setStopped",
+     "args": [
+      "sess-1",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-2": "sess-1",
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {}
+    }
+   },
+   {
+    "event": {
+     "action": "setStopped",
+     "args": [
+      "sess-2",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-2": "sess-1",
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {
+      "sess-2": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "forgetSession",
+     "args": [
+      "sess-1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {
+      "tab-3": "sess-2"
+     },
+     "stoppedSessions": {
+      "sess-2": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "forgetSession",
+     "args": [
+      "sess-2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "tabSessions": {},
+     "stoppedSessions": {}
+    }
+   }
+  ]
+ }
+]

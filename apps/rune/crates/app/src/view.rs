@@ -55,8 +55,10 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::settings_view::build(s, t, phone, window, &mut layer);
     crate::snapshots_view::dialogs(s, t, phone, &mut layer);
     crate::bug_report::build(s, t, phone, &mut layer);
+    s.browser_layer(t, &mut layer);
     ui::canvas::view::unmount_confirms(s, |s: &State| &s.canvases, |s: &mut State| &mut s.canvases, t, &mut layer);
     s.sync_canvas_slots(cx, phone, !layer.is_empty());
+    s.sync_browser_panes(cx, phone);
     layer.push(
         row()
             .key("toaster-layer")
@@ -222,12 +224,17 @@ fn main_area(
                 .or_else(|| editor_body(s, t, tab))
                 .or_else(|| crate::automations_view::tab_body(s, t, tab, false))
                 .or_else(|| s.canvas_tab_body(t, tab, false))
+                .or_else(|| s.browser_tab_body(t, tab, false))
         };
         let slots = ui::workspace::Slots {
             leading,
             empty: &empty,
             tab: &tab,
-            title: &|tab: &model::workspace::Tab| crate::terminal_view::tab_title(s, tab).or_else(|| crate::chat_view::tab_title(s, tab)),
+            title: &|tab: &model::workspace::Tab| {
+                crate::terminal_view::tab_title(s, tab)
+                    .or_else(|| crate::chat_view::tab_title(s, tab))
+                    .or_else(|| s.browser_tab_title(tab))
+            },
             badge: &|tab: &model::workspace::Tab| match tab {
                 model::workspace::Tab::Git { cwd, .. } => model::git::changed_file_count(&s.git.cache, cwd),
                 _ => 0,
@@ -469,6 +476,11 @@ fn workspace_main(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     }
     if let Some(tab @ model::workspace::Tab::Canvas { .. }) = active_phone_tab(s)
         && let Some(body) = s.canvas_tab_body(t, tab, true)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
+    }
+    if let Some(tab @ model::workspace::Tab::Browser { .. }) = active_phone_tab(s)
+        && let Some(body) = s.browser_tab_body(t, tab, true)
     {
         return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
     }

@@ -76,6 +76,8 @@ pub struct TabOwner {
     pub session_id: String,
     pub project_id: String,
     pub principal: Option<String>,
+    /// True for standalone user tabs opened for a project without a chat session.
+    pub project_only: bool,
 }
 
 impl TabOwner {
@@ -88,6 +90,20 @@ impl TabOwner {
             session_id: session_id.into(),
             project_id: project_id.into(),
             principal: principal.filter(|p| !p.is_empty()),
+            project_only: false,
+        }
+    }
+
+    /// A standalone user browser tab owned by a project and principal without a chat session.
+    pub fn project_only(
+        project_id: impl Into<String>,
+        principal: Option<String>,
+    ) -> Self {
+        Self {
+            session_id: String::new(),
+            project_id: project_id.into(),
+            principal: principal.filter(|p| !p.is_empty()),
+            project_only: true,
         }
     }
 
@@ -101,10 +117,16 @@ impl TabOwner {
         claimed_project: Option<&str>,
         principal: Option<&str>,
     ) -> bool {
-        if self.session_id.is_empty() || self.project_id.is_empty() || !subscribed_to_owner {
+        if self.project_id.is_empty() {
             return false;
         }
-        if claimed_session.is_some_and(|session| session != self.session_id) {
+        if self.project_only {
+            if claimed_session.is_some() {
+                return false;
+            }
+        } else if self.session_id.is_empty() || !subscribed_to_owner {
+            return false;
+        } else if claimed_session.is_some_and(|session| session != self.session_id) {
             return false;
         }
         if claimed_project.is_some_and(|project| project != self.project_id) {

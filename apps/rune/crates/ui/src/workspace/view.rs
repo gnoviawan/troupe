@@ -348,7 +348,7 @@ fn identity<S>(ctx: &Ctx<'_, S>, tab: &Tab) -> (&'static Icon, String) {
             (i::file(name, ctx.dark), name.to_owned())
         }
         Tab::Terminal { terminal_id, .. } => (&i::TERMINAL, (ctx.title)(tab).unwrap_or_else(|| terminal_id.clone())),
-        Tab::Browser { .. } => (&i::GLOBE, "New Tab".to_owned()),
+        Tab::Browser { .. } => (&i::GLOBE, (ctx.title)(tab).unwrap_or_else(|| "New Tab".to_owned())),
         Tab::Git { .. } => (&i::GIT_BRANCH, "Git Changes".to_owned()),
         Tab::GitHistory { .. } => (&i::HISTORY, "Git History".to_owned()),
         Tab::AgentChat { .. } => (&i::CIRCLE_DOT, (ctx.title)(tab).unwrap_or_else(|| "New chat".to_owned())),
@@ -660,6 +660,7 @@ fn new_tab_menu<S: 'static>(ctx: &Ctx<'_, S>, pane: &str, layer: &mut Vec<El>) -
         });
     let chat_pane = pane.to_owned();
     let terminal_pane = pane.to_owned();
+    let browser_pane = pane.to_owned();
     Menu::new(format!("new-tab-menu-{pane}"))
         .width(224.0)
         .item(
@@ -677,6 +678,15 @@ fn new_tab_menu<S: 'static>(ctx: &Ctx<'_, S>, pane: &str, layer: &mut Vec<El>) -
                 .on_select(move |s: &mut S| {
                     lens(s).new_tab(Request::NewTerminal {
                         pane: terminal_pane.clone(),
+                    });
+                }),
+        )
+        .item(
+            MenuItem::new("New browser tab")
+                .icon(&i::GLOBE)
+                .on_select(move |s: &mut S| {
+                    lens(s).new_tab(Request::NewBrowser {
+                        pane: browser_pane.clone(),
                     });
                 }),
         )

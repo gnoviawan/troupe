@@ -256,6 +256,8 @@ const { setupRecorder, setupScenarios } = await import('./stores/setup')
 const { bugReportRecorder, bugReportScenarios } = await import('./stores/bug-report')
 const { subagentsRecorder, subagentsScenarios } = await import('./stores/subagents')
 const { accountsRecorder, accountsScenarios } = await import('./stores/accounts')
+const { browserSessionRecorder, browserSessionScenarios } = await import('./stores/browser-session')
+const { browserControlRecorder, browserControlScenarios } = await import('./stores/browser-control')
 const {
   automationDraftRecorder,
   automationDraftScenarios,
@@ -298,7 +300,9 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
     automationRoutesScenarios
   ],
   [subagentsRecorder, subagentsScenarios],
-  [accountsRecorder, accountsScenarios]
+  [accountsRecorder, accountsScenarios],
+  [browserSessionRecorder, browserSessionScenarios],
+  [browserControlRecorder, browserControlScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'

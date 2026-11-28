@@ -94,6 +94,27 @@ impl WsRelaySink {
             publish_worktree_branch_renamed(self, payload);
             return true;
         }
+        if matches!(type_, "browser_tab_updated" | "browser_tab_closed") {
+            if let Some(tab_id) = payload.get("tabId").and_then(Value::as_str) {
+                let kind = if type_ == "browser_tab_updated" {
+                    "tab_updated"
+                } else {
+                    "tab_closed"
+                };
+                self.watches().publish(
+                    crate::web::watch::WatchKind::BrowserScreencast,
+                    tab_id,
+                    || {
+                        serde_json::json!({
+                            "event": kind,
+                            "tabId": tab_id,
+                            "tab": payload,
+                        })
+                    },
+                );
+            }
+            return true;
+        }
         false
     }
 }

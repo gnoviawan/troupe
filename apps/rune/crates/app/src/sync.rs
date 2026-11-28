@@ -112,6 +112,7 @@ pub(crate) enum Pending {
     ClearHistory(String),
     Snapshots(crate::snapshots::Call),
     Canvas(crate::canvas_host::CanvasWsPending),
+    Browser(crate::browser_host::BrowserWsPending),
 }
 
 /// A device read: not answered yet, or answered (`None` when the key is empty).
@@ -291,6 +292,23 @@ impl State {
         self.request(kind, payload, pending, false);
     }
 
+    /// Sends a raw `/ws` request type outside `WsRequestType` (e.g. `browser_tab_*`).
+    pub(crate) fn raw_call(
+        &mut self,
+        kind: impl Into<String>,
+        payload: Value,
+        pending: Pending,
+    ) {
+        self.sync.next_call += 1;
+        let call = self.sync.next_call;
+        self.sync.pending.insert(call, pending);
+        self.send(Command::RawCall {
+            call,
+            kind: kind.into(),
+            payload,
+        });
+    }
+
     /// A mutating request the host ledgers: it carries a command id and survives a reconnect.
     pub(crate) fn command(&mut self, kind: WsRequestType, payload: Value, pending: Pending) {
         self.request(kind, payload, pending, true);
@@ -362,6 +380,7 @@ impl State {
                 self.status = status;
                 if became_live {
                     self.canvas_reconnected();
+                    self.browser_reconnected();
                 }
             }
             Output::WatchState {
@@ -391,6 +410,16 @@ impl State {
                 watch: WsWatchName::ChatHistory,
                 ..
             } => self.list_chats(),
+            Output::WatchState {
+                watch: WsWatchName::BrowserScreencast,
+                scope,
+                state,
+            }
+            | Output::WatchDelta {
+                watch: WsWatchName::BrowserScreencast,
+                scope,
+                delta: state,
+            } => self.browser_screencast_frame(&scope, &state),
             Output::WatchRefused { watch, error, .. } => {
                 log::warn!(
                     "[app] watch {watch:?} refused: {}: {}",
@@ -400,6 +429,9 @@ impl State {
             }
             Output::Reply { call, result } => self.reply(call, result),
             Output::Event(event) => self.chat_event(event),
+            Output::RawEvent {
+                sid, kind, payload, ..
+            } => self.browser_raw_event(sid, &kind, payload),
             Output::Unhandled(frame) => self.canvas_ws_frame(*frame),
             _ => {}
         }
@@ -535,6 +567,7 @@ impl State {
             Pending::ClearHistory(project) => self.history_cleared(project, result),
             Pending::Snapshots(call) => self.snapshots_replied(call, result),
             Pending::Canvas(call) => self.canvas_ws_reply(call, result),
+            Pending::Browser(call) => self.browser_ws_reply(call, result),
             Pending::Mcp(effect) => self.mcp_loaded(*effect, result),
             Pending::McpSave(effect, action) => self.mcp_saved(*effect, action, result),
             Pending::Subagents(call) => self.subagents_answered(call, result),
@@ -735,6 +768,7 @@ impl State {
         for request in std::mem::take(&mut self.workspace.requests) {
             match request {
                 ui::workspace::Request::NewTerminal { pane } => self.new_terminal(Some(pane)),
+                ui::workspace::Request::NewBrowser { pane } => self.open_browser_tab(Some(pane), None),
                 ui::workspace::Request::SaveAndClose { path, .. } => self.save_and_close(path),
                 other => log::info!("[app] workspace request not wired in the Rune shell yet: {other:?}"),
             }

@@ -100,6 +100,9 @@ pub(crate) fn rows(s: &State, phone: bool) -> Vec<Row> {
     if !phone {
         out.push(command("open-canvas", Workspace, "Open Canvas", "Open the project's .figcraft design document as a canvas tab", &["canvas", "figcraft", "design", "drawing", "vector"]));
     }
+    let mut browser = command("new-browser-tab", Workspace, "New Browser Tab", "Open a browser tab in the active pane", &["browser", "web", "preview", "url", "tab"]);
+    browser.shortcut = s.shortcut_label("newBrowserTab");
+    out.push(browser);
     out.push(command("open-project-settings", Navigation, "Project Settings", "Configure the active project workspace", &["settings", "project", "configure", "config"]));
     out.push(command("open-app-preferences", Navigation, "App Preferences", "Open global application preferences", &["preferences", "prefs", "settings", "app", "global"]));
     for (index, p) in s.projects.store.projects.iter().enumerate() {
@@ -209,6 +212,7 @@ fn glyph(id: &str) -> &'static rune::Icon {
         "new-chat" | "new-quick-chat" | "launch-agent" => "Bot",
         "save-snapshot" => "Save",
         "open-canvas" => "Canvas",
+        "new-browser-tab" => "Globe",
         "open-project-settings" => "Settings",
         "open-app-preferences" => "SlidersHorizontal",
         "open-command-history" => "History",
@@ -506,6 +510,7 @@ impl State {
             "open-shortcut-menu" => self.overlays.open(crate::keys::MENU),
             "save-snapshot" => self.open_create_snapshot(),
             "open-canvas" => self.open_project_canvas(),
+            "new-browser-tab" => self.open_browser_tab(None, None),
             "report-bug" => self.open_bug_report(),
             _ => {
                 if let Some(project) = id.strip_prefix("project-") {

@@ -17,6 +17,7 @@
 
 pub mod automations;
 pub mod base;
+pub mod browser;
 pub mod canvas;
 pub mod chat;
 pub mod composer;

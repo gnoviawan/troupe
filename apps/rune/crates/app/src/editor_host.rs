@@ -312,6 +312,9 @@ pub(crate) fn on_ime(s: &mut State, ime: &rune::Ime, tx: &mut rune::Tx) -> bool 
     if s.canvas_ime(ime, tx) {
         return true;
     }
+    if s.browser_ime(ime, tx) {
+        return true;
+    }
     s.editors.ime(ime)
 }
 

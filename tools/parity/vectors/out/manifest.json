@@ -388,6 +388,24 @@
         "usage_words",
         "claude_rows_say_their_state"
       ]
+    },
+    "browser-session": {
+      "sources": {
+        "src/renderer/stores/browser-session-store.ts": "406226534498245c2bd3547ee4af7d3750216822",
+        "src/renderer/lib/browser-url.ts": "a8cf7cad62dde36032adf1ac6036739497b74bd1"
+      },
+      "vectors": [
+        "tab_lifecycle_zoom_and_viewport",
+        "url_and_viewport_helpers"
+      ]
+    },
+    "browser-control": {
+      "sources": {
+        "src/renderer/stores/browser-control-store.ts": "449a0608d06d5aa17a652aeee11d1ba9aee186f6"
+      },
+      "vectors": [
+        "track_stop_and_forget_sessions"
+      ]
     }
   }
 }

@@ -220,6 +220,7 @@ impl State {
                 }
             }
             "newProject" => self.overlays.open(crate::rail::NEW_PROJECT),
+            "newBrowserTab" => self.open_browser_tab(None, None),
             "zoomIn" => self.set_zoom(self.zoom.zoom_in()),
             "zoomOut" => self.set_zoom(self.zoom.zoom_out()),
             "zoomReset" => self.set_zoom(ui::Zoom::DEFAULT),

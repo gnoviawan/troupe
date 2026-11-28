@@ -8,8 +8,9 @@
 //! stays on the client and which the server already owns.
 
 pub mod acp;
-pub mod bug_report;
 pub mod automations;
+pub mod browser;
+pub mod bug_report;
 pub mod chats;
 pub mod editor;
 pub mod explorer;

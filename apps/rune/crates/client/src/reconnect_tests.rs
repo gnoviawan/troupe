@@ -645,3 +645,74 @@ fn a_call_handle_already_in_use_is_refused_and_the_first_call_kept() {
         }]
     );
 }
+
+#[test]
+fn raw_call_forwards_type_replies_and_fails_with_closed_on_drop() {
+    let mut host = Host::new();
+    host.connect();
+    host.command(Command::RawCall {
+        call: 11,
+        kind: "browser_tab_open".into(),
+        payload: json!({ "projectId": "p1", "url": "http://127.0.0.1:8199/" }),
+    });
+    assert_eq!(
+        host.request("browser_tab_open")["payload"],
+        json!({ "projectId": "p1", "url": "http://127.0.0.1:8199/" })
+    );
+    assert_eq!(
+        host.reply("browser_tab_open", json!({ "tabId": "tab-1" })),
+        vec![Output::Reply {
+            call: 11,
+            result: Ok(Some(json!({ "tabId": "tab-1" })))
+        }]
+    );
+
+    host.command(Command::RawCall {
+        call: 12,
+        kind: "browser_tab_navigate".into(),
+        payload: json!({ "tabId": "tab-1", "url": "https://example.com/" }),
+    });
+    let out = host.reconnect();
+    assert!(out.iter().any(|o| matches!(
+        o,
+        Output::Reply {
+            call: 12,
+            result: Err(e)
+        } if e.code == "closed"
+    )));
+}
+
+#[test]
+fn raw_events_emit_standalone_and_inside_session_batches_without_breaking_cursor() {
+    let mut host = Host::new();
+    host.follow();
+
+    let standalone = host.frame(json!({
+        "type": "browser_stop_changed",
+        "payload": { "sessionId": "s1", "stopped": true }
+    }));
+    assert_eq!(
+        standalone,
+        vec![Output::RawEvent {
+            sid: None,
+            seq: 0,
+            kind: "browser_stop_changed".into(),
+            payload: json!({ "sessionId": "s1", "stopped": true })
+        }]
+    );
+
+    let mixed = host.frame(json!({
+        "type": "events",
+        "events": [
+            { "sid": "s1", "seq": 4, "type": "browser_agent_tab", "payload": { "action": "opened", "tabId": "t1" } },
+            chunk(5)
+        ]
+    }));
+    assert!(mixed.iter().any(|o| matches!(
+        o,
+        Output::RawEvent { sid: Some(sid), seq: 4, kind, .. }
+            if sid == "s1" && kind == "browser_agent_tab"
+    )));
+    assert_eq!(seqs(&mixed), vec![5]);
+    assert_eq!(host.client.cursor("s1").map(|c| c.last_seq), Some(5));
+}

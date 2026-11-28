@@ -23,6 +23,10 @@
 use super::*;
 
 #[cfg(unix)]
+#[path = "browser_pane_controls.rs"]
+mod controls;
+
+#[cfg(unix)]
 use crate::browser_host::{self, input::PaneInput, BrowserHost, TabOwner};
 
 const NO_HOST: &str = "capability_unavailable";
@@ -32,7 +36,8 @@ const NO_HOST: &str = "capability_unavailable";
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct OpenPayload {
     project_id: String,
-    session_id: String,
+    #[serde(default)]
+    session_id: Option<String>,
     url: String,
     #[serde(default)]
     width: Option<f64>,
@@ -103,6 +108,13 @@ pub(super) fn is_pane_request(type_: &str) -> bool {
             | "browser_tab_navigate"
             | "browser_tab_resize"
             | "browser_tab_input"
+            | "browser_tab_history"
+            | "browser_tab_zoom"
+            | "browser_tab_find"
+            | "browser_tab_clipboard"
+            | "browser_tab_dialog"
+            | "browser_tab_file_chooser"
+            | "browser_tab_screenshot"
     )
 }
 
@@ -147,6 +159,13 @@ async fn handle_with_host(
         "browser_tab_navigate" => navigate(host, parse(payload), env).await,
         "browser_tab_resize" => resize(host, parse(payload), env).await,
         "browser_tab_input" => input(host, parse(payload), env).await,
+        "browser_tab_history"
+        | "browser_tab_zoom"
+        | "browser_tab_find"
+        | "browser_tab_clipboard"
+        | "browser_tab_dialog"
+        | "browser_tab_file_chooser"
+        | "browser_tab_screenshot" => controls::dispatch(host, type_, payload, env).await,
         _ => Err((
             WsErrorCode::Unsupported,
             "unknown browser pane request".to_string(),
@@ -222,8 +241,9 @@ fn authorize_tab(
             "tab belongs to another chat".to_string(),
         ));
     };
-    if persisted_session_project(env, &owner.session_id)
-        .is_some_and(|persisted_project| persisted_project != owner.project_id)
+    if !owner.project_only
+        && persisted_session_project(env, &owner.session_id)
+            .is_some_and(|persisted_project| persisted_project != owner.project_id)
     {
         return Err((
             WsErrorCode::Forbidden,
@@ -238,7 +258,7 @@ fn authorize_tab(
             "browser requires authenticated write access".into(),
         ));
     }
-    let subscribed = !env.subscriptions.clients_for(&owner.session_id).is_empty();
+    let subscribed = !owner.project_only && !env.subscriptions.clients_for(&owner.session_id).is_empty();
     let principal = caller_principal(env);
     if !owner.allows(
         subscribed,
@@ -288,33 +308,40 @@ async fn open(
             "browser requires authenticated write access".into(),
         ));
     }
-    if payload.session_id.is_empty() {
-        return Err((
-            WsErrorCode::Unsupported,
-            "sessionId is required".to_string(),
-        ));
-    }
-    if env.registry.canonical_root(&payload.project_id).is_none() {
-        return Err((WsErrorCode::NotFound, "project not found".to_string()));
-    }
-    if env
-        .subscriptions
-        .clients_for(&payload.session_id)
-        .is_empty()
-    {
-        return Err((
-            WsErrorCode::Forbidden,
-            "subscribe to the session before opening a browser tab".to_string(),
-        ));
-    }
-    if persisted_session_project(env, &payload.session_id)
-        .is_some_and(|persisted_project| persisted_project != payload.project_id)
-    {
-        return Err((
-            WsErrorCode::Forbidden,
-            "session belongs to another project".to_string(),
-        ));
-    }
+    let owner = match payload.session_id {
+        Some(session_id) => {
+            if session_id.is_empty() {
+                return Err((
+                    WsErrorCode::Unsupported,
+                    "sessionId is required".to_string(),
+                ));
+            }
+            if env.registry.canonical_root(&payload.project_id).is_none() {
+                return Err((WsErrorCode::NotFound, "project not found".to_string()));
+            }
+            if env.subscriptions.clients_for(&session_id).is_empty() {
+                return Err((
+                    WsErrorCode::Forbidden,
+                    "subscribe to the session before opening a browser tab".to_string(),
+                ));
+            }
+            if persisted_session_project(env, &session_id)
+                .is_some_and(|persisted_project| persisted_project != payload.project_id)
+            {
+                return Err((
+                    WsErrorCode::Forbidden,
+                    "session belongs to another project".to_string(),
+                ));
+            }
+            TabOwner::new(session_id, payload.project_id, caller_principal(env))
+        }
+        None => {
+            if env.registry.canonical_root(&payload.project_id).is_none() {
+                return Err((WsErrorCode::NotFound, "project not found".to_string()));
+            }
+            TabOwner::project_only(payload.project_id, caller_principal(env))
+        }
+    };
     let label = format!("tab-{}", uuid::Uuid::new_v4());
     let side = |value: Option<f64>, default: f64| {
         value
@@ -328,11 +355,6 @@ async fn open(
         width: side(payload.width, 1280.0),
         height: side(payload.height, 800.0),
     };
-    let owner = TabOwner::new(
-        payload.session_id,
-        payload.project_id,
-        caller_principal(env),
-    );
     host.claim_user_tab(&label, owner);
     let view = match crate::browser_automation::create_tab(&label, &payload.url, bounds).await {
         Ok(view) => view,

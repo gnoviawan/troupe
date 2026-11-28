@@ -15,6 +15,9 @@ rune-kit = { workspace = true, features = ["markdown", "mermaid"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { workspace = true }
 log = "0.4"
+base64 = "0.22"
+# Decodes Chromium's 3-scan non-interleaved baseline JPEGs accurately (zune-jpeg 0.5 mis-decodes them green).
+jpeg-decoder = { version = "0.3", default-features = false }
 # PDF pages rasterised on the CPU, the same on native and wasm (`docs/rune/decisions.md`, "PDF engine").
 hayro = { version = "0.9", default-features = false, features = ["embed-fonts"] }
 

@@ -30,6 +30,8 @@ pub enum Request {
     NewChat { pane: String },
     /// The `+` menu's "New terminal" in this pane.
     NewTerminal { pane: String },
+    /// The `+` menu's "New browser tab" in this pane.
+    NewBrowser { pane: String },
     /// Write `content` to `path` (the unsaved-changes dialog's Save), then close its tab.
     SaveAndClose { path: String, content: String },
 }

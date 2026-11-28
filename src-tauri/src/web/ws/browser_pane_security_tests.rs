@@ -638,3 +638,82 @@ async fn authenticate_same_chat_reconnect_recovers_with_new_device_id() {
     let reconnect = authenticated_browser_env(&rig, "new-device", false).await;
     assert!(authorize_tab(&rig.host, USER_TAB, None, None, &reconnect).is_ok());
 }
+
+#[tokio::test]
+async fn project_only_tab_enforces_principal_project_and_controls() {
+    let rig = TestRig::new().await;
+    let project_dir = tempfile::tempdir().unwrap();
+    let outside_dir = tempfile::tempdir().unwrap();
+    let outside_file = outside_dir.path().join("secret.txt");
+    std::fs::write(&outside_file, "secret").unwrap();
+    rig.registry.set(
+        vec![ProjectSummary {
+            id: "proj-1".into(),
+            name: "Project 1".into(),
+            color: "blue".into(),
+            path: Some(project_dir.path().to_string_lossy().into_owned()),
+            is_archived: false,
+            is_default: false,
+        }],
+        None,
+    );
+    rig.host.claim_user_tab(
+        USER_TAB,
+        TabOwner::project_only("proj-1", Some("host-token".into())),
+    );
+    rig.host.mark_test_tab_live(USER_TAB);
+
+    let (owner_env, _tx1, _rx1) = rig.client_env(&[], Some("device-a"));
+    let (other_principal_env, _tx2, _rx2) = rig.client_env(&[], Some("device-b"));
+
+    // Owner with same principal passes authz on all control requests (reaches absent engine -> not_found).
+    for (req_type, payload) in [
+        ("browser_tab_history", json!({ "tabId": USER_TAB, "action": "back" })),
+        ("browser_tab_zoom", json!({ "tabId": USER_TAB, "factor": 1.25 })),
+        ("browser_tab_find", json!({ "tabId": USER_TAB, "query": "hello" })),
+        ("browser_tab_clipboard", json!({ "tabId": USER_TAB, "action": "copy" })),
+        ("browser_tab_dialog", json!({ "tabId": USER_TAB, "action": "accept" })),
+        ("browser_tab_screenshot", json!({ "tabId": USER_TAB })),
+    ] {
+        let reply = handle_with_host("ok".into(), req_type, &payload, &owner_env, &rig.host).await;
+        assert_eq!(err_code(&reply), "not_found", "owner passes authz on {req_type}");
+        let refused = handle_with_host("no".into(), req_type, &payload, &other_principal_env, &rig.host).await;
+        assert_eq!(err_code(&refused), "forbidden", "other principal refused on {req_type}");
+    }
+
+    // Cross-project claim on a project-only tab is forbidden.
+    let cross_proj = handle_with_host(
+        "cp".into(),
+        "browser_tab_history",
+        &json!({ "tabId": USER_TAB, "action": "reload", "projectId": "proj-2" }),
+        &owner_env,
+        &rig.host,
+    )
+    .await;
+    assert_eq!(err_code(&cross_proj), "forbidden");
+
+    // Oversized find query and outside-root file chooser are refused.
+    let big_find = handle_with_host(
+        "bf".into(),
+        "browser_tab_find",
+        &json!({ "tabId": USER_TAB, "query": "a".repeat(600) }),
+        &owner_env,
+        &rig.host,
+    )
+    .await;
+    assert_eq!(err_code(&big_find), "unsupported");
+
+    let escape_upload = handle_with_host(
+        "eu".into(),
+        "browser_tab_file_chooser",
+        &json!({
+            "tabId": USER_TAB,
+            "selector": "input[type=file]",
+            "files": [outside_file.to_string_lossy()]
+        }),
+        &owner_env,
+        &rig.host,
+    )
+    .await;
+    assert_eq!(err_code(&escape_upload), "forbidden");
+}

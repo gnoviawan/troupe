@@ -17,6 +17,7 @@ mod agent_switch;
 #[cfg(test)]
 mod agent_switch_tests;
 mod answers;
+mod browser_host;
 mod bug_report;
 #[cfg(test)]
 mod bug_report_tests;
@@ -256,6 +257,8 @@ pub struct State {
     /// The design canvases (FigCraft): per-project sessions, persistence and gateway.
     pub canvases: ui::canvas::Canvases,
     pub(crate) canvas_host: canvas_host::CanvasHost,
+    /// The server-hosted browser panes: sessions, screencast pixels and agent control state.
+    pub browser: browser_host::BrowserUi,
     /// The window's waker, kept for `reload`.
     pub(crate) waker: Option<Waker>,
 }
@@ -326,6 +329,7 @@ impl Default for State {
             automations: automations::AutomationsUi::default(),
             canvases: ui::canvas::Canvases::default(),
             canvas_host: canvas_host::CanvasHost::default(),
+            browser: browser_host::BrowserUi::default(),
             waker: None,
         }
     }
@@ -460,6 +464,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_preview = state.automation_editor_tick(now);
     let (canvas_changed, next_canvas) = state.pump_canvases(tx);
     changed |= canvas_changed;
+    changed |= state.pump_browsers(tx);
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
