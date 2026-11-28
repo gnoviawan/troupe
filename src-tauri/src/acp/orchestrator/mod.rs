@@ -10,6 +10,8 @@
 //!   sub-agent profiles; [`profiles`] resolves and applies the profiles,
 //!   and [`agents`] lists the launchable agents.
 //! - [`sinks`] holds the child's filter and watcher sinks.
+//! - [`wake`] holds the per-chat wake mailbox and delivers settled sub-agent
+//!   results to idle root chats.
 //! - [`worktree`] snapshots the parent's state and manages the per-run
 //!   worktree.
 //!
@@ -25,6 +27,7 @@ mod run;
 mod send;
 mod settings;
 mod sinks;
+mod wake;
 mod worktree;
 
 #[cfg(test)]
@@ -39,6 +42,7 @@ pub use run::{
 };
 #[allow(unused_imports)]
 pub use settings::{OrchestratorSettings, SettingsInput};
+pub use wake::WakeSink;
 
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
@@ -47,8 +51,16 @@ use tokio::runtime::Handle;
 
 use crate::acp::install::AcpInstallService;
 use crate::acp::manager::AcpManager;
+use crate::web::WsRelaySink;
 
 static INSTALLED: OnceLock<Arc<OrchestratorEngine>> = OnceLock::new();
+
+/// Build the host event sink that wakes parent chats when their sub-agents
+/// settle. Add it to `AcpManager`'s sinks before calling [`install`].
+#[must_use]
+pub fn wake_sink() -> Arc<WakeSink> {
+    WakeSink::new()
+}
 
 /// Build and install the host's engine, and return it. The first call
 /// wins.
@@ -61,17 +73,17 @@ static INSTALLED: OnceLock<Arc<OrchestratorEngine>> = OnceLock::new();
 /// worktrees.
 pub fn install(
     manager: Arc<AcpManager>,
+    relay: Arc<WsRelaySink>,
+    wake_sink: Arc<WakeSink>,
     data_dir: PathBuf,
     installed_agents: Option<Arc<AcpInstallService>>,
     project_roots: Vec<PathBuf>,
     handle: Handle,
 ) -> Arc<OrchestratorEngine> {
-    let engine = Arc::new(OrchestratorEngine::new(
-        manager,
-        data_dir,
-        installed_agents,
-        handle,
-    ));
+    let engine = Arc::new(
+        OrchestratorEngine::new(manager, data_dir, installed_agents, handle).with_relay(relay),
+    );
+    wake_sink.attach(&engine);
     worktree::sweep(&engine.handle, project_roots);
     if INSTALLED.set(engine.clone()).is_err() {
         log::warn!("[orchestrator] an engine was already installed");

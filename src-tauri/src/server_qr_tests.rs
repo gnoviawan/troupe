@@ -194,6 +194,7 @@ fn resolve_qr_target_rejects_loopback_only_config_without_override() {
     .err()
     .expect("must reject loopback-only config");
     assert!(err.contains("localhost only (127.0.0.1)"), "got: {err}");
+    assert!(err.contains("Settings -> About"), "got: {err}");
     let _ = std::fs::remove_dir_all(&dir);
 }
 

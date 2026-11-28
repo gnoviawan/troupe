@@ -1,0 +1,18 @@
+{
+  "knownFailing": [
+    { "capability": "back", "code": "timeout" },
+    { "capability": "popup", "code": "timeout" },
+    { "capability": "console", "code": "capability_unavailable" },
+    { "capability": "network", "code": "capability_unavailable" },
+    { "capability": "iframe_cross_origin", "code": "capability_unavailable" },
+    { "capability": "payment_frame_fields", "code": "capability_unavailable" },
+    { "capability": "frame_password_submit", "code": "capability_unavailable" },
+    { "capability": "frame_focused_password_submit", "code": "capability_unavailable" },
+    { "capability": "frame_focused_key", "code": "capability_unavailable" },
+    { "capability": "frame_upload", "code": "capability_unavailable" },
+    { "capability": "frame_file_chooser", "code": "capability_unavailable" },
+    { "capability": "file_pages", "code": "confirmation_required" },
+    { "capability": "file_link_hops", "code": "confirmation_required" },
+    { "capability": "agent_overlay", "code": "confirmation_required" }
+  ]
+}

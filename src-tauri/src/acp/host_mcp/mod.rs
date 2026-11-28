@@ -28,6 +28,7 @@ pub mod canvas_policy;
 pub mod canvas_skill;
 pub mod canvas_tools;
 pub mod child;
+pub mod comu_tools;
 pub mod mcp_install;
 pub mod parent;
 pub mod presence;
@@ -37,6 +38,8 @@ pub mod worker_chats;
 
 #[cfg(test)]
 mod automation_tools_tests;
+#[cfg(test)]
+mod comu_tools_tests;
 #[cfg(test)]
 mod gateway_harness;
 #[cfg(test)]
@@ -131,16 +134,23 @@ background automation?\" with the options \"Yes, schedule it\" and \"Not now\". 
 `automation_guide` and build it with the automation tools. After either answer, do not ask \
 again in this chat. Skip the question when the user is already asking for an automation.";
 
+/// Local desktop Computer Use (`comu_*` tools). Kept concise so every
+/// Troupe-owned section fits inside [`CLAUDE_INSTRUCTIONS_BUDGET`].
+pub const COMU_INSTRUCTIONS: &str = "Computer Use (Troupe Comu): to inspect or drive native \
+desktop apps on this machine, call `comu_guide` first, then use the `comu_*` tools \
+(`comu_list_windows`, `comu_get_window_state`, `comu_click`, `comu_type_text`, `comu_run_steps`). \
+Prefer background window targets over foreground desktop actions; never target Troupe itself.";
+
 /// The full `instructions` of the child's `initialize` result: the host
-/// tools, delegation, the chat guidance, the repeatable-work offer, then the design
-/// canvas guide. Agents surface it in model context, so it is the
-/// advertisement for the host tools and the chat renderer's markdown
-/// affordances. Most-needed first: Claude Code keeps only the first
-/// [`CLAUDE_INSTRUCTIONS_BUDGET`] code units.
+/// tools, delegation, the chat guidance, the repeatable-work offer, local
+/// computer use, then the design canvas guide. Agents surface it in model
+/// context, so it is the advertisement for the host tools and the chat
+/// renderer's markdown affordances. Most-needed first: Claude Code keeps only
+/// the first [`CLAUDE_INSTRUCTIONS_BUDGET`] code units.
 #[must_use]
 pub fn session_instructions() -> String {
     format!(
-        "{TERMUL_TOOL_INSTRUCTIONS}\n\n{DELEGATION_INSTRUCTIONS}\n\n{TERMUL_CHAT_INSTRUCTIONS}\n\n{AUTOMATION_SUGGESTION_INSTRUCTIONS}\n\n{}",
+        "{TERMUL_TOOL_INSTRUCTIONS}\n\n{DELEGATION_INSTRUCTIONS}\n\n{TERMUL_CHAT_INSTRUCTIONS}\n\n{AUTOMATION_SUGGESTION_INSTRUCTIONS}\n\n{COMU_INSTRUCTIONS}\n\n{}",
         canvas_tools::instructions()
     )
 }
@@ -222,6 +232,10 @@ pub enum FrameKind {
     /// A `subagent_*` tool call, answered by the host orchestrator engine
     /// for the calling chat.
     Subagent,
+    /// Fetch the `comu_*` tool schemas served by the desktop Comu host.
+    DescribeComu,
+    /// A `comu_*` local Computer Use tool call forwarded to `crate::comu::dispatch`.
+    Comu,
 }
 
 /// One option the agent offers in an `ask_user` question.
@@ -441,6 +455,12 @@ pub struct FrameRequest {
     /// A `Subagent` frame's tool arguments, parsed by the parent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subagent_input: Option<serde_json::Value>,
+    /// The `comu_*` tool name of a `Comu` frame.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comu_tool: Option<String>,
+    /// Raw JSON object arguments of a `Comu` frame.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comu_input: Option<serde_json::Value>,
 }
 
 /// Parent reply frame (one per connection). `result` carries the browser

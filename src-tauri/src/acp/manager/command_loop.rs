@@ -785,6 +785,7 @@ pub(super) async fn run_command_loop(
                 // The prompt turn takes over from any work the agent did on
                 // its own in this session.
                 if driver_state.lock().unprompted().end(&session_id.0) {
+                    host_plan_server.end_unprompted_work(&agent_id.0, &session_id.0);
                     crate::acp::events::emit_agent_working(&sinks, &agent_id, &session_id.0, false);
                 }
                 // A new prompt clears the commands that ended since the last.
@@ -825,8 +826,9 @@ pub(super) async fn run_command_loop(
                 // routed to this accepted prompt's session, even when the agent
                 // reuses an MCP child created for an older session.
                 host_plan_server.begin_turn(&agent_id.0, &session_id.0);
-                // The user's prompt turn ends a browser Stop for the session.
+                // The user's prompt turn ends a browser or Comu Stop for the session.
                 crate::browser_automation::user_turn(&session_id.0);
+                crate::comu::user_turn(&session_id.0);
                 // Story 1.8 T3.2: capture the client turn-id to echo on prompt_complete.
                 let turn_turn_id = turn_id.clone();
                 let spawn_result = cx.spawn(async move {
@@ -1305,6 +1307,7 @@ pub(super) async fn run_command_loop(
                     no_turn
                 };
                 if stopped_working {
+                    host_plan_server.end_unprompted_work(&agent_id.0, &session_id.0);
                     crate::acp::events::emit_agent_working(&sinks, &agent_id, &session_id.0, false);
                 }
                 let _ = reply.send(result.map_err(|e| e.to_string()));
@@ -1760,6 +1763,7 @@ pub(super) async fn run_command_loop(
                             (state.begin_close_session(&session_id.0), stopped_working)
                         };
                         if stopped_working {
+                            req_plan_server.end_unprompted_work(&req_agent_id.0, &session_id.0);
                             crate::acp::events::emit_agent_working(
                                 &req_sinks,
                                 &req_agent_id,

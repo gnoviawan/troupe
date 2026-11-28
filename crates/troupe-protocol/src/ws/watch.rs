@@ -127,6 +127,7 @@ wire_enum! {
         AgentSignInRequest = "agent_sign_in_request",
         AgentSignInResolved = "agent_sign_in_resolved",
         BrowserPolicyChanged = "browser_policy_changed",
+        ComuPolicyChanged = "comu_policy_changed",
         AutomationChanged = "automation_changed",
         AutomationResync = "automation_resync",
     }

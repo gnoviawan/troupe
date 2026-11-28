@@ -17,6 +17,10 @@ mod browser_tab_saved_grants;
 // unconditionally so the standalone `termul-server` mounts the same routes.
 pub mod canvas;
 mod commands;
+// Local Computer Use (Troupe Comu): runtime-neutral policy + ComuHost trait
+// shared with web routes; DesktopComuHost is registered only in desktop setup.
+pub mod comu;
+mod comu_screen_overlay;
 // One host per durable path (AD-14): sidecar `File::try_lock` locks taken before
 // any store opens. Tauri-free so the desktop and `termul-server` share it.
 pub mod data_lock;
@@ -1756,6 +1760,7 @@ pub fn run() {
             let (codex_limit, codex_limit_inbox) = acp::codex_limit::CodexLimitHandle::channel();
             let (antigravity_limit, antigravity_limit_inbox) =
                 acp::antigravity_limit::AntigravityLimitHandle::channel();
+            let orchestrator_wake = acp::orchestrator::wake_sink();
             let (ws_relay, acp_manager) = match &session_persistence {
                 Some(persistence) => {
                     let relay = Arc::new(WsRelaySink::with_persistence(
@@ -1769,6 +1774,7 @@ pub fn run() {
                                 claude_limit.sink(),
                                 codex_limit.sink(),
                                 antigravity_limit.sink(),
+                                orchestrator_wake.clone(),
                             ],
                             Arc::clone(persistence),
                             Arc::clone(&claude_agent_service),
@@ -1787,6 +1793,7 @@ pub fn run() {
                                 claude_limit.sink(),
                                 codex_limit.sink(),
                                 antigravity_limit.sink(),
+                                orchestrator_wake.clone(),
                             ],
                             Arc::clone(&claude_agent_service),
                             Arc::clone(&codex_agent_service),
@@ -1879,6 +1886,8 @@ pub fn run() {
                 .collect();
             acp::orchestrator::install(
                 Arc::clone(&acp_manager),
+                Arc::clone(&ws_relay),
+                orchestrator_wake,
                 app_data_dir.clone(),
                 acp_install_service.clone(),
                 sweep_roots,
@@ -1954,12 +1963,16 @@ pub fn run() {
             }
             let project_of: browser_automation::core::ProjectResolver = {
                 let persistence = session_persistence.clone();
-                Arc::new(move |session_id| {
-                    persistence
-                        .as_ref()
-                        .and_then(|p| p.metadata(session_id).ok())
-                        .and_then(|m| m.project_id)
-                        .unwrap_or_else(|| acp::session_persistence::UNASSIGNED_PROJECT_ID.to_string())
+                Arc::new(move |session_id| match persistence.as_ref() {
+                    Some(p) => match p.metadata(session_id) {
+                        Ok(meta) => meta.project_id.unwrap_or_else(|| {
+                            acp::session_persistence::UNASSIGNED_PROJECT_ID.to_string()
+                        }),
+                        // Lookup failed: return empty string so neither Browser nor Comu
+                        // persists a project-scoped approval into the shared unassigned bucket.
+                        Err(_) => String::new(),
+                    },
+                    None => String::new(),
                 })
             };
             let root_of: browser_automation::core::RootResolver = {
@@ -1975,6 +1988,23 @@ pub fn run() {
                     }
                 })
             };
+            let comu_policy_service = {
+                let comu_policy_root = handle
+                    .path()
+                    .app_data_dir()
+                    .map_err(|e| format!("comu policy: app_data_dir: {e}"))?
+                    .join("comu-policy");
+                let service = Arc::new(comu::policy::ComuPolicyService::new(
+                    comu_policy_root,
+                    vec![ws_relay.clone()],
+                ));
+                comu::policy::install(Arc::clone(&service));
+                app.manage(Arc::clone(&service));
+                service
+            };
+            let comu_tickets = Arc::clone(&host_tickets);
+            let comu_project_of = Arc::clone(&project_of);
+
             let browser_host = browser_automation::DesktopBrowserHost::new(
                 handle.clone(),
                 browser_tab_manager.clone(),
@@ -1991,6 +2021,29 @@ pub fn run() {
             );
             profile_control.attach(browser_host.profile_control());
             browser_automation::set_browser_host(browser_host);
+
+            let _ = troupe_comu_engine::ComuEngine::attach_macos_overlay_on_main_thread();
+            match comu::host::DesktopComuHost::new(
+                troupe_comu_engine::ComuEngineOptions {
+                    host_bundle_id: Some(handle.config().identifier.clone()),
+                    ..troupe_comu_engine::ComuEngineOptions::default()
+                },
+                vec![ws_relay.clone()],
+                comu_tickets,
+                comu_policy_service,
+                comu_project_of,
+            ) {
+                Ok(comu_host) => {
+                    comu_host.install_screen_indicator(comu_screen_overlay::ScreenOverlay::new(
+                        handle.clone(),
+                    ));
+                    comu::set_comu_host(comu_host);
+                    log::info!("[comu] desktop Computer Use host registered");
+                }
+                Err(error) => {
+                    log::error!("[comu] failed to initialize desktop Computer Use host: {error}");
+                }
+            }
 
             app.manage(Arc::clone(&acp_manager));
             app.manage(Arc::clone(&ws_relay));
@@ -2204,6 +2257,14 @@ pub fn run() {
             commands::browser_policy_get_app,
             commands::browser_policy_apply_project,
             commands::browser_policy_apply_app,
+            // Troupe Comu (local Computer Use, main webview only)
+            commands::comu_policy_get_app,
+            commands::comu_policy_apply_app,
+            commands::comu_policy_get_project,
+            commands::comu_policy_apply_project,
+            commands::comu_permissions_status,
+            commands::comu_request_permission,
+            commands::comu_stop,
             // Automations (main webview only)
             commands::automation_list,
             commands::automation_get,

@@ -1,4 +1,4 @@
-import { Bot, CalendarClock, Canvas, Globe, type TermulIcon } from '@/components/icons'
+import { Bot, CalendarClock, Canvas, Globe, Monitor, type TermulIcon } from '@/components/icons'
 import type { TermulToolEntry, TermulToolId } from '@/lib/composer/termul-tools'
 import { cn } from '@/lib/utils'
 
@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 export const TERMUL_TOOL_ICONS: Record<TermulToolId, TermulIcon> = {
   browser: Globe,
   canvas: Canvas,
+  comu: Monitor,
   automations: CalendarClock,
   orchestrate: Bot
 }

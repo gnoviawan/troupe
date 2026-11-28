@@ -33,7 +33,7 @@ use report::Row;
 
 const ENABLE_VAR: &str = "TERMUL_BROWSER_CONFORMANCE";
 const OUT_VAR: &str = "TERMUL_BROWSER_CONFORMANCE_OUT";
-const WHOLE_RUN_BUDGET: Duration = Duration::from_secs(15 * 60);
+const WHOLE_RUN_BUDGET: Duration = Duration::from_secs(25 * 60);
 const MAIN_WEBVIEW_READY_BUDGET: Duration = Duration::from_secs(20);
 const EXIT_UNEXPECTED: i32 = 1;
 const EXIT_HARNESS: i32 = 2;
@@ -51,6 +51,13 @@ fn expected_for(os: &str) -> &'static str {
         "windows" => include_str!("expected/windows.json"),
         "macos" => include_str!("expected/macos.json"),
         _ => include_str!("expected/linux.json"),
+    }
+}
+
+fn chromium_expected_for(os: &str) -> &'static str {
+    match os {
+        "macos" => include_str!("expected/macos-chromium.json"),
+        _ => include_str!("expected/linux-chromium.json"),
     }
 }
 
@@ -90,23 +97,7 @@ async fn run_all(
     }
 
     let engine = adapter::Engine::install(&handle);
-    let mut rows = Vec::new();
-    let mut broken: Vec<&'static str> = Vec::new();
-    for capability in cases::CAPABILITIES {
-        let outcome = cases::run(&engine, &fixtures, &cross, capability, &broken).await;
-        if outcome.failure.is_some() {
-            broken.push(capability.id);
-        }
-        let verdict = judge(
-            &Observed {
-                capability: capability.id,
-                failure_code: outcome.failure.as_ref().map(|f| f.code.as_str()),
-            },
-            &known,
-        );
-        rows.push(Row { outcome, verdict });
-    }
-
+    let rows = run_pass(&engine, &fixtures, &cross, &known).await;
     report::print_table(os, &rows);
     let summary = report::summary_json(os, fixtures.port(), dev_port, &rows);
     let path = summary_path();
@@ -119,14 +110,56 @@ async fn run_all(
     }
     println!("summary json: {summary}");
 
-    if rows
-        .iter()
-        .any(|r| matches!(r.verdict, Verdict::Unexpected(_)))
-    {
+    let mut unexpected = rows.iter().any(|r| matches!(r.verdict, Verdict::Unexpected(_)));
+    // The same cases against the server's Chromium engine, on hosts that
+    // have a Chrome, Edge or Chromium.
+    match adapter::Engine::install_chromium(&handle).await {
+        Some(chromium) => {
+            let known = expected::parse(chromium_expected_for(os), &cases::ids())
+                .unwrap_or_else(|e| die(&format!("chromium expected file for {os}: {e}")));
+            let rows = run_pass(&chromium, &fixtures, &cross, &known).await;
+            let label = format!("{os}-chromium");
+            report::print_table(&label, &rows);
+            println!(
+                "chromium summary json: {}",
+                report::summary_json(&label, fixtures.port(), dev_port, &rows)
+            );
+            unexpected |= rows.iter().any(|r| matches!(r.verdict, Verdict::Unexpected(_)));
+        }
+        None => println!("chromium pass skipped: no Chrome, Edge or Chromium on this host"),
+    }
+
+    if unexpected {
         EXIT_UNEXPECTED
     } else {
         0
     }
+}
+
+/// Every case against the host `engine` installed, judged against `known`.
+async fn run_pass(
+    engine: &adapter::Engine,
+    fixtures: &FixtureServer,
+    cross: &FixtureServer,
+    known: &[expected::Known],
+) -> Vec<Row> {
+    let mut rows = Vec::new();
+    let mut broken: Vec<&'static str> = Vec::new();
+    for capability in cases::CAPABILITIES {
+        let outcome = cases::run(engine, fixtures, cross, capability, &broken).await;
+        if outcome.failure.is_some() {
+            broken.push(capability.id);
+        }
+        let verdict = judge(
+            &Observed {
+                capability: capability.id,
+                failure_code: outcome.failure.as_ref().map(|f| f.code.as_str()),
+            },
+            known,
+        );
+        rows.push(Row { outcome, verdict });
+    }
+    rows
 }
 
 fn main() {

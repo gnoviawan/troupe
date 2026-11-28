@@ -16,6 +16,7 @@ describe('appPrefCategories', () => {
       'skills',
       'mcp-servers',
       'browser',
+      'comu',
       'shortcuts',
       'about'
     ])

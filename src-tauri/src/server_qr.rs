@@ -351,7 +351,7 @@ pub(crate) fn resolve_qr_target(
             return Err(
                 "this troupe-server is configured for localhost only (127.0.0.1), so other \
                  devices cannot reach it. Switch to all interfaces (0.0.0.0) in Settings -> \
-                 Server or `troupe-server onboard`, or pass --url <https://...> if behind a \
+                 About or `troupe-server onboard`, or pass --url <https://...> if behind a \
                  reverse proxy."
                     .into(),
             );

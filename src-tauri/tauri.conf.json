@@ -11,6 +11,7 @@
 		"frontendDist": "../dist-tauri"
 	},
 	"app": {
+		"macOSPrivateApi": true,
 		"withGlobalTauri": false,
 		"windows": [
 			{

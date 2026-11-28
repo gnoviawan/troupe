@@ -26,6 +26,8 @@ pub fn is_durable_event(type_: &str) -> bool {
             | "mcp_registry_changed"
             | "browser_ticket_closed"
             | "browser_stop_changed"
+            | "comu_stop_changed"
+            | "comu_session_active"
             | "agent_working"
             | "background_commands"
             | "auth_required"
