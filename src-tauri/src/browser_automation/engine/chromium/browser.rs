@@ -16,6 +16,9 @@ use super::pipe::{CdpEvent, Connection};
 use crate::browser_automation::engine::cdp::CdpMethod;
 use crate::browser_automation::engine::EngineError;
 
+/// How long a starting browser may take to answer its first command.
+const FIRST_ANSWER: Duration = Duration::from_secs(60);
+
 /// How long `Browser.close` may take before the process is killed.
 #[allow(dead_code, reason = "used by close")]
 const CLOSE_GRACE: Duration = Duration::from_secs(5);
@@ -59,14 +62,18 @@ impl Browser {
         });
         tokio::spawn(route_events(rx, Arc::downgrade(&browser)));
         // Proves the pipe answers, and turns on the target events that
-        // carry page titles.
+        // carry page titles. A first start on a fresh profile, on a busy
+        // host, can take longer than one ordinary command.
         browser
-            .call(
+            .conn
+            .call_within(
+                None,
                 CdpMethod::TargetSetDiscoverTargets,
                 json!({ "discover": true }),
+                FIRST_ANSWER,
             )
             .await
-            .map_err(|_| "the browser did not answer on its CDP pipe".to_string())?;
+            .map_err(|e| format!("the browser did not answer on its CDP pipe ({:?})", e.kind))?;
         // Every new target starts paused, so a popup is closed before it
         // runs (`route_events`); the rest are resumed.
         browser
