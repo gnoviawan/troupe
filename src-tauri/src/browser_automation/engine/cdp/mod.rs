@@ -1,6 +1,6 @@
-//! Engine-neutral CDP logic over a [`CdpTransport`]. WebView2's
-//! `CallDevToolsProtocolMethod` is the only transport today; a future
-//! CDP-speaking runtime reuses this module unchanged.
+//! Engine-neutral CDP logic over a [`CdpTransport`]. Two transports use
+//! it: WebView2's `CallDevToolsProtocolMethod` and the Chromium engine's
+//! `--remote-debugging-pipe` connection.
 //!
 //! Helpers run in an isolated world of the main frame: the page shares
 //! its DOM with that world but none of its globals, prototypes or
@@ -16,6 +16,10 @@ pub mod input;
 
 /// Closed CDP method allow-list: a transport can issue nothing else.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(
+    not(unix),
+    allow(dead_code, reason = "the page, target and fetch methods serve the Chromium engine, which is Unix only")
+)]
 pub enum CdpMethod {
     PageGetFrameTree,
     PageCreateIsolatedWorld,
@@ -33,6 +37,26 @@ pub enum CdpMethod {
     DomSetFileInputFiles,
     PageEnable,
     PageSetInterceptFileChooserDialog,
+    PageNavigate,
+    PageReload,
+    PageGetNavigationHistory,
+    PageNavigateToHistoryEntry,
+    PageHandleJavaScriptDialog,
+    FetchEnable,
+    FetchContinueRequest,
+    FetchFailRequest,
+    EmulationSetDeviceMetricsOverride,
+    TargetCreateTarget,
+    TargetAttachToTarget,
+    TargetCloseTarget,
+    TargetCreateBrowserContext,
+    TargetDisposeBrowserContext,
+    TargetSetDiscoverTargets,
+    TargetDetachFromTarget,
+    RuntimeRunIfWaitingForDebugger,
+    BrowserClose,
+    BrowserSetDownloadBehavior,
+    BrowserCancelDownload,
 }
 
 impl CdpMethod {
@@ -54,6 +78,26 @@ impl CdpMethod {
             CdpMethod::DomSetFileInputFiles => "DOM.setFileInputFiles",
             CdpMethod::PageEnable => "Page.enable",
             CdpMethod::PageSetInterceptFileChooserDialog => "Page.setInterceptFileChooserDialog",
+            CdpMethod::PageNavigate => "Page.navigate",
+            CdpMethod::PageReload => "Page.reload",
+            CdpMethod::PageGetNavigationHistory => "Page.getNavigationHistory",
+            CdpMethod::PageNavigateToHistoryEntry => "Page.navigateToHistoryEntry",
+            CdpMethod::PageHandleJavaScriptDialog => "Page.handleJavaScriptDialog",
+            CdpMethod::FetchEnable => "Fetch.enable",
+            CdpMethod::FetchContinueRequest => "Fetch.continueRequest",
+            CdpMethod::FetchFailRequest => "Fetch.failRequest",
+            CdpMethod::EmulationSetDeviceMetricsOverride => "Emulation.setDeviceMetricsOverride",
+            CdpMethod::TargetCreateTarget => "Target.createTarget",
+            CdpMethod::TargetAttachToTarget => "Target.attachToTarget",
+            CdpMethod::TargetCloseTarget => "Target.closeTarget",
+            CdpMethod::TargetCreateBrowserContext => "Target.createBrowserContext",
+            CdpMethod::TargetDisposeBrowserContext => "Target.disposeBrowserContext",
+            CdpMethod::TargetSetDiscoverTargets => "Target.setDiscoverTargets",
+            CdpMethod::TargetDetachFromTarget => "Target.detachFromTarget",
+            CdpMethod::RuntimeRunIfWaitingForDebugger => "Runtime.runIfWaitingForDebugger",
+            CdpMethod::BrowserClose => "Browser.close",
+            CdpMethod::BrowserSetDownloadBehavior => "Browser.setDownloadBehavior",
+            CdpMethod::BrowserCancelDownload => "Browser.cancelDownload",
         }
     }
 }

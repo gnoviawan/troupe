@@ -44,6 +44,8 @@ pub mod git_history_api;
 pub mod git_hunk_api;
 pub mod github_api;
 pub mod host_allow;
+#[cfg(unix)]
+pub mod hosted_browser;
 pub mod host_local;
 #[cfg(test)]
 mod host_local_tests;
