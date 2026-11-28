@@ -324,7 +324,7 @@ wire_enum! {
 wire_enum! {
     /// A watch a connection can hold. `projects`, `chat_history`, `agents` and
     /// `chat_activity` have the empty scope; `fs` and `terminals` are scoped
-    /// to a project id, `store` to a store key.
+    /// to a project id, `store` to a store key, `browser_screencast` to a tab id.
     pub enum WsWatchName {
         Projects = "projects",
         ChatHistory = "chat_history",
@@ -332,6 +332,7 @@ wire_enum! {
         Fs = "fs",
         Store = "store",
         Terminals = "terminals",
+        BrowserScreencast = "browser_screencast",
         ChatActivity = "chat_activity",
     }
 }

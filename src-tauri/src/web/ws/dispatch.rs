@@ -160,6 +160,10 @@ pub(super) async fn route_request(req: WsRequest, env: &HandlerEnv) -> WsReply {
         "mark_chat_read" => handle_mark_chat_read(id, &req.payload, relay),
         // The canvas gateway's renderer leg (`canvas.rs`): mounts this
         // connection holds and its answers to forwarded canvas calls.
+        // The browser pane (`browser_pane.rs`), served by `--browser-host`.
+        pane if browser_pane::is_pane_request(pane) => {
+            browser_pane::handle(id, pane, &req.payload, env).await
+        }
         "canvas_mount" => handle_canvas_mount(id, &req.payload, env),
         "canvas_unmount" => handle_canvas_unmount(id, &req.payload, env),
         "canvas_reply" => handle_canvas_reply(id, &req.payload, env),
