@@ -1,0 +1,818 @@
+[
+ {
+  "store": "provider-usage",
+  "name": "usage_words",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "tone",
+     "args": [
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "normal",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tone",
+     "args": [
+      79.9
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "normal",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tone",
+     "args": [
+      80
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "warning",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tone",
+     "args": [
+      99.5
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "warning",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tone",
+     "args": [
+      100
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "critical",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tone",
+     "args": [
+      140
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "critical",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "label",
+     "args": [
+      {
+       "kind": "session",
+       "group": null,
+       "scope": null,
+       "percent": 1,
+       "resetsAt": null,
+       "severity": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "5-hour",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "label",
+     "args": [
+      {
+       "kind": "weekly_all",
+       "group": null,
+       "scope": null,
+       "percent": 1,
+       "resetsAt": null,
+       "severity": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Weekly",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "label",
+     "args": [
+      {
+       "kind": "weekly_scoped",
+       "group": null,
+       "scope": "Opus",
+       "percent": 1,
+       "resetsAt": null,
+       "severity": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Weekly · Opus",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "label",
+     "args": [
+      {
+       "kind": "weekly_scoped",
+       "group": null,
+       "scope": null,
+       "percent": 1,
+       "resetsAt": null,
+       "severity": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Weekly",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "label",
+     "args": [
+      {
+       "kind": "extra_usage",
+       "group": null,
+       "scope": null,
+       "percent": 1,
+       "resetsAt": null,
+       "severity": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Extra usage",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": [
+      1800000012
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "resets now",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": [
+      1800002700
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "resets in 45m",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": [
+      1800008040
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "resets in 2h 14m",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": [
+      1800007200
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "resets in 2h",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": [
+      1800252000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "resets in 3d",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": [
+      1802592000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "resets in 30d",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": [
+      1799999400
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "resets now",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "checked",
+     "args": [
+      1799999970000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Updated just now",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "checked",
+     "args": [
+      1799999760000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Updated 4m ago",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "checked",
+     "args": [
+      1799992200000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Updated 2h ago",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "plan",
+     "args": [
+      "max"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Max",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "plan",
+     "args": [
+      "pro"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Pro",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "plan",
+     "args": [
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "plan",
+     "args": [
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "codexLabel",
+     "args": [
+      {
+       "kind": "session",
+       "percent": 1,
+       "resetsAt": null,
+       "windowDurationMins": 300
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "5-hour",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "codexLabel",
+     "args": [
+      {
+       "kind": "weekly",
+       "percent": 1,
+       "resetsAt": null,
+       "windowDurationMins": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Weekly",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "antigravityLabel",
+     "args": [
+      {
+       "kind": "model",
+       "label": "",
+       "modelId": "gemini-3-pro",
+       "percent": 1,
+       "resetsAt": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "gemini-3-pro",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "antigravityLabel",
+     "args": [
+      {
+       "kind": "model",
+       "label": "Gemini 3 Pro",
+       "modelId": "g",
+       "percent": 1,
+       "resetsAt": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Gemini 3 Pro",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "provider-usage",
+  "name": "claude_rows_say_their_state",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "primary",
+     "args": [
+      {
+       "accountId": "a",
+       "status": "ok",
+       "subscriptionType": "max",
+       "windows": [
+        {
+         "kind": "session",
+         "group": null,
+         "scope": null,
+         "percent": 42,
+         "resetsAt": null,
+         "severity": null
+        },
+        {
+         "kind": "weekly_scoped",
+         "group": null,
+         "scope": "Opus",
+         "percent": 85,
+         "resetsAt": null,
+         "severity": null
+        }
+       ],
+       "checkedAt": 1800000000000,
+       "message": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 85,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "primary",
+     "args": [
+      {
+       "accountId": "a",
+       "status": "error",
+       "subscriptionType": "max",
+       "windows": [
+        {
+         "kind": "session",
+         "group": null,
+         "scope": null,
+         "percent": 42,
+         "resetsAt": null,
+         "severity": null
+        }
+       ],
+       "checkedAt": 1800000000000,
+       "message": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": true
+      },
+      {
+       "accountId": "a",
+       "status": "ok",
+       "subscriptionType": "max",
+       "windows": [
+        {
+         "kind": "session",
+         "group": null,
+         "scope": null,
+         "percent": 42,
+         "resetsAt": null,
+         "severity": null
+        },
+        {
+         "kind": "weekly_scoped",
+         "group": null,
+         "scope": "Opus",
+         "percent": 85,
+         "resetsAt": null,
+         "severity": null
+        }
+       ],
+       "checkedAt": 1800000000000,
+       "message": null
+      },
+      false,
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "warning",
+     "meta": "Max · near the Weekly · Opus limit"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": true
+      },
+      {
+       "accountId": "a",
+       "status": "ok",
+       "subscriptionType": "max",
+       "windows": [
+        {
+         "kind": "session",
+         "group": null,
+         "scope": null,
+         "percent": 100,
+         "resetsAt": null,
+         "severity": null
+        }
+       ],
+       "checkedAt": 1800000000000,
+       "message": null
+      },
+      false,
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "critical",
+     "meta": "Max · limit reached"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": true
+      },
+      {
+       "accountId": "a",
+       "status": "ok",
+       "subscriptionType": "max",
+       "windows": [
+        {
+         "kind": "session",
+         "group": null,
+         "scope": null,
+         "percent": 10,
+         "resetsAt": null,
+         "severity": null
+        }
+       ],
+       "checkedAt": 1800000000000,
+       "message": null
+      },
+      false,
+      2
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "ok",
+     "meta": "Max · 2 projects"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": true
+      },
+      {
+       "accountId": "a",
+       "status": "ok",
+       "subscriptionType": null,
+       "windows": [
+        {
+         "kind": "session",
+         "group": null,
+         "scope": null,
+         "percent": 10,
+         "resetsAt": null,
+         "severity": null
+        }
+       ],
+       "checkedAt": 1800000000000,
+       "message": null
+      },
+      false,
+      1
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "ok",
+     "meta": "1 project"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": true
+      },
+      null,
+      false,
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "ok",
+     "meta": "Signed in"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": true
+      },
+      {
+       "accountId": "a",
+       "status": "ok",
+       "subscriptionType": "pro",
+       "windows": [],
+       "checkedAt": 1800000000000,
+       "message": null
+      },
+      true,
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "waiting",
+     "meta": "Pro · waiting for browser"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": false
+      },
+      null,
+      false,
+      3
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "signed-out",
+     "meta": "signed out"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": true
+      },
+      {
+       "accountId": "a",
+       "status": "signed_out",
+       "subscriptionType": "max",
+       "windows": [],
+       "checkedAt": 1800000000000,
+       "message": null
+      },
+      false,
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "signed-out",
+     "meta": "Max · signed out"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      {
+       "id": "a",
+       "name": "Work",
+       "builtin": false,
+       "signedIn": null
+      },
+      null,
+      false,
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "unknown",
+     "meta": "Could not check sign-in"
+    },
+    "state": null
+   }
+  ]
+ }
+]

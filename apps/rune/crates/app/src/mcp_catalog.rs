@@ -30,6 +30,8 @@ pub enum CatalogFetch {
     Status(u64),
     /// `/mcp-catalog/sync`, by request number.
     Sync(u64),
+    /// An install step (`mcp_install`).
+    Install(crate::mcp_install::InstallFetch),
 }
 
 /// `McpCatalogStatusState`.
@@ -64,6 +66,13 @@ pub struct CatalogUi {
     pub active: bool,
 }
 
+impl CatalogUi {
+    #[cfg(test)]
+    pub(crate) fn search_generation(&self) -> u64 {
+        self.generation
+    }
+}
+
 fn glyph(name: &str) -> &'static rune::Icon {
     theme::icons::named(name).expect("bundled icon")
 }
@@ -86,7 +95,7 @@ fn code_of(e: &HttpError) -> String {
 }
 
 impl State {
-    fn catalog_send(&mut self, request: HttpRequest, tag: CatalogFetch) {
+    pub(crate) fn catalog_send(&mut self, request: HttpRequest, tag: CatalogFetch) {
         #[cfg(test)]
         self.mcp_ui.posted.push((request.path.clone(), request.body.clone().unwrap_or(Value::Null)));
         if let Some(host) = &mut self.host {
@@ -160,7 +169,7 @@ impl State {
     }
 
     /// The switch: `setSync`, with the choice shown until the host answers.
-    fn catalog_set_sync(&mut self, enabled: bool) {
+    pub(crate) fn catalog_set_sync(&mut self, enabled: bool) {
         log::info!("[settings.McpCatalogBrowser] sync {}", if enabled { "on" } else { "off" });
         let c = &mut self.mcp_ui.catalog;
         c.toggling = true;
@@ -216,6 +225,7 @@ impl State {
     /// A catalog answer.
     pub(crate) fn catalog_fetched(&mut self, tag: CatalogFetch, result: Result<Value, HttpError>) {
         match tag {
+            CatalogFetch::Install(tag) => return self.install_fetched(tag, result),
             CatalogFetch::Search { generation, query, append } => {
                 let c = &mut self.mcp_ui.catalog;
                 if generation != c.generation {
@@ -355,7 +365,7 @@ fn catalog_card(s: &State, t: &'static Tokens, r: &Row, block: Option<Block>) ->
             .disabled(block.is_some() || r.state != "installable")
             .build(t)
             .key("install")
-            .on_press(move |s: &mut State| s.toast_later(&format!("Installing {row_for} from the catalog")))
+            .on_press(move |s: &mut State| s.install_start(&row_for))
     };
     let head = row().key("head").w_full().gap(10.0).items_center().child(letter_tile(t, &name, 32.0)).child(title).child(action);
     let mut body = col().key(format!("catalog-{}", r.name)).role("group").label(name.clone()).gap(10.0).padding(14.0).radius(8.0).fill(c.card).border(1.0, c.border).items_stretch().child(head);

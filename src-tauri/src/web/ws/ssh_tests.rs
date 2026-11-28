@@ -59,6 +59,7 @@ struct Client {
     env: HandlerEnv,
     rx: OutboundReceiver,
     exec: KeyedExecutor,
+    watches: std::collections::VecDeque<Value>,
 }
 
 impl Client {
@@ -77,6 +78,7 @@ impl Client {
             env,
             rx,
             exec: KeyedExecutor::new(CancellationToken::new()),
+            watches: std::collections::VecDeque::new(),
         }
     }
 
@@ -92,8 +94,10 @@ impl Client {
         let text = crate::web::command_ledger::test_clock::stamp_ws_text(&frame(type_, payload));
         assert!(dispatch_connection_text(&text, &mut self.conn, &self.env, &self.exec).await);
         loop {
-            if let Outbound::Reply(reply) = self.next().await {
-                return reply;
+            match self.next().await {
+                Outbound::Reply(reply) => return reply,
+                Outbound::Watch(frame) => self.watches.push_back(serde_json::to_value(frame).unwrap()),
+                _ => {}
             }
         }
     }
@@ -234,6 +238,9 @@ async fn trusting_a_host_key_names_the_key_of_an_open_question() {
 
 /// The next watch frame on the client's queue, skipping replies.
 async fn next_watch(client: &mut Client) -> Value {
+    if let Some(frame) = client.watches.pop_front() {
+        return frame;
+    }
     loop {
         if let Outbound::Watch(frame) = client.next().await {
             return serde_json::to_value(frame).unwrap();
