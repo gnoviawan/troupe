@@ -117,7 +117,9 @@ impl Policy {
     /// says. Names are resolved by the proxy when the request goes out.
     pub fn allows_url(&self, url: &Url) -> bool {
         match url.scheme() {
-            "about" | "data" | "blob" => return true,
+            "about" => return url.as_str() == "about:blank",
+            // Blob provenance cannot be established from a navigation URL alone.
+            "data" | "javascript" | "blob" => return false,
             "http" | "https" | "ws" | "wss" => {}
             _ => return false,
         }
