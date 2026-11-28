@@ -73,10 +73,12 @@ impl Client {
             &tx,
             &conn.subscriptions,
         );
-        env.identity.set(ClientIdentity {
-            device_id: "test-device".into(),
-            client_instance_id: uuid::Uuid::new_v4().to_string(),
-        }).unwrap();
+        env.identity
+            .set(ClientIdentity {
+                device_id: "test-device".into(),
+                client_instance_id: uuid::Uuid::new_v4().to_string(),
+            })
+            .unwrap();
         Self {
             conn,
             env,
@@ -87,7 +89,13 @@ impl Client {
     }
 
     fn claim(&self, attempt: &str) {
-        self.env.relay.ssh().unwrap().owners.lock().insert(attempt.into(), super::ssh::ssh_owner(&self.env).unwrap());
+        self.env
+            .relay
+            .ssh()
+            .unwrap()
+            .owners
+            .lock()
+            .insert(attempt.into(), super::ssh::ssh_owner(&self.env).unwrap());
     }
 
     async fn next(&mut self) -> Outbound {
@@ -104,7 +112,9 @@ impl Client {
         loop {
             match self.next().await {
                 Outbound::Reply(reply) => return reply,
-                Outbound::Watch(frame) => self.watches.push_back(serde_json::to_value(frame).unwrap()),
+                Outbound::Watch(frame) => {
+                    self.watches.push_back(serde_json::to_value(frame).unwrap())
+                }
                 _ => {}
             }
         }
@@ -269,7 +279,11 @@ fn the_ssh_watch_is_forbidden_to_a_writer_that_is_not_host_local() {
         None,
     );
     assert_eq!(code(&refused), "forbidden");
-    assert!(message(&refused).contains("credentials"), "{}", message(&refused));
+    assert!(
+        message(&refused).contains("credentials"),
+        "{}",
+        message(&refused)
+    );
 }
 
 #[tokio::test]
@@ -558,9 +572,15 @@ async fn a_moved_key_profile_loses_its_stored_passphrase() {
 #[test]
 fn ownership_uses_the_handlers_payload_shape_even_with_extra_fields() {
     let answer = serde_json::json!({"sessionId": "victim", "request": {}});
-    assert_eq!(super::ssh::request_attempt("ssh_session_respond_host_key", &answer), Some("victim"));
+    assert_eq!(
+        super::ssh::request_attempt("ssh_session_respond_host_key", &answer),
+        Some("victim")
+    );
     let upload = serde_json::json!({"sessionId": "decoy", "request": {"connectionId": "actual"}});
-    assert_eq!(super::ssh::request_attempt("sftp_upload", &upload), Some("actual"));
+    assert_eq!(
+        super::ssh::request_attempt("sftp_upload", &upload),
+        Some("actual")
+    );
 }
 
 #[tokio::test]
@@ -569,22 +589,72 @@ async fn two_local_clients_receive_only_their_own_host_key_prompts() {
     let relay = relay_with_ssh(dir.path());
     let mut a = Client::new(&relay);
     let mut b = Client::new(&relay);
-    a.claim("a"); b.claim("b");
+    a.claim("a");
+    b.claim("b");
     for client in [&mut a, &mut b] {
         assert!(client.send("watch", json!({"watch": "ssh"})).await.ok);
         assert_eq!(next_watch(client).await["state"], json!({"hostKeys": []}));
     }
     let emit = Arc::clone(&relay.ssh().unwrap().emit);
     for id in ["a", "b"] {
-        emit(crate::ssh::session::EVENT_HOST_KEY, json!({
-            "sessionId": id, "status": "unknown", "host": id, "port": 22,
-            "keyType": "ssh-ed25519", "fingerprint": format!("SHA256:{id}"), "previousFingerprints": []
-        }));
+        emit(
+            crate::ssh::session::EVENT_HOST_KEY,
+            json!({
+                "sessionId": id, "status": "unknown", "host": id, "port": 22,
+                "keyType": "ssh-ed25519", "fingerprint": format!("SHA256:{id}"), "previousFingerprints": []
+            }),
+        );
     }
     assert_eq!(next_watch(&mut a).await["delta"]["sessionId"], "a");
     assert_eq!(next_watch(&mut b).await["delta"]["sessionId"], "b");
-    let foreign = b.send("ssh_session_respond_host_key", json!({"sessionId": "a", "trust": false, "request": {}})).await;
+    let foreign = b
+        .send(
+            "ssh_session_respond_host_key",
+            json!({"sessionId": "a", "trust": false, "request": {}}),
+        )
+        .await;
     assert_eq!(code(&foreign), "unauthorized");
     assert!(a.watches.is_empty());
     assert!(b.watches.is_empty());
+}
+
+#[test]
+fn every_sftp_route_uses_connection_id_and_refuses_alternate_targets() {
+    for route in super::ssh::SSH_WS_REQUESTS
+        .iter()
+        .filter(|r| r.starts_with("sftp_"))
+    {
+        let payload = json!({"request": {"connectionId": "victim", "sessionId": "own"}});
+        assert_eq!(
+            super::ssh::request_attempt(route, &payload),
+            Some("victim"),
+            "{route}"
+        );
+        assert!(!super::ssh::valid_target_fields(route, &payload), "{route}");
+        let valid = json!({"request": {"connectionId": "actual"}});
+        assert_eq!(
+            super::ssh::request_attempt(route, &valid),
+            Some("actual"),
+            "{route}"
+        );
+        assert!(super::ssh::valid_target_fields(route, &valid), "{route}");
+    }
+}
+
+#[test]
+fn ssh_session_routes_refuse_connection_id_decoys() {
+    for route in [
+        "ssh_session_open",
+        "ssh_session_cancel",
+        "ssh_session_close",
+        "ssh_session_respond_host_key",
+    ] {
+        let target = json!({"sessionId": "own", "connectionId": "victim"});
+        let payload = if route == "ssh_session_open" {
+            json!({"request": target})
+        } else {
+            target
+        };
+        assert!(!super::ssh::valid_target_fields(route, &payload), "{route}");
+    }
 }
