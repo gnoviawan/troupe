@@ -35,6 +35,13 @@ const NO_PROJECT: PrepareChatError = {
 /** A change to a profile, applied to the profile as it is when the change is sent. */
 export type EditProfile = (profile: SubagentProfile) => SubagentProfile
 
+/** State of the expanded panel's Mode row for an installed profile. */
+export type ProfileModeField =
+  | { kind: 'ready'; session: AcpSession }
+  | { kind: 'loading' }
+  | { kind: 'none' }
+  | { kind: 'error'; label: string; retry: (() => void) | null }
+
 /** Everything the profile row's model chip and Mode row need. */
 export interface ProfilePicker extends ComposerOptionControls {
   source: SelectorSource
@@ -43,8 +50,8 @@ export interface ProfilePicker extends ComposerOptionControls {
   agentIcon: string | null
   /** The agent's modes with the profile's mode current; null when it lists none. */
   modes: SessionModeState | null
-  /** A session-shaped holder of `modes` for the mode menu. */
-  modeSession: AcpSession | null
+  /** State of the Mode field row: chip, loading, no modes, or prepare error. */
+  modeField: ProfileModeField
   onSetModel: (modelId: string, values?: OptionValues) => Promise<void>
   onSetConfig: (configId: string, value: string | boolean) => Promise<void>
   onSetMode: (modeId: string) => Promise<void>
@@ -56,13 +63,15 @@ export interface ProfilePicker extends ComposerOptionControls {
  * agent's last known options (the options cache, filled from its saved model
  * list or a warm prepare) with the profile's saved model, mode and option
  * values on top. Picks save the profile; a tab moves it to that agent. Opening
- * the picker prepares the agent in the open project, as the launcher does, so
- * its live models, thinking levels and modes load.
+ * the picker or expanding the profile row prepares the agent in the open
+ * project, as the launcher does, so its live models, thinking levels and modes
+ * load.
  */
 export function useProfilePicker({
   profile,
   launchableAgentIds,
   pinned,
+  expanded,
   edit
 }: {
   profile: SubagentProfile
@@ -70,6 +79,8 @@ export function useProfilePicker({
   launchableAgentIds: ReadonlySet<string>
   /** The profile cannot move to another agent, so the picker offers only its own. */
   pinned: boolean
+  /** The profile's settings panel is expanded; prepares the agent to load its modes. */
+  expanded: boolean
   edit: (change: EditProfile) => Promise<void>
 }): ProfilePicker {
   const agentId = profile.agentId
@@ -92,6 +103,7 @@ export function useProfilePicker({
   const projectId = useProjectStore((s) => s.activeProjectId) ?? ''
   const cwd = projectId ? getDefaultCwdForProject(projectId) : ''
   const key = cwd ? prepareChatKey(agentId, cwd, undefined) : null
+  const prepared = useAcpStore((s) => (key ? Boolean(s.preparedSessions[key]) : false))
   const preparing = useAcpStore((s) => (key ? Boolean(s.preparingChatKeys[key]) : false))
   const prepareError = useAcpStore((s) => (key ? (s.prepareChatErrors[key] ?? null) : null))
   const cache = useAcpStore((s) => s.agentOptionsCache[agentId] ?? null)
@@ -128,15 +140,16 @@ export function useProfilePicker({
     prepare()
   }, [key, prepare])
 
-  // While the picker is open, its agent is prepared once (a tab pick moves the
-  // profile to another agent, which is prepared then).
+  // While the picker or expanded panel is open, its agent is prepared once (a
+  // tab pick moves the profile to another agent, which is prepared then).
   const [open, setOpen] = useState(false)
+  const shouldPrepare = open || expanded
   useEffect(() => {
-    if (!open || !key) return
+    if (!shouldPrepare || !key) return
     const s = useAcpStore.getState()
-    if (s.preparedSessions[key] || s.preparingChatKeys[key] || s.prepareChatErrors[key]) return
+    if (prepared || s.preparingChatKeys[key] || s.prepareChatErrors[key]) return
     prepare()
-  }, [open, key, prepare])
+  }, [shouldPrepare, key, prepare, prepared])
 
   useEffect(() => {
     if (!prepareError) return
@@ -238,6 +251,14 @@ export function useProfilePicker({
         : null,
     [modes, profile.id, cwd, projectId, effective.models, effective.configOptions]
   )
+  const modeError = prepareError ?? (!cwd ? NO_PROJECT : null)
+  const modeField = useMemo((): ProfileModeField => {
+    if (modeSession) return { kind: 'ready', session: modeSession }
+    if (modeError) return { kind: 'error', label: modeError.label, retry: key ? retry : null }
+    if (preparing) return { kind: 'loading' }
+    if (prepared) return { kind: 'none' }
+    return { kind: 'loading' }
+  }, [modeSession, modeError, key, retry, preparing, prepared])
 
   return {
     ...controls,
@@ -246,7 +267,7 @@ export function useProfilePicker({
     agentTemplateId: config?.templateId ?? selectedEntry?.agent.id ?? null,
     agentIcon: config?.icon ?? null,
     modes,
-    modeSession,
+    modeField,
     onSetModel,
     onSetConfig,
     onSetMode,

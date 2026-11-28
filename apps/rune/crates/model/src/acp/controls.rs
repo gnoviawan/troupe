@@ -250,8 +250,8 @@ fn catalog_models(option: &Value) -> Vec<Value> {
         .collect()
 }
 
-/// `modelCatalogFromOptions`: the model list of a cache entry, kept across
-/// restarts; `None` when the entry has no model list.
+/// `modelCatalogFromOptions`: the model and mode lists of a cache entry, kept
+/// across restarts; `None` when the entry has neither.
 pub(super) fn model_catalog(entry: &Value, now: f64) -> Option<Value> {
     let option = entry["configOptions"]
         .as_array()
@@ -283,10 +283,29 @@ pub(super) fn model_catalog(entry: &Value, now: f64) -> Option<Value> {
             "options": catalog_models(option),
         })
     });
-    if model_option.is_none() && models.is_none() {
+    let modes = entry
+        .get("modes")
+        .filter(|modes| modes.get("availableModes").and_then(Value::as_array).is_some_and(|m| !m.is_empty()))
+        .map(|modes| {
+            json!({
+                "currentModeId": modes.get("currentModeId"),
+                "availableModes": modes["availableModes"].as_array().into_iter().flatten().map(|mode| {
+                    // `JSON.stringify` drops an absent id or name, so they stay absent here.
+                    let mut saved = serde_json::Map::new();
+                    for key in ["id", "name"] {
+                        if let Some(value) = mode.get(key) {
+                            saved.insert(key.to_owned(), value.clone());
+                        }
+                    }
+                    saved.insert("description".to_owned(), mode.get("description").cloned().unwrap_or(Value::Null));
+                    Value::Object(saved)
+                }).collect::<Vec<_>>(),
+            })
+        });
+    if model_option.is_none() && models.is_none() && modes.is_none() {
         return None;
     }
-    Some(json!({ "models": models, "modelOption": model_option, "updatedAt": now }))
+    Some(json!({ "models": models, "modelOption": model_option, "modes": modes, "updatedAt": now }))
 }
 
 impl State {

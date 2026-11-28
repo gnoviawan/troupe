@@ -3,6 +3,7 @@ import { ModeChip } from '@/components/chat/AgentHeader'
 import { AgentModelSelector } from '@/components/chat/agent-model-selector/AgentModelSelector'
 import { AlertTriangle, Copy, ShieldAlert, Trash2 } from '@/components/icons'
 import { RowMenu } from '@/components/settings/RowMenu'
+import { Button } from '@/components/ui/button'
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { SEGMENTED_TRACK_CLASS, segmentClass } from '@/components/ui/panel-styles'
@@ -19,7 +20,7 @@ import {
   profileSkipsPrompts,
   storedProfile
 } from './profile-model'
-import { type EditProfile, useProfilePicker } from './use-profile-picker'
+import { type EditProfile, type ProfileModeField, useProfilePicker } from './use-profile-picker'
 
 /**
  * Saves `edit` of the profile named `id`, applied when the change is sent, so
@@ -216,6 +217,46 @@ function DeleteItem({
   )
 }
 
+function ModeFieldControl({
+  field,
+  agentName,
+  onSelect
+}: {
+  field: ProfileModeField
+  agentName: string
+  onSelect: (modeId: string) => Promise<void>
+}): React.JSX.Element {
+  switch (field.kind) {
+    case 'ready':
+      return (
+        <ModeChip
+          session={field.session}
+          disabled={false}
+          onSelect={onSelect}
+          label="Mode"
+          agentName={agentName}
+        />
+      )
+    case 'loading':
+      return <p className="pt-2 text-xs text-muted-foreground">Loading modes…</p>
+    case 'none':
+      return <p className="pt-2 text-xs text-muted-foreground">This agent has no modes.</p>
+    case 'error':
+      return (
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <p role="alert" className="text-xs text-destructive">
+            {field.label}
+          </p>
+          {field.retry ? (
+            <Button type="button" size="xs" variant="secondary" onClick={field.retry}>
+              Try again
+            </Button>
+          ) : null}
+        </div>
+      )
+  }
+}
+
 /**
  * One sub-agent profile: its agent, name and note, the composer's model
  * picker as its model chip, its switch and a menu. Expanded, it edits the
@@ -245,14 +286,15 @@ export function ProfileRow({
   const stored = useMemo(() => storedProfile(profile), [profile])
   const edit = useCallback((change: EditProfile) => save(profile.id, change), [save, profile.id])
   const lockReason = agentLockReason(profile, profiles)
+  const installed = profile.agentName !== null
   const picker = useProfilePicker({
     profile: stored,
     launchableAgentIds,
     pinned: lockReason !== null,
+    expanded: expanded && installed,
     edit
   })
   const others = useMemo(() => profiles.filter((other) => other !== profile), [profiles, profile])
-  const installed = profile.agentName !== null
   const agentName = profile.agentName ?? picker.agentName ?? profile.agentId
   const skips = profileSkipsPrompts(stored)
   const panelId = useId()
@@ -340,14 +382,12 @@ export function ProfileRow({
               </p>
             </FieldRow>
           ) : null}
-          {picker.modeSession ? (
+          {installed ? (
             <FieldRow label="Mode">
-              <ModeChip
-                session={picker.modeSession}
-                disabled={false}
-                onSelect={picker.onSetMode}
-                label="Mode"
+              <ModeFieldControl
+                field={picker.modeField}
                 agentName={agentName}
+                onSelect={picker.onSetMode}
               />
             </FieldRow>
           ) : null}

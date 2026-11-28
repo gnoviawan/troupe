@@ -115,4 +115,32 @@ describe('saved model lists after a page load', () => {
 
     expect(useAcpStore.getState().agentOptionsCache.edited).toBeUndefined()
   })
+
+  it('restores saved modes from the model catalog on loadAgentConfigs', async () => {
+    const modes = {
+      currentModeId: 'plan',
+      availableModes: [
+        { id: 'default', name: 'Default', description: null },
+        { id: 'plan', name: 'Plan', description: 'Read-only planning' }
+      ]
+    }
+    sharedFake.seed(PersistenceKeys.acpAgents, [config('with-modes')])
+    sharedFake.seed(PersistenceKeys.agentModelCatalog('with-modes'), {
+      models: null,
+      modelOption: null,
+      modes,
+      updatedAt: 12
+    })
+
+    await useAcpStore.getState().loadAgentConfigs()
+
+    await vi.waitFor(() =>
+      expect(useAcpStore.getState().agentOptionsCache['with-modes']).toEqual({
+        models: null,
+        modes,
+        configOptions: [],
+        updatedAt: 12
+      })
+    )
+  })
 })
