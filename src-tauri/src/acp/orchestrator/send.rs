@@ -59,7 +59,7 @@ impl OrchestratorEngine {
                 cleared_permission: bool,
             },
             WaitSettling(tokio::sync::oneshot::Receiver<()>),
-            Resume(ResumeMeta),
+            Resume(Box<ResumeMeta>),
         }
 
         let resume_meta = loop {
@@ -137,7 +137,7 @@ impl OrchestratorEngine {
                                 "this subagent run has no resumable session",
                             ));
                         };
-                        Decision::Resume(ResumeMeta {
+                        Decision::Resume(Box::new(ResumeMeta {
                             root: entry.root.clone(),
                             parent_agent: entry.parent_agent.clone(),
                             parent_session_id: entry.parent_session_id.clone(),
@@ -149,7 +149,7 @@ impl OrchestratorEngine {
                             workspace_mode: entry.workspace.mode,
                             session_id,
                             capture: entry.capture.clone(),
-                        })
+                        }))
                     }
                 }
             };
@@ -375,7 +375,7 @@ impl OrchestratorEngine {
     async fn resume_inner(
         self: &Arc<Self>,
         run: &RunId,
-        meta: ResumeMeta,
+        meta: Box<ResumeMeta>,
         checks: ResumeChecks,
         message: String,
         sender: String,
