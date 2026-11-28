@@ -278,6 +278,35 @@ fn test_windows_git_path_still_strips_safe_verbatim_forms() {
     }
 }
 
+/// #2146 follow-up: registry roots use `strip_verbatim_path`. A
+/// volume GUID root and a name Windows would trim stay verbatim; drive and
+/// UNC forms still drop the prefix. Pure string rewriting, so it runs on
+/// every OS.
+#[test]
+fn test_strip_verbatim_path_keeps_volume_guid_and_trailing_dot_or_space() {
+    const VOLUME: &str = r"\\?\Volume{26a21bda-a627-11d7-9931-806e6f6e6963}\repo";
+    let cases = [
+        (r"\\?\C:\work\app", r"C:\work\app"),
+        (r"\\?\UNC\server\share\app", r"\\server\share\app"),
+        (r"C:\work\app", r"C:\work\app"),
+        (r"\\server\share\app", r"\\server\share\app"),
+        (VOLUME, VOLUME),
+        (r"\\?\E:\app.", r"\\?\E:\app."),
+        (r"\\?\C:\work\repo.", r"\\?\C:\work\repo."),
+        (r"\\?\C:\work\repo ", r"\\?\C:\work\repo "),
+        (r"\\?\C:\work\repo.\sub", r"\\?\C:\work\repo.\sub"),
+        (r"\\?\C:\work\repo \sub", r"\\?\C:\work\repo \sub"),
+        (r"\\?\foo", r"\\?\foo"),
+    ];
+    for (stored, expected) in cases {
+        assert_eq!(
+            strip_verbatim_path(PathBuf::from(stored)),
+            PathBuf::from(expected),
+            "{stored}"
+        );
+    }
+}
+
 #[cfg(not(windows))]
 #[test]
 fn test_git_path_keeps_literal_posix_backslash_names() {

@@ -39,10 +39,23 @@ pub fn strip_verbatim_prefix(path: &str) -> Cow<'_, str> {
     Cow::Borrowed(path)
 }
 
-/// [`strip_verbatim_prefix`] for an owned path. A path that is not valid
-/// UTF-8 is returned unchanged.
+/// Everyday spelling of a Windows project root, for an owned path. A path
+/// that is not valid UTF-8 is returned unchanged.
+///
+/// Used by project-root validation and the lenient registry load (#2132 /
+/// #2146). Reuses [`windows_git_path`]: only drive (`\\?\C:\…`) and UNC
+/// (`\\?\UNC\…`) verbatim forms are rewritten, and only when the plain
+/// spelling names the same directory. A `\\?\Volume{GUID}\…` root has no
+/// plain equivalent (stripping would leave a relative `Volume{…}\…`
+/// path) and is kept verbatim. So is a root whose components end in a dot
+/// or space, because Win32 would trim those and point at a different folder.
+///
+/// Guards live here, not in [`strip_verbatim_prefix`]. That helper stays a
+/// naive prefix rewrite for git, session, and client callers; git already
+/// goes through [`windows_git_path`], and widening the prefix helper would
+/// change path spelling in those other subsystems.
 pub fn strip_verbatim_path(path: PathBuf) -> PathBuf {
-    let plain = path.to_str().and_then(|text| match strip_verbatim_prefix(text) {
+    let plain = path.to_str().and_then(|text| match windows_git_path(text) {
         Cow::Owned(plain) => Some(plain),
         Cow::Borrowed(_) => None,
     });
