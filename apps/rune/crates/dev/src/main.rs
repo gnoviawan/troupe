@@ -27,6 +27,7 @@ fn config() -> Option<client::Config> {
         device_id: std::env::var("TROUPE_DEVICE_ID").unwrap_or_else(|_| "troupe-dev".into()),
         client_instance_id: format!("troupe-dev-{pid}-{nanos:x}"),
         seed: (u64::from(pid) << 32) | u64::from(nanos),
+        host_local: None,
     })
 }
 

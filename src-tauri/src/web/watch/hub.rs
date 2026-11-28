@@ -63,6 +63,9 @@ pub enum WatchKind {
     /// What every chat list shows for each agent chat: working, needs you,
     /// unread turn end.
     ChatActivity,
+    /// SSH session progress, host-key questions, session ends and transfer
+    /// progress (`troupe-server --desktop`); host-local connections only.
+    Ssh,
     /// One browser tab's screencast frames (scope = tab id).
     BrowserScreencast,
 }
@@ -79,6 +82,7 @@ impl WatchKind {
             Self::Store => "store",
             Self::Terminals => "terminals",
             Self::ChatActivity => "chat_activity",
+            Self::Ssh => "ssh",
             Self::BrowserScreencast => "browser_screencast",
         }
     }
@@ -94,6 +98,7 @@ impl WatchKind {
             "store" => Some(Self::Store),
             "terminals" => Some(Self::Terminals),
             "chat_activity" => Some(Self::ChatActivity),
+            "ssh" => Some(Self::Ssh),
             "browser_screencast" => Some(Self::BrowserScreencast),
             _ => None,
         }
@@ -105,7 +110,7 @@ impl WatchKind {
     #[must_use]
     pub fn accepts_scope(self, scope: &str) -> bool {
         match self {
-            Self::Projects | Self::ChatHistory | Self::Agents | Self::ChatActivity => {
+            Self::Projects | Self::ChatHistory | Self::Agents | Self::ChatActivity | Self::Ssh => {
                 scope.is_empty()
             }
             Self::Fs | Self::Store | Self::Terminals | Self::BrowserScreencast => {
@@ -146,7 +151,11 @@ impl WatchFrame {
         Self {
             type_: WS_WATCH_TYPE,
             watch: kind.as_str(),
-            scope: scope.to_string(),
+            scope: if kind == WatchKind::Ssh {
+                String::new()
+            } else {
+                scope.to_string()
+            },
             revision,
             reset: Some(true),
             state: Some(state),
@@ -158,7 +167,11 @@ impl WatchFrame {
         Self {
             type_: WS_WATCH_TYPE,
             watch: kind.as_str(),
-            scope: scope.to_string(),
+            scope: if kind == WatchKind::Ssh {
+                String::new()
+            } else {
+                scope.to_string()
+            },
             revision,
             reset: None,
             state: None,
@@ -419,7 +432,14 @@ impl WatchHub {
                 host_epoch: host_epoch.clone(),
                 n: subscriber.n,
             };
-            let frame = || Outbound::Watch(WatchFrame::delta(kind, scope, revision.clone(), delta.clone()));
+            let frame = || {
+                Outbound::Watch(WatchFrame::delta(
+                    kind,
+                    scope,
+                    revision.clone(),
+                    delta.clone(),
+                ))
+            };
             if subscriber.out.try_enqueue(frame()) == EnqueueOutcome::Full {
                 let out = subscriber.out.clone();
                 let frame = frame();

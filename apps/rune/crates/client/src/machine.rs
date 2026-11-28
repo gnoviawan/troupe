@@ -1,6 +1,40 @@
 //! The contract between a socket machine and the backend that runs it.
 
+use std::sync::Arc;
+
 use rune_core::machine::{Attempt, Effects};
+
+/// Reads the host-local credential each time the `/ws` socket authenticates:
+/// the Rune desktop app reads `<state dir>/host-local.token`, which a
+/// `troupe-server --desktop` host writes fresh at every start. Never logged.
+#[derive(Clone)]
+pub struct HostLocalCredential(Arc<dyn Fn() -> Option<String> + Send + Sync>);
+
+impl HostLocalCredential {
+    pub fn new(read: impl Fn() -> Option<String> + Send + Sync + 'static) -> Self {
+        Self(Arc::new(read))
+    }
+
+    /// The credential now; `None` when it cannot be read.
+    #[must_use]
+    pub fn read(&self) -> Option<String> {
+        (self.0)().filter(|token| !token.is_empty())
+    }
+}
+
+impl std::fmt::Debug for HostLocalCredential {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("HostLocalCredential(..)")
+    }
+}
+
+impl PartialEq for HostLocalCredential {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for HostLocalCredential {}
 
 /// Who the client is and where the host lives.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -18,6 +52,8 @@ pub struct Config {
     /// is part of every `commandId`, so a client rebuilt for the same window
     /// never reuses an earlier client's ids.
     pub seed: u64,
+    /// The host-local credential, for the desktop app's own server only.
+    pub host_local: Option<HostLocalCredential>,
 }
 
 impl Config {

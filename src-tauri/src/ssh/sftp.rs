@@ -7,6 +7,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
 /// Where transfer progress goes (`ssh-transfer-progress`).
+/// The progress event of an upload or download.
+pub const EVENT_TRANSFER_PROGRESS: &str = "ssh-transfer-progress";
+
 pub type ProgressSink<'a> = &'a (dyn Fn(&'static str, serde_json::Value) + Send + Sync);
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -246,7 +249,7 @@ impl Progress<'_> {
             error,
         };
         (self.sink)(
-            "ssh-transfer-progress",
+            EVENT_TRANSFER_PROGRESS,
             serde_json::to_value(&progress).unwrap_or_default(),
         );
     }
@@ -359,7 +362,12 @@ pub async fn upload_file(
     let sink = |event: &'static str, payload: serde_json::Value| {
         let _ = app.emit(event, payload);
     };
-    upload_file_from(sftp, local_path, remote_path, &sink, connection_id).await
+    upload_file_from(sftp, local_path, remote_path, &sink, connection_id, true).await
+}
+
+fn upload_flags(overwrite: bool) -> OpenFlags {
+    if overwrite { OpenFlags::CREATE | OpenFlags::TRUNCATE | OpenFlags::WRITE }
+    else { OpenFlags::CREATE | OpenFlags::EXCLUDE | OpenFlags::WRITE }
 }
 
 /// [`upload_file`] with progress sent to `sink`.
@@ -369,6 +377,7 @@ pub async fn upload_file_from(
     remote_path: &str,
     sink: ProgressSink<'_>,
     connection_id: &str,
+    overwrite: bool,
 ) -> Result<(), String> {
     let total = tokio::fs::metadata(local_path)
         .await
@@ -386,10 +395,20 @@ pub async fn upload_file_from(
         let mut local = tokio::fs::File::open(local_path)
             .await
             .map_err(|e| (0, format!("Failed to open '{}': {}", local_path, e)))?;
-        let mut remote = sftp
-            .create(remote_path)
-            .await
-            .map_err(|e| (0, format!("Failed to create '{}': {}", remote_path, e)))?;
+        let flags = upload_flags(overwrite);
+        let mut remote = match sftp.open_with_flags(remote_path, flags).await {
+            Ok(file) => file,
+            Err(error) => {
+                // SFTP v3 servers may report only generic FAILURE for an exclusive
+                // create conflict. A subsequent stat classifies it without writing.
+                let message = if !overwrite && sftp.symlink_metadata(remote_path).await.is_ok() {
+                    format!("SFTP_ALREADY_EXISTS: {}", remote_path)
+                } else {
+                    format!("Failed to create '{}': {}", remote_path, error)
+                };
+                return Err((0, message));
+            }
+        };
         copy_with_progress(&mut local, &mut remote, &progress).await
     }
     .await;

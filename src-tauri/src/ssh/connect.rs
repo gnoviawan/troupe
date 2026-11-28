@@ -217,7 +217,11 @@ impl client::Handler for ClientHandler {
         if status == HostKeyStatus::Trusted {
             return Ok(true);
         }
-        let info = known_hosts::info_for(&self.host, self.port, &key);
+        let mut info = known_hosts::info_for(&self.host, self.port, &key);
+        if status == HostKeyStatus::Changed {
+            info.previous_fingerprints =
+                known_hosts::previous_fingerprints(&self.host, self.port, &key);
+        }
         if status == HostKeyStatus::Revoked {
             log::warn!("[SSH] Host key for {} is revoked in known_hosts", info.host);
             return self.reject(ConnectError::new(

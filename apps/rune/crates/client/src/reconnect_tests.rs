@@ -17,6 +17,7 @@ pub(crate) fn config() -> Config {
         device_id: "dev-1".into(),
         client_instance_id: "tab-1".into(),
         seed: 7,
+        host_local: None,
     }
 }
 
@@ -644,4 +645,30 @@ fn a_call_handle_already_in_use_is_refused_and_the_first_call_kept() {
             result: Ok(Some(json!({ "sessions": [] })))
         }]
     );
+}
+
+#[test]
+fn each_authenticate_reads_the_host_local_credential_again() {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    let reads = Arc::new(AtomicUsize::new(0));
+    let counter = Arc::clone(&reads);
+    let mut host = Host::new();
+    host.client = WsClient::new(Config {
+        host_local: Some(crate::machine::HostLocalCredential::new(move || {
+            let n = counter.fetch_add(1, Ordering::SeqCst) + 1;
+            Some(format!("credential-{n}"))
+        })),
+        ..config()
+    });
+    host.connect();
+    assert_eq!(host.request("authenticate")["payload"]["hostLocalToken"], "credential-1");
+    host.reconnect();
+    assert_eq!(
+        host.request("authenticate")["payload"]["hostLocalToken"],
+        "credential-2",
+        "a restarted server writes a new credential; the reconnect reads it"
+    );
+    assert_eq!(reads.load(Ordering::SeqCst), 2);
 }

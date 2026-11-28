@@ -421,6 +421,924 @@
     }
   },
   {
+    "file": "ws-request.json",
+    "name": "ssh_list_profiles",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_list_profiles",
+    "frame": {
+      "id": "req-901",
+      "type": "ssh_list_profiles",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_list_profiles",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_list_profiles",
+    "frame": {
+      "id": "req-901",
+      "ok": true,
+      "payload": [
+        {
+          "id": "p1",
+          "name": "prod",
+          "host": "prod.example",
+          "port": 22,
+          "username": "deploy",
+          "authMethod": "key",
+          "privateKeyPath": "~/.ssh/id_ed25519",
+          "jumpHostId": null,
+          "portForwards": [],
+          "tags": null,
+          "group": null,
+          "favorite": false,
+          "lastConnected": null,
+          "importedFrom": null,
+          "hasStoredPassword": false,
+          "hasStoredPassphrase": false
+        }
+      ]
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_save_profile",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_save_profile",
+    "frame": {
+      "id": "req-902",
+      "type": "ssh_save_profile",
+      "payload": {
+        "profile": {
+          "id": "p1",
+          "name": "prod",
+          "host": "prod.example",
+          "port": 22,
+          "username": "deploy",
+          "authMethod": "key",
+          "privateKeyPath": "~/.ssh/id_ed25519",
+          "jumpHostId": null,
+          "portForwards": [],
+          "tags": null,
+          "group": null,
+          "favorite": false,
+          "lastConnected": null,
+          "importedFrom": null,
+          "hasStoredPassword": false,
+          "hasStoredPassphrase": false
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_save_profile",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_save_profile",
+    "frame": {
+      "id": "req-902",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_delete_profile",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_delete_profile",
+    "frame": {
+      "id": "req-903",
+      "type": "ssh_delete_profile",
+      "payload": {
+        "profileId": "p1"
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_delete_profile",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_delete_profile",
+    "frame": {
+      "id": "req-903",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_duplicate_profile",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_duplicate_profile",
+    "frame": {
+      "id": "req-904",
+      "type": "ssh_duplicate_profile",
+      "payload": {
+        "profileId": "p1"
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_duplicate_profile",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_duplicate_profile",
+    "frame": {
+      "id": "req-904",
+      "ok": true,
+      "payload": {
+        "id": "p2",
+        "name": "prod (copy)",
+        "host": "prod.example",
+        "port": 22,
+        "username": "deploy",
+        "authMethod": "key",
+        "privateKeyPath": "~/.ssh/id_ed25519",
+        "jumpHostId": null,
+        "portForwards": [],
+        "tags": null,
+        "group": null,
+        "favorite": false,
+        "lastConnected": null,
+        "importedFrom": null,
+        "hasStoredPassword": false,
+        "hasStoredPassphrase": false
+      }
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_import_config",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_import_config",
+    "frame": {
+      "id": "req-905",
+      "type": "ssh_import_config",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_import_config",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_import_config",
+    "frame": {
+      "id": "req-905",
+      "ok": true,
+      "payload": [
+        {
+          "id": "p1",
+          "name": "prod",
+          "host": "prod.example",
+          "port": 22,
+          "username": "deploy",
+          "authMethod": "key",
+          "privateKeyPath": "~/.ssh/id_ed25519",
+          "jumpHostId": null,
+          "portForwards": [],
+          "tags": null,
+          "group": null,
+          "favorite": false,
+          "lastConnected": null,
+          "importedFrom": "~/.ssh/config",
+          "hasStoredPassword": false,
+          "hasStoredPassphrase": false
+        }
+      ]
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_inspect_key",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_inspect_key",
+    "frame": {
+      "id": "req-906",
+      "type": "ssh_inspect_key",
+      "payload": {
+        "path": "/home/u/.ssh/id_ed25519"
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_inspect_key",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_inspect_key",
+    "frame": {
+      "id": "req-906",
+      "ok": true,
+      "payload": {
+        "path": "/home/u/.ssh/id_ed25519",
+        "status": "ok",
+        "encrypted": false,
+        "keyType": "ssh-ed25519"
+      }
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_list_keys",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_list_keys",
+    "frame": {
+      "id": "req-907",
+      "type": "ssh_list_keys",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_list_keys",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_list_keys",
+    "frame": {
+      "id": "req-907",
+      "ok": true,
+      "payload": [
+        {
+          "path": "/home/u/.ssh/id_ed25519",
+          "status": "ok",
+          "encrypted": false,
+          "keyType": "ssh-ed25519"
+        }
+      ]
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_session_open",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_open",
+    "frame": {
+      "id": "req-908",
+      "type": "ssh_session_open",
+      "payload": {
+        "request": {
+          "sessionId": "ssh-1",
+          "profileId": "p1",
+          "cols": 80,
+          "rows": 24
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_session_open",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_open",
+    "frame": {
+      "id": "req-908",
+      "ok": false,
+      "err": {
+        "code": "SSH_PROFILE_NOT_FOUND",
+        "message": "Profile not found: p1"
+      }
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_session_respond_host_key",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_respond_host_key",
+    "frame": {
+      "id": "req-909",
+      "type": "ssh_session_respond_host_key",
+      "payload": {
+        "sessionId": "ssh-1",
+        "trust": true,
+        "fingerprint": "SHA256:fixtureHostKey"
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_session_respond_host_key",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_respond_host_key",
+    "frame": {
+      "id": "req-909",
+      "ok": true,
+      "payload": true
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_session_cancel",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_cancel",
+    "frame": {
+      "id": "req-910",
+      "type": "ssh_session_cancel",
+      "payload": {
+        "sessionId": "ssh-1"
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_session_cancel",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_cancel",
+    "frame": {
+      "id": "req-910",
+      "ok": true,
+      "payload": true
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_session_close",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_close",
+    "frame": {
+      "id": "req-911",
+      "type": "ssh_session_close",
+      "payload": {
+        "sessionId": "ssh-1"
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_session_close",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_close",
+    "frame": {
+      "id": "req-911",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "ssh_session_list",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_list",
+    "frame": {
+      "id": "req-912",
+      "type": "ssh_session_list",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "ssh_session_list",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs ssh_session_list",
+    "frame": {
+      "id": "req-912",
+      "ok": true,
+      "payload": [
+        {
+          "sessionId": "ssh-1",
+          "profileId": "p1",
+          "terminalId": "term-1",
+          "connectedAt": "2026-11-27T10:00:00Z",
+          "claim": null
+        }
+      ]
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_list_dir",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_list_dir",
+    "frame": {
+      "id": "req-913",
+      "type": "sftp_list_dir",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_list_dir",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_list_dir",
+    "frame": {
+      "id": "req-913",
+      "ok": true,
+      "payload": [
+        {
+          "name": "notes.txt",
+          "path": "/home/deploy/notes.txt",
+          "entryType": "file",
+          "size": 12,
+          "permissions": 33188,
+          "modifiedAt": "2026-11-27T10:00:00Z",
+          "owner": "deploy"
+        }
+      ]
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_realpath",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_realpath",
+    "frame": {
+      "id": "req-914",
+      "type": "sftp_realpath",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "."
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_realpath",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_realpath",
+    "frame": {
+      "id": "req-914",
+      "ok": true,
+      "payload": "/home/deploy"
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_download",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_download",
+    "frame": {
+      "id": "req-915",
+      "type": "sftp_download",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy/notes.txt",
+          "localPath": "/tmp/notes.txt"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_download",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_download",
+    "frame": {
+      "id": "req-915",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_upload",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_upload",
+    "frame": {
+      "id": "req-916",
+      "type": "sftp_upload",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy/notes.txt",
+          "localPath": "/tmp/notes.txt"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_upload",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_upload",
+    "frame": {
+      "id": "req-916",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_delete",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_delete",
+    "frame": {
+      "id": "req-917",
+      "type": "sftp_delete",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy/old.txt"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_delete",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_delete",
+    "frame": {
+      "id": "req-917",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_mkdir",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_mkdir",
+    "frame": {
+      "id": "req-918",
+      "type": "sftp_mkdir",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy/new"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_mkdir",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_mkdir",
+    "frame": {
+      "id": "req-918",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_rename",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_rename",
+    "frame": {
+      "id": "req-919",
+      "type": "sftp_rename",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "oldPath": "/home/deploy/a.txt",
+          "newPath": "/home/deploy/b.txt"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_rename",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_rename",
+    "frame": {
+      "id": "req-919",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_read_file",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_read_file",
+    "frame": {
+      "id": "req-920",
+      "type": "sftp_read_file",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy/notes.txt"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_read_file",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_read_file",
+    "frame": {
+      "id": "req-920",
+      "ok": true,
+      "payload": "hello world\n"
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_write_file",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_write_file",
+    "frame": {
+      "id": "req-921",
+      "type": "sftp_write_file",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy/notes.txt",
+          "content": "hello world\n"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_write_file",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_write_file",
+    "frame": {
+      "id": "req-921",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "sftp_create_file",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_create_file",
+    "frame": {
+      "id": "req-922",
+      "type": "sftp_create_file",
+      "payload": {
+        "request": {
+          "connectionId": "ssh-1",
+          "remotePath": "/home/deploy/empty.txt"
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "sftp_create_file",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/ssh.rs sftp_create_file",
+    "frame": {
+      "id": "req-922",
+      "ok": true,
+      "payload": null
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "listeners_status",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_status",
+    "frame": {
+      "id": "req-923",
+      "type": "listeners_status",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "listeners_status",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_status",
+    "frame": {
+      "id": "req-923",
+      "ok": true,
+      "payload": {
+        "lan": null,
+        "tunnel": null,
+        "tunnelRunning": false,
+        "remoteWrites": false
+      }
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "listeners_set_lan",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_set_lan",
+    "frame": {
+      "id": "req-924",
+      "type": "listeners_set_lan",
+      "payload": {
+        "enabled": true,
+        "port": 8193
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "listeners_set_lan",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_set_lan",
+    "frame": {
+      "id": "req-924",
+      "ok": false,
+      "err": {
+        "code": "LISTENERS_FAILED",
+        "message": "port 8193 is in use"
+      }
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "listeners_set_tunnel",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_set_tunnel",
+    "frame": {
+      "id": "req-925",
+      "type": "listeners_set_tunnel",
+      "payload": {
+        "enabled": false
+      }
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "listeners_set_tunnel",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_set_tunnel",
+    "frame": {
+      "id": "req-925",
+      "ok": true,
+      "payload": {
+        "lan": null,
+        "tunnel": null,
+        "tunnelRunning": false,
+        "remoteWrites": false
+      }
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "listeners_rotate_token",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_rotate_token",
+    "frame": {
+      "id": "req-926",
+      "type": "listeners_rotate_token",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "listeners_rotate_token",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/listeners.rs listeners_rotate_token",
+    "frame": {
+      "id": "req-926",
+      "ok": true,
+      "payload": {
+        "lan": null,
+        "tunnel": null,
+        "tunnelRunning": false,
+        "remoteWrites": false
+      }
+    }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "ssh.state",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/watch.rs ssh_state",
+    "frame": {
+      "type": "watch",
+      "watch": "ssh",
+      "scope": "",
+      "revision": {
+        "hostEpoch": "fixture-epoch",
+        "n": 1
+      },
+      "reset": true,
+      "state": {
+        "hostKeys": [
+          {
+            "sessionId": "ssh-1",
+            "status": "changed",
+            "host": "prod.example",
+            "port": 22,
+            "keyType": "ssh-ed25519",
+            "fingerprint": "SHA256:fixtureHostKey",
+            "previousFingerprints": ["SHA256:fixtureOldHostKey"]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "ssh.delta.progress",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/desktop_mode.rs ssh_delta",
+    "frame": {
+      "type": "watch",
+      "watch": "ssh",
+      "scope": "",
+      "revision": {
+        "hostEpoch": "fixture-epoch",
+        "n": 2
+      },
+      "delta": {
+        "event": "progress",
+        "sessionId": "ssh-1",
+        "stage": "verifyingHostKey"
+      }
+    }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "ssh.delta.host_key",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/desktop_mode.rs ssh_delta",
+    "frame": {
+      "type": "watch",
+      "watch": "ssh",
+      "scope": "",
+      "revision": {
+        "hostEpoch": "fixture-epoch",
+        "n": 3
+      },
+      "delta": {
+        "sessionId": "ssh-1",
+        "status": "unknown",
+        "host": "prod.example",
+        "port": 22,
+        "keyType": "ssh-ed25519",
+        "fingerprint": "SHA256:fixtureHostKey",
+        "event": "host_key"
+      }
+    }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "ssh.delta.host_key_resolved",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/desktop_mode.rs ssh_delta",
+    "frame": {
+      "type": "watch",
+      "watch": "ssh",
+      "scope": "",
+      "revision": {
+        "hostEpoch": "fixture-epoch",
+        "n": 4
+      },
+      "delta": {
+        "event": "host_key_resolved",
+        "sessionId": "ssh-1"
+      }
+    }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "ssh.delta.ended",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/desktop_mode.rs ssh_delta",
+    "frame": {
+      "type": "watch",
+      "watch": "ssh",
+      "scope": "",
+      "revision": {
+        "hostEpoch": "fixture-epoch",
+        "n": 5
+      },
+      "delta": {
+        "event": "ended",
+        "sessionId": "ssh-1",
+        "terminalId": "term-1",
+        "reason": "exited",
+        "exitCode": 0,
+        "detail": null
+      }
+    }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "ssh.delta.transfer",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/desktop_mode.rs ssh_delta",
+    "frame": {
+      "type": "watch",
+      "watch": "ssh",
+      "scope": "",
+      "revision": {
+        "hostEpoch": "fixture-epoch",
+        "n": 6
+      },
+      "delta": {
+        "event": "transfer",
+        "connectionId": "ssh-1",
+        "remotePath": "/home/deploy/notes.txt",
+        "localPath": "/tmp/notes.txt",
+        "bytesTransferred": 12,
+        "totalBytes": 12,
+        "direction": "upload",
+        "status": "completed",
+        "error": null
+      }
+    }
+  },
+  {
     "file": "ws-watch.json",
     "name": "browser_screencast.state",
     "_handwritten": true,

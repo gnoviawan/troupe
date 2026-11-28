@@ -96,7 +96,7 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
   })
 
   it('exports exactly 103 request types including chat MCP install approval, per-chat Codex and Antigravity account and resume, the Antigravity usage check, and the agent overlay', () => {
-    expect(WS_REQUEST_TYPES).toHaveLength(103)
+    expect(WS_REQUEST_TYPES).toHaveLength(129)
     const expected = [
       'send_prompt',
       'cancel_prompt',

@@ -63,6 +63,7 @@ mod page {
                 device_id: device_id(storage.as_ref()),
                 client_instance_id: format!("rune-web-{}", random_hex(2)),
                 seed,
+                host_local: None,
             }),
             route,
         }

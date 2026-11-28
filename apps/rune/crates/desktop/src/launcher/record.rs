@@ -16,8 +16,8 @@ pub struct ServerRecord {
     pub port: u16,
     pub binary: PathBuf,
     pub data_dir: PathBuf,
-    /// Started to outlive the app (`TROUPE_PREVIEW_KEEP_SERVER=1`): no watchdog, left running
-    /// at quit.
+    /// Started to outlive the app (`TROUPE_PREVIEW_KEEP_SERVER=1`): no `--parent-pid`, left
+    /// running at quit.
     pub keep_alive: bool,
 }
 

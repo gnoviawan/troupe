@@ -274,6 +274,42 @@ wire_enum! {
         CanvasMount = "canvas_mount",
         CanvasUnmount = "canvas_unmount",
         CanvasReply = "canvas_reply",
+        // SSH for the host-local client of `troupe-server --desktop` (the
+        // Rune desktop app), named after the Tauri commands, with their
+        // arguments as the payload (`{ request }`, `{ profileId }`,
+        // `{ sessionId, trust, fingerprint? }`, ...). Only a `host_local`
+        // connection may send them. Session progress, host-key questions and
+        // transfer progress arrive on the `ssh` watch. A payload can carry a
+        // password or passphrase.
+        SshListProfiles = "ssh_list_profiles",
+        SshSaveProfile = "ssh_save_profile",
+        SshDeleteProfile = "ssh_delete_profile",
+        SshDuplicateProfile = "ssh_duplicate_profile",
+        SshImportConfig = "ssh_import_config",
+        SshInspectKey = "ssh_inspect_key",
+        SshListKeys = "ssh_list_keys",
+        SshSessionOpen = "ssh_session_open",
+        SshSessionRespondHostKey = "ssh_session_respond_host_key",
+        SshSessionCancel = "ssh_session_cancel",
+        SshSessionClose = "ssh_session_close",
+        SshSessionList = "ssh_session_list",
+        SftpListDir = "sftp_list_dir",
+        SftpRealpath = "sftp_realpath",
+        SftpDownload = "sftp_download",
+        SftpUpload = "sftp_upload",
+        SftpDelete = "sftp_delete",
+        SftpMkdir = "sftp_mkdir",
+        SftpRename = "sftp_rename",
+        SftpReadFile = "sftp_read_file",
+        SftpWriteFile = "sftp_write_file",
+        SftpCreateFile = "sftp_create_file",
+        // Remote access controls for the host-local client: the LAN
+        // listener, the tunnel and the remote token. Each answers the
+        // listeners' status, whose URLs carry the remote token.
+        ListenersStatus = "listeners_status",
+        ListenersSetLan = "listeners_set_lan",
+        ListenersSetTunnel = "listeners_set_tunnel",
+        ListenersRotateToken = "listeners_rotate_token",
     }
 }
 
@@ -322,9 +358,11 @@ wire_enum! {
 }
 
 wire_enum! {
-    /// A watch a connection can hold. `projects`, `chat_history`, `agents` and
-    /// `chat_activity` have the empty scope; `fs` and `terminals` are scoped
-    /// to a project id, `store` to a store key, `browser_screencast` to a tab id.
+    /// A watch a connection can hold. `projects`, `chat_history`, `agents`,
+    /// `chat_activity` and `ssh` have the empty scope; `fs` and `terminals`
+    /// are scoped to a project id, `store` to a store key,
+    /// `browser_screencast` to a tab id. Only a `host_local` connection may
+    /// watch `ssh`.
     pub enum WsWatchName {
         Projects = "projects",
         ChatHistory = "chat_history",
@@ -332,6 +370,7 @@ wire_enum! {
         Fs = "fs",
         Store = "store",
         Terminals = "terminals",
+        Ssh = "ssh",
         BrowserScreencast = "browser_screencast",
         ChatActivity = "chat_activity",
     }

@@ -33,6 +33,9 @@ pub struct HostKeyInfo {
     pub key_type: String,
     /// `SHA256:<base64>` — the same format `ssh-keygen -lf` prints.
     pub fingerprint: String,
+    /// The fingerprints known_hosts records for this host and key type, when
+    /// the presented key differs from them (a changed key).
+    pub previous_fingerprints: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -62,6 +65,7 @@ pub fn info_for(host: &str, port: u16, key: &PublicKey) -> HostKeyInfo {
         port,
         key_type: key.algorithm().as_str().to_string(),
         fingerprint: key.fingerprint(HashAlg::Sha256).to_string(),
+        previous_fingerprints: Vec::new(),
     }
 }
 
@@ -171,6 +175,52 @@ pub(crate) fn verdict(contents: &str, entry: &str, key: &PublicKey) -> FileVerdi
     } else {
         FileVerdict::NotFound
     }
+}
+
+/// The fingerprints of the keys `contents` records for `entry` with the
+/// algorithm of `key` but other key data: what a changed key replaces.
+pub(crate) fn recorded_others(contents: &str, entry: &str, key: &PublicKey) -> Vec<String> {
+    let mut found = Vec::new();
+    for line in contents.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') || line.starts_with('@') {
+            continue;
+        }
+        let mut fields = line.split_whitespace();
+        let (Some(first), Some(key_type), Some(blob)) = (fields.next(), fields.next(), fields.next())
+        else {
+            continue;
+        };
+        if !patterns_match(first, entry) {
+            continue;
+        }
+        let Ok(recorded) = PublicKey::from_openssh(&format!("{} {}", key_type, blob)) else {
+            continue;
+        };
+        if recorded.algorithm() == key.algorithm() && recorded.key_data() != key.key_data() {
+            let fingerprint = recorded.fingerprint(HashAlg::Sha256).to_string();
+            if !found.contains(&fingerprint) {
+                found.push(fingerprint);
+            }
+        }
+    }
+    found
+}
+
+/// The fingerprints both stores record for this host and key type that are
+/// not `key`. A store that cannot be read adds nothing.
+pub fn previous_fingerprints(host: &str, port: u16, key: &PublicKey) -> Vec<String> {
+    let entry = host_entry(host, port);
+    let mut found = Vec::new();
+    for path in [app_known_hosts_path(), user_known_hosts_path()] {
+        let contents = read_store(path, false).unwrap_or_default();
+        for fingerprint in recorded_others(&contents, &entry, key) {
+            if !found.contains(&fingerprint) {
+                found.push(fingerprint);
+            }
+        }
+    }
+    found
 }
 
 /// Combine the per-file results. A revocation in either store wins; then
