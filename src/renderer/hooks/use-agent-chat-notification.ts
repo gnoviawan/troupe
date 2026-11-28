@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import {
   type AgentChatNotifyEvent,
   type AgentChatNotifySnapshot,
-  decideAgentChatNotifications
+  decideAgentChatNotifications,
+  isNotifiableStopReason
 } from '@/lib/agent-chat-notify'
 import { logFrontendError } from '@/lib/log-api'
 import { openAgentChatInOwnProject } from '@/lib/open-agent-chat'
@@ -101,6 +102,13 @@ export function useAgentChatNotification(): void {
       })
     }
 
+    const cancelSettle = (sessionId: string): void => {
+      const timer = settleTimers.get(sessionId)
+      if (timer === undefined) return
+      clearTimeout(timer)
+      settleTimers.delete(sessionId)
+    }
+
     const settle = (event: AgentChatNotifyEvent): void => {
       if (settleTimers.has(event.sessionId)) return
       const timer = setTimeout(() => {
@@ -122,7 +130,21 @@ export function useAgentChatNotification(): void {
     const emit = (): void => {
       const next = readSnapshot()
       for (const sessionId of deferred) {
-        if (!next.sessions[sessionId] || !next.notifyTurnFinished) deferred.delete(sessionId)
+        const session = next.sessions[sessionId]
+        const prevSeq = prev?.sessions[sessionId]?.turnEndSeq ?? 0
+        // A newer turn that ended without a notifiable reason (cancelled)
+        // supersedes the deferred finish.
+        const superseded =
+          session !== undefined &&
+          session.turnEndSeq > prevSeq &&
+          !isNotifiableStopReason(session.stopReason)
+        if (!session || !next.notifyTurnFinished || superseded) {
+          deferred.delete(sessionId)
+          cancelSettle(sessionId)
+        } else if (session.busy) {
+          // The agent woke up: the next idle stretch gets a full settle window.
+          cancelSettle(sessionId)
+        }
       }
       next.deferredFinishes = new Set(deferred)
       const events = decideAgentChatNotifications(prev, next)

@@ -610,13 +610,19 @@ impl HostPlanServer {
         };
 
         // Agents may retain and call an MCP child created for an older session.
-        // Prefer the token's bound session when it is active. Otherwise, repair
-        // the route only when this runtime agent has exactly one active turn;
-        // multiple active sessions are ambiguous and must never cross-route.
+        // Prefer the token's bound session when it runs a prompt turn, or when
+        // it works on its own and no prompt turn of the agent could own the
+        // call instead. Otherwise, repair the route only when this runtime
+        // agent has exactly one routable session; multiple are ambiguous and
+        // must never cross-route.
         let real_session_id = {
-            let sessions = self.active_turns.routable(&auth.agent_id);
+            let agent_id = auth.agent_id.as_str();
+            let prompt_owned = self.active_turns.prompt_active(agent_id, &bound_session_id);
+            let own_work = self.active_turns.unprompted_active(agent_id, &bound_session_id)
+                && !self.active_turns.any_prompt(agent_id);
+            let sessions = self.active_turns.routable(agent_id);
             match sessions.len() {
-                _ if sessions.contains(&bound_session_id) => bound_session_id.clone(),
+                _ if prompt_owned || own_work => bound_session_id.clone(),
                 1 => {
                     let active_session_id = sessions.iter().next().expect("len checked").clone();
                     log::info!(
