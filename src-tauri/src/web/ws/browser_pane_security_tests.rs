@@ -13,6 +13,14 @@ use crate::web::project_registry::ProjectSummary;
 const USER_TAB: &str = "tab-00000000-0000-4000-8000-000000000001";
 const AGENT_TAB: &str = "agent-00000000-0000-4000-8000-000000000002";
 
+type HandlerCase<'a> = (
+    &'a str,
+    &'a HandlerEnv,
+    &'a OutboundSender,
+    Option<&'a str>,
+    Option<&'a str>,
+);
+
 struct ClearHost;
 
 impl Drop for ClearHost {
@@ -273,13 +281,7 @@ fn cross_chat_project_and_principal_refused_by_all_real_handlers() {
         // 4. Multiplexed socket subscribed to both chats but claiming chat-b or proj-2.
         let (mux_env, mux_tx, _rx4) = rig.client_env(&["chat-a", "chat-b"], Some("device-a"));
 
-        let cases: &[(
-            &str,
-            &HandlerEnv,
-            &OutboundSender,
-            Option<&str>,
-            Option<&str>,
-        )] = &[
+        let cases: &[HandlerCase<'_>] = &[
             ("other_chat", &other_chat_env, &other_chat_tx, None, None),
             (
                 "other_principal",
