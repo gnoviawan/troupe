@@ -16,9 +16,9 @@ use crate::acp::host_ticket::HostTickets;
 use crate::acp::session_persistence::UNASSIGNED_PROJECT_ID;
 use crate::acp::SessionPersistence;
 use crate::browser_automation::core::{ProjectResolver, RootResolver};
-use crate::browser_automation::hosted::HostedSurface;
 use crate::browser_automation::engine::chromium::perimeter::{InternalAddresses, Perimeter};
 use crate::browser_automation::engine::chromium::{launch, ChromiumEngine, LocalSource, Tabs};
+use crate::browser_automation::hosted::HostedSurface;
 use crate::browser_automation::{self, DesktopBrowserHost, HostServices};
 use crate::web::desktop_mode::BrowserHostOptions;
 use crate::web::{EventSink, ProjectRegistry, WsRelaySink};
@@ -56,6 +56,7 @@ pub async fn install(
     let policy = perimeter.policy();
     let source = Arc::new(LocalSource::new(
         binary,
+        state_dir.to_path_buf(),
         root.join("profiles"),
         options.no_sandbox,
         perimeter,
@@ -140,11 +141,21 @@ pub async fn conformance_host(
     services: HostServices,
 ) -> Option<Arc<dyn crate::browser_automation::engine::BrowserEngine>> {
     let binary = launch::find()?;
+    {
+        use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
+        std::fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(data)
+            .ok()?;
+        let _ = std::fs::set_permissions(data, std::fs::Permissions::from_mode(0o700));
+    }
     let perimeter = Perimeter::start(InternalAddresses::Allow).await.ok()?;
     let policy = perimeter.policy();
     // A throwaway profile: the sandbox is not what the suite checks.
     let source = Arc::new(LocalSource::new(
         binary,
+        data.to_path_buf(),
         data.join("profiles"),
         true,
         perimeter,

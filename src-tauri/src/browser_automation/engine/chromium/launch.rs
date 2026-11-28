@@ -61,6 +61,9 @@ fn on_path(name: &str) -> Option<PathBuf> {
 #[derive(Debug, Clone)]
 pub struct LaunchSpec {
     pub binary: PathBuf,
+    /// The trusted state directory under which profile directories live.
+    /// Chain validation starts here and never walks above it.
+    pub state_dir: PathBuf,
     /// The persistent user-data dir of this process's profile.
     pub profile_dir: PathBuf,
     /// Run without Chromium's sandbox. Only for an operator who runs the
@@ -145,7 +148,7 @@ pub fn spawn(spec: &LaunchSpec) -> Result<Launched, LaunchError> {
     if !spec.no_sandbox && unsafe { libc::geteuid() } == 0 {
         return Err(LaunchError::RootNeedsNoSandbox);
     }
-    prepare_profile(&spec.profile_dir).map_err(LaunchError::Io)?;
+    prepare_profile(&spec.state_dir, &spec.profile_dir).map_err(LaunchError::Io)?;
     let (child_reads, host_writes) = pipe().map_err(LaunchError::Io)?;
     let (host_reads, child_writes) = pipe().map_err(LaunchError::Io)?;
     let (r, w) = (child_reads.as_raw_fd(), child_writes.as_raw_fd());
@@ -212,18 +215,42 @@ fn pipe() -> io::Result<(OwnedFd, OwnedFd)> {
 }
 
 /// Private browser state must never be shared with another local user.
-fn prepare_profile(path: &Path) -> io::Result<()> {
+///
+/// Validates `base` (the trusted state directory) and every component below it
+/// down to `path`, never walking above `base`. Refuses symlinks, foreign
+/// ownership, group- or world-writable directories, non-private profile leaves,
+/// and paths outside `base`.
+fn prepare_profile(base: &Path, path: &Path) -> io::Result<()> {
     use std::os::unix::fs::{DirBuilderExt, MetadataExt};
-    // Profiles live at <state>/browser-host/profiles/<profile>.
-    let base = path.ancestors().nth(3).ok_or_else(|| {
-        io::Error::new(io::ErrorKind::PermissionDenied, "missing state directory")
+    if !base.is_absolute() || !path.is_absolute() {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "browser state and profile directories must be absolute paths",
+        ));
+    }
+    let relative = path.strip_prefix(base).map_err(|_| {
+        io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "browser profile must live under the state directory",
+        )
     })?;
-    let mut current = base.to_path_buf();
-    let validate = |directory: &Path| -> io::Result<()> {
+    let components: Vec<_> = relative.components().collect();
+    if components.is_empty()
+        || components
+            .iter()
+            .any(|component| !matches!(component, std::path::Component::Normal(_)))
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "invalid profile path",
+        ));
+    }
+    let euid = unsafe { libc::geteuid() };
+    let validate = |directory: &Path, forbidden_mode_bits: u32| -> io::Result<()> {
         let metadata = std::fs::symlink_metadata(directory)?;
         if !metadata.is_dir()
-            || metadata.uid() != unsafe { libc::geteuid() }
-            || metadata.mode() & 0o022 != 0
+            || metadata.uid() != euid
+            || metadata.mode() & forbidden_mode_bits != 0
         {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
@@ -232,25 +259,18 @@ fn prepare_profile(path: &Path) -> io::Result<()> {
         }
         Ok(())
     };
-    validate(&current)?;
-    for component in path
-        .strip_prefix(base)
-        .map_err(io::Error::other)?
-        .components()
-    {
-        if !matches!(component, std::path::Component::Normal(_)) {
-            return Err(io::Error::new(
-                io::ErrorKind::PermissionDenied,
-                "invalid profile path",
-            ));
-        }
+    let mut current = base.to_path_buf();
+    validate(&current, 0o022)?;
+    let last_index = components.len() - 1;
+    for (index, component) in components.into_iter().enumerate() {
         current.push(component);
         match std::fs::DirBuilder::new().mode(0o700).create(&current) {
             Ok(()) => {}
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
             Err(e) => return Err(e),
         }
-        validate(&current)?;
+        let forbidden = if index == last_index { 0o077 } else { 0o022 };
+        validate(&current, forbidden)?;
     }
     Ok(())
 }

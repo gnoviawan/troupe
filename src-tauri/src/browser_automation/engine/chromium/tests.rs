@@ -107,6 +107,10 @@ async fn harness(internal: InternalAddresses, url: &str) -> Option<Harness> {
         return None;
     };
     let profiles = tempfile::tempdir().unwrap();
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(profiles.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
     let perimeter = Perimeter::start(internal).await.unwrap();
     let policy = perimeter.policy();
     // The sandbox is irrelevant to what these tests check, and CI and
@@ -114,6 +118,7 @@ async fn harness(internal: InternalAddresses, url: &str) -> Option<Harness> {
     let source = Arc::new(LocalSource::new(
         binary,
         profiles.path().to_path_buf(),
+        profiles.path().join("browser-host/profiles"),
         true,
         perimeter,
     ));
