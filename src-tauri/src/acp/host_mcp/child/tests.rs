@@ -672,9 +672,11 @@ fn without_a_host_the_browser_tool_is_advertised_fail_closed() {
     }
 }
 
-const HOST_TOOLS: [&str; 25] = [
+const HOST_TOOLS: [&str; 27] = [
     "ask_user",
     "mcp_install",
+    "message_parent",
+    "subagent_answer",
     "automation_apply_ops",
     "automation_capabilities",
     "automation_create",

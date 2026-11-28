@@ -106,6 +106,11 @@ pub struct HostPlanServer {
     /// `ask_user` calls waiting for the user, keyed by their `q-` question id
     /// (the id the renderer answers with). Removed on answer, cancel or drop.
     pending_asks: Mutex<HashMap<String, PendingAsk>>,
+    /// The sub-agent orchestrator, wired by `orchestrator::install` (or a
+    /// test). An orchestrated child's `ask_user` enqueues its question wake
+    /// here; absent, no question wake is raised. Weak: the engine owns the
+    /// manager that owns this server, a strong reference would cycle.
+    orchestrator: Mutex<Option<std::sync::Weak<crate::acp::orchestrator::OrchestratorEngine>>>,
     /// `mcp_install` calls waiting for the approval card.
     pending_installs: Mutex<HashMap<String, mcp_install::OpenMcpInstall>>,
     /// Install ids that already finished, so a late answer is
@@ -155,6 +160,7 @@ impl HostPlanServer {
             sessions: Mutex::new(HashMap::new()),
             active_turns: routes::TurnRoutes::default(),
             pending_asks: Mutex::new(HashMap::new()),
+            orchestrator: Mutex::new(None),
             pending_installs: Mutex::new(HashMap::new()),
             finished_installs: Mutex::new(VecDeque::new()),
             mcp_install_answer_floor: Mutex::new(crate::acp::host_ticket::ANSWER_FLOOR),
@@ -291,6 +297,21 @@ impl HostPlanServer {
                 );
             }
         }
+    }
+
+    /// Wire the sub-agent orchestrator so a child's `ask_user` can wake its
+    /// orchestrator. Called by `orchestrator::install` at startup; tests set
+    /// their engine directly.
+    pub fn set_orchestrator(&self, engine: Arc<crate::acp::orchestrator::OrchestratorEngine>) {
+        *self.orchestrator.lock() = Some(Arc::downgrade(&engine));
+    }
+
+    /// The wired orchestrator, when subagents are available on this host.
+    pub(crate) fn orchestrator(&self) -> Option<Arc<crate::acp::orchestrator::OrchestratorEngine>> {
+        self.orchestrator
+            .lock()
+            .as_ref()
+            .and_then(std::sync::Weak::upgrade)
     }
 
     /// Show the question and install cards of `token`'s session on
