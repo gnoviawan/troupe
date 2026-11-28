@@ -12,8 +12,6 @@ pub(crate) mod dispatch;
 mod downloads;
 mod events;
 mod frames;
-#[cfg(unix)]
-mod hosted;
 mod observe;
 mod input_actions;
 mod link_hops;
@@ -25,7 +23,7 @@ mod reply;
 mod sensitive_gate;
 pub mod sensitivity;
 mod stop;
-mod surface;
+pub(crate) mod surface;
 mod tabs;
 mod teardown;
 mod uploads;
@@ -47,8 +45,7 @@ pub use reply::{
     Success, ERR_CAPABILITY, ERR_CONFIRMATION, ERR_INTERNAL, ERR_INVALID_PARAMS, ERR_STALE_REF,
     ERR_TAB_NOT_FOUND, ERR_TIMEOUT,
 };
-#[cfg(unix)]
-pub(crate) use hosted::HostedSurface;
+pub(crate) use events::TabProjection;
 pub use tabs::TabView;
 #[cfg(any(test, feature = "conformance"))]
 pub use teardown::session_dir;
@@ -62,7 +59,6 @@ use crate::browser_tab_manager::{BrowserBounds, BrowserTabManager};
 use crate::web::EventSink;
 use authz::{DenyReason, HopVerdict};
 use consent::ConsentGate;
-use events::TabProjection;
 use reply::PageData;
 use ports::{PermissionRequest, PolicyStore};
 use surface::{PaneSurface, TabSurface};
@@ -118,6 +114,19 @@ impl DesktopBrowserHost {
             traits.background_render
         );
         let surface: Arc<dyn TabSurface> = Arc::new(PaneSurface { app, tabs });
+        teardown::spawn_startup_sweep(surface.clone());
+        Self::with_parts(surface, engine, sinks, services)
+    }
+
+    /// A host over a windowless tab surface and its engine: the server's
+    /// Chromium (`browser_automation::hosted`), which runs on Unix only.
+    #[cfg_attr(not(unix), allow(dead_code, reason = "the hosted surface is Unix only"))]
+    pub(crate) fn hosted(
+        surface: Arc<dyn TabSurface>,
+        engine: Arc<dyn BrowserEngine>,
+        sinks: Vec<Arc<dyn EventSink>>,
+        services: HostServices,
+    ) -> Arc<Self> {
         teardown::spawn_startup_sweep(surface.clone());
         Self::with_parts(surface, engine, sinks, services)
     }

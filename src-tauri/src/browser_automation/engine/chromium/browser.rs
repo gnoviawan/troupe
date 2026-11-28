@@ -252,6 +252,11 @@ async fn settle_new_target(browser: Arc<Browser>, params: Value) {
     let (Some(target), Some(session)) = (target, session) else {
         return;
     };
+    // The host's own `Target.attachToTarget` reports here too, unpaused:
+    // that session is a tab's and stays.
+    if params.get("waitingForDebugger").and_then(Value::as_bool) != Some(true) {
+        return;
+    }
     if params.pointer("/targetInfo/openerId").is_some() {
         log::info!("[chromium] popup closed before it ran");
         let _ = browser
