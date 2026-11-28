@@ -607,6 +607,7 @@ async fn authenticated_browser_env(rig: &TestRig, device: &str, read_only: bool)
 async fn authenticate_spoofed_device_cannot_cross_auth_class() {
     let rig = TestRig::new().await;
     let env = authenticated_browser_env(&rig, "victim-device", false).await;
+    assert_eq!(caller_principal(&env).as_deref(), Some("host-token"));
     rig.host.claim_user_tab(
         USER_TAB,
         TabOwner::new("chat-a", "proj-1", Some("host-local".into())),
@@ -618,6 +619,7 @@ async fn authenticate_spoofed_device_cannot_cross_auth_class() {
 async fn authenticate_remote_read_only_cannot_recover_host_tab() {
     let rig = TestRig::new().await;
     let env = authenticated_browser_env(&rig, "victim-device", true).await;
+    assert_eq!(caller_principal(&env).as_deref(), Some("remote-read-only"));
     rig.host.claim_user_tab(
         USER_TAB,
         TabOwner::new("chat-a", "proj-1", Some("host-token".into())),
