@@ -51,6 +51,8 @@ pub enum Fetch {
     Catalog(crate::mcp_catalog::CatalogFetch),
     /// An `/api/automations` route.
     Automation(crate::automations::AutoFetch),
+    /// A `/canvas/*` route or `/fs/ls` for opening a project's canvas.
+    Canvas(crate::canvas_host::CanvasFetch),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

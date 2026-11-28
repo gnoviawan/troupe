@@ -266,6 +266,7 @@ pub fn emit_session_update(
                 content: chunk.content,
                 message_id,
                 parent_tool_call_id,
+                sender: None,
             };
             events::fan_out(
                 sinks,
@@ -300,6 +301,7 @@ pub fn emit_session_update(
                 content: chunk.content,
                 message_id,
                 parent_tool_call_id,
+                sender: None,
             };
             events::fan_out(
                 sinks,
@@ -318,6 +320,7 @@ pub fn emit_session_update(
                 content: chunk.content,
                 message_id,
                 parent_tool_call_id,
+                sender: None,
             };
             events::fan_out(
                 sinks,
