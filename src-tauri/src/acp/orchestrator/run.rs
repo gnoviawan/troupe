@@ -168,8 +168,6 @@ pub(crate) struct ChildRun {
     pub(crate) identity: SubagentAgent,
     /// Profile id resolved at start; re-checked against current settings on resume.
     pub(crate) profile_id: String,
-    /// Explicit model passed to `subagent_start` (overrides the profile's default).
-    pub(crate) requested_model: Option<String>,
     pub(crate) execution_policy: Option<(
         crate::acp::config::AgentConfig,
         super::profiles::SubagentProfile,

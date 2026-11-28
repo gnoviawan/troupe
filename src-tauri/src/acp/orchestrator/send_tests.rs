@@ -592,7 +592,6 @@ async fn ownership_failed_run_and_input_limits_are_enforced() {
             agent_id: "agent-child".to_string(),
         },
         profile_id: "mock-sub".to_string(),
-        requested_model: None,
         execution_policy: None,
         child_cwd: "/tmp".to_string(),
         session_id: Some(SessionId("child-1".to_string())),

@@ -474,7 +474,6 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
             agent_id: "agent-seeded".to_string(),
         },
         profile_id: "mock-sub".to_string(),
-        requested_model: None,
         execution_policy: None,
         child_cwd: "/tmp".to_string(),
         session_id: Some(SessionId(session.to_string())),

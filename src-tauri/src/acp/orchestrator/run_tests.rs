@@ -26,7 +26,6 @@ fn child_run(body: RunBody) -> ChildRun {
             agent_id: "agent-child".to_string(),
         },
         profile_id: "acp-registry:codex-acp".to_string(),
-        requested_model: None,
         execution_policy: None,
         child_cwd: "/repo/.termul/worktrees/sub-9f2c1a".to_string(),
         session_id,

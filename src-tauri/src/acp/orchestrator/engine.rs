@@ -391,7 +391,6 @@ impl OrchestratorEngine {
                 agent_id: child_agent.0.clone(),
             },
             profile_id: profile.id.clone(),
-            requested_model: req.model.clone(),
             execution_policy: Some((config.clone(), profile.clone(), model.clone())),
             child_cwd: child_cwd.clone(),
             session_id: None,
