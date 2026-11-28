@@ -12,9 +12,9 @@ use tokio_util::sync::CancellationToken;
 
 use super::{exchange_frame, text_result, TermulPlanServer};
 use crate::acp::host_mcp::subagent_tools::{
-    SubagentRefInput, SubagentStartInput, SubagentStatusInput, SubagentTool, SubagentWaitInput,
-    LIST_AGENTS_DESCRIPTION, START_DESCRIPTION, STATUS_DESCRIPTION, STOP_DESCRIPTION,
-    WAIT_DESCRIPTION,
+    SubagentRefInput, SubagentSendInput, SubagentStartInput, SubagentStatusInput, SubagentTool,
+    SubagentWaitInput, LIST_AGENTS_DESCRIPTION, SEND_DESCRIPTION, START_DESCRIPTION,
+    STATUS_DESCRIPTION, STOP_DESCRIPTION, WAIT_DESCRIPTION,
 };
 use crate::acp::host_mcp::{FrameKind, FrameRequest};
 
@@ -96,6 +96,20 @@ impl TermulPlanServer {
     }
 
     #[tool(
+        name = "subagent_send",
+        description = SEND_DESCRIPTION,
+        annotations(destructive_hint = false, open_world_hint = true)
+    )]
+    async fn subagent_send(
+        &self,
+        Parameters(input): Parameters<SubagentSendInput>,
+        cancelled: CancellationToken,
+    ) -> CallToolResult {
+        self.parked_subagent(SubagentTool::Send, arguments(input), cancelled)
+            .await
+    }
+
+    #[tool(
         name = "subagent_wait",
         description = WAIT_DESCRIPTION,
         annotations(read_only_hint = true, open_world_hint = false)
@@ -126,7 +140,10 @@ impl TermulPlanServer {
         description = STOP_DESCRIPTION,
         annotations(destructive_hint = true, open_world_hint = false)
     )]
-    async fn subagent_stop(&self, Parameters(input): Parameters<SubagentRefInput>) -> CallToolResult {
+    async fn subagent_stop(
+        &self,
+        Parameters(input): Parameters<SubagentRefInput>,
+    ) -> CallToolResult {
         self.subagent(SubagentTool::Stop, arguments(input)).await
     }
 }

@@ -20,8 +20,10 @@ export const EXPECTED_PATCHES = [
 ]
 
 const REV = /rev\s*=\s*"([0-9a-f]{40})"/
+const GIT = /git\s*=\s*"([^"]+)"/
 const TABLE = /^\[\s*([^\]]+?)\s*\]/
 const ENTRY = /^([A-Za-z0-9_-]+)\s*=/
+const RUNE_GIT = /github\.com\/anomalyco\/rune(?:\.git)?$/
 
 // Every `{ ... rev = "..." }` dependency entry in the TOML text, tagged with the
 // table it sits under. Dep lines in this repo are single-line; a `rev` inside a
@@ -39,7 +41,8 @@ export function entries(toml) {
     }
     const name = line.match(ENTRY)
     const rev = line.match(REV)
-    if (name && rev) out.push({ table, name: name[1], rev: rev[1] })
+    const git = line.match(GIT)
+    if (name && rev) out.push({ table, name: name[1], rev: rev[1], git: git ? git[1] : null })
   }
   return out
 }
@@ -59,7 +62,10 @@ export function check(toml, pin) {
     if (!entry) errors.push(`missing [patch.crates-io] entry ${name}`)
   }
   for (const p of patches) {
-    if (p.rev !== pin) errors.push(`[patch.crates-io] ${p.name} rev ${p.rev} != rune.pin ${pin}`)
+    const isRunePatch = EXPECTED_PATCHES.includes(p.name) || p.git === null || RUNE_GIT.test(p.git)
+    if (isRunePatch && p.rev !== pin) {
+      errors.push(`[patch.crates-io] ${p.name} rev ${p.rev} != rune.pin ${pin}`)
+    }
   }
   return errors
 }

@@ -1,0 +1,24 @@
+[package]
+name = "troupe-canvas"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+description = "FigCraft's editor in the Rune desktop app: the host control protocol answered in process, and the editor drawn by egui-wgpu in an `El::effect` slot."
+
+# The figcraft fork and tag `src-tauri` pins (spine AD-17/18/24); `pin_tests.rs` keeps the tag
+# equal to `canvas/figcraft.pin`. The egui family comes from the fork's own `[patch.crates-io]`,
+# repeated in this workspace's manifest because a dependency's patches never reach its dependents.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+base64 = "0.22"
+egui = "0.37"
+egui-wgpu = { version = "0.37", default-features = false }
+figcraft-doc = { git = "https://github.com/gnoviawan/figcraft", tag = "termul-v0.6.0" }
+figcraft-engine = { git = "https://github.com/gnoviawan/figcraft", tag = "termul-v0.6.0" }
+figcraft-format = { git = "https://github.com/gnoviawan/figcraft", tag = "termul-v0.6.0" }
+figcraft-text = { git = "https://github.com/gnoviawan/figcraft", tag = "termul-v0.6.0" }
+figcraft-ui-egui = { git = "https://github.com/gnoviawan/figcraft", tag = "termul-v0.6.0" }
+log = "0.4"
+rune = { workspace = true }
+serde_json = { workspace = true }
+# Rune does not re-export wgpu; this matches its `~30.0.1` so `Frame::format` is the same type.
+wgpu = { version = "~30.0.1", default-features = false }

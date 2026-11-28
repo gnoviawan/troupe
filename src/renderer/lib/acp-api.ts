@@ -212,7 +212,7 @@ export interface ToolCallLocation {
   line?: number
 }
 
-/** One stretch of text a subagent wrote between two of its tool calls. */
+/** One stretch of text a subagent wrote between two of its tool calls, or a follow-up from its parent agent. */
 export interface SubagentMessage {
   /** Timeline seq of the chunk that opened it; orders it among the subagent's tool calls. */
   seq: number
@@ -220,6 +220,8 @@ export interface SubagentMessage {
   text: string
   /** ACP `messageId` of its chunks, when the agent sent one. */
   messageId?: string
+  /** Parent agent name when this message was sent to the subagent via `subagent_send`. */
+  sender?: string
 }
 
 export interface ToolCall {
@@ -554,6 +556,8 @@ export interface MessageChunkEvent {
   messageId?: string
   /** Subagent dispatch that wrote this chunk; its text stays out of the main reply. */
   parentToolCallId?: string
+  /** Host-stamped parent agent name for a `subagent_send` follow-up. */
+  sender?: string
 }
 export interface ToolCallEvent {
   agentId: AgentId
