@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 pub enum SubagentTool {
     ListAgents,
     Start,
+    Send,
     Wait,
     Status,
     Stop,
@@ -24,6 +25,7 @@ impl SubagentTool {
         match self {
             Self::ListAgents => "subagent_list_agents",
             Self::Start => "subagent_start",
+            Self::Send => "subagent_send",
             Self::Wait => "subagent_wait",
             Self::Status => "subagent_status",
             Self::Stop => "subagent_stop",
@@ -84,6 +86,22 @@ pub struct SubagentStatusInput {
     pub subagent_ids: Option<Vec<String>>,
 }
 
+/// Input of `subagent_send`.
+#[derive(Debug, Clone, Deserialize, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SubagentSendInput {
+    /// The id `subagent_start` returned.
+    pub subagent_id: String,
+    /// Follow-up message for the subagent, 1 to 8000 characters.
+    #[schemars(length(min = 1, max = 8000))]
+    pub message: String,
+    /// Cancel the subagent's current turn first when it is running, so the
+    /// message runs next right away instead of waiting for the turn to end.
+    /// Ignored when the subagent is idle.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interrupt: Option<bool>,
+}
+
 /// Input of `subagent_stop`.
 #[derive(Debug, Clone, Deserialize, Serialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -116,16 +134,25 @@ state, uncommitted changes included, so its edits never touch yours) or `shared`
 directory). The user sees it as a sub-agent row with its live transcript and a Stop button, \
 and approves its tool permissions in this chat unless the user set its profile to allow \
 them. Returns JSON {subagentId, state, title, \
-workspace} once it is running; collect the result with subagent_wait. Errors: disabled, \
-unknown_agent, agent_not_allowed, capacity, depth, invalid_input, workspace_failed, \
-spawn_failed.";
+workspace} once it is running; send follow-ups with subagent_send and collect the result with \
+subagent_wait. Errors: disabled, unknown_agent, agent_not_allowed, capacity, depth, \
+invalid_input, workspace_failed, spawn_failed.";
+
+pub const SEND_DESCRIPTION: &str = "Send a follow-up message to a subagent this chat started. \
+While the run is working, the message is queued as the session's next prompt and delivered \
+when the current turn ends; pass `interrupt: true` to cancel the current turn first. After \
+the run has completed or been cancelled, this relaunches the agent, reloads its kept session \
+and sends the message, returning the run to running so subagent_wait works on it again. \
+`message` is 1 to 8000 characters. Returns JSON {subagentId, state, queued}. Errors: \
+not_found, invalid_input, disabled, unknown_agent, agent_not_allowed, capacity, busy, \
+not_resumable, session_unloadable, spawn_failed.";
 
 pub const WAIT_DESCRIPTION: &str = "Wait for a subagent to finish, up to `timeoutMs` (default \
 and maximum 240000). Returns JSON {subagentId, state, result?, error?, usage?} once it is \
 completed, cancelled or failed. If it is still working when the time is up, returns \
 {subagentId, state, timedOut: true}; that is not an error, call subagent_wait again. State \
 requires_action means it waits for the user to approve a tool in this chat: tell the user, \
-then wait again.";
+then wait again. After it settles, use subagent_send to resume it with a follow-up.";
 
 pub const STATUS_DESCRIPTION: &str = "Report this chat's subagents without waiting: every run, \
 or the ones named in `subagentIds`. Returns JSON {runs: [{subagentId, state, title, endedAt?, \
@@ -134,5 +161,4 @@ is cut, with resultTruncated true; subagent_wait on that run returns the whole r
 
 pub const STOP_DESCRIPTION: &str = "Stop a running subagent. Returns JSON {outcome: \"sent\"} \
 or {outcome: \"already_ended\"} when it had already finished. Its partial work stays in its \
-workspace.";
-
+workspace, and you can resume it later with subagent_send.";

@@ -142,9 +142,18 @@ fn a_nested_run_announces_with_its_parents_dispatch() {
 fn a_state_change_reports_a_record_update_card() {
     let state = Mutex::new(DriverState::new());
     let mut locked = state.lock();
-    orchestrated_updates(&mut locked, orchestrated_record(SubagentState::Running), None, 20);
-    let updates =
-        orchestrated_updates(&mut locked, orchestrated_record(SubagentState::RequiresAction), None, 30);
+    orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        20,
+    );
+    let updates = orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::RequiresAction),
+        None,
+        30,
+    );
     drop(locked);
     assert_eq!(
         updates,
@@ -194,7 +203,12 @@ fn a_state_change_reports_a_record_update_card() {
 fn a_settle_carries_the_result_content_and_the_idle_record() {
     let state = Mutex::new(DriverState::new());
     let mut locked = state.lock();
-    orchestrated_updates(&mut locked, orchestrated_record(SubagentState::Running), None, 20);
+    orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        20,
+    );
     let mut settled = orchestrated_record(SubagentState::Idle {
         end: SubagentEnd {
             reason: SubagentEndReason::Completed,
@@ -228,9 +242,18 @@ fn a_settle_carries_the_result_content_and_the_idle_record() {
 fn a_repeated_record_with_no_content_reports_nothing() {
     let state = Mutex::new(DriverState::new());
     let mut locked = state.lock();
-    orchestrated_updates(&mut locked, orchestrated_record(SubagentState::Running), None, 20);
-    let repeat =
-        orchestrated_updates(&mut locked, orchestrated_record(SubagentState::Running), None, 30);
+    orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        20,
+    );
+    let repeat = orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        30,
+    );
     drop(locked);
     assert!(
         repeat.is_empty(),
@@ -254,15 +277,24 @@ fn a_settle_record_without_a_stamp_gets_one() {
 fn a_working_snapshot_after_the_settle_is_ignored() {
     let state = Mutex::new(DriverState::new());
     let mut locked = state.lock();
-    orchestrated_updates(&mut locked, orchestrated_record(SubagentState::Running), None, 20);
+    orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        20,
+    );
     orchestrated_updates(
         &mut locked,
         orchestrated_record(SubagentState::idle(SubagentEndReason::Cancelled)),
         None,
         30,
     );
-    let stale =
-        orchestrated_updates(&mut locked, orchestrated_record(SubagentState::RequiresAction), None, 31);
+    let stale = orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::RequiresAction),
+        None,
+        31,
+    );
     assert!(stale.is_empty(), "a stale change card is dropped");
     assert!(locked
         .subagent_records()
@@ -271,10 +303,50 @@ fn a_working_snapshot_after_the_settle_is_ignored() {
 }
 
 #[test]
+fn an_explicit_resume_transitions_idle_back_to_running() {
+    let state = Mutex::new(DriverState::new());
+    let mut locked = state.lock();
+    orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        20,
+    );
+    orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::idle(SubagentEndReason::Completed)),
+        Some("first result"),
+        30,
+    );
+    let resumed = super::native_subagents::orchestrated_updates_with(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        40,
+        true,
+    );
+    assert_eq!(resumed.len(), 1);
+    assert_eq!(resumed[0]["update"]["status"], "in_progress");
+    assert_eq!(
+        resumed[0]["update"]["_meta"]["termul/subagent"]["activity"],
+        "running"
+    );
+    assert!(locked
+        .subagent_records()
+        .record(ROOT, "termul-subagent:sub-9f2c1a")
+        .is_some_and(|record| record.state == SubagentState::Running));
+}
+
+#[test]
 fn a_failed_settle_without_content_marks_the_card_failed() {
     let state = Mutex::new(DriverState::new());
     let mut locked = state.lock();
-    orchestrated_updates(&mut locked, orchestrated_record(SubagentState::Running), None, 20);
+    orchestrated_updates(
+        &mut locked,
+        orchestrated_record(SubagentState::Running),
+        None,
+        20,
+    );
     let updates = orchestrated_updates(
         &mut locked,
         orchestrated_record(SubagentState::Idle {
@@ -423,9 +495,7 @@ for line in sys.stdin:
         .0
         .lock()
         .iter()
-        .filter(|(kind, _, _)| {
-            matches!(kind.as_str(), "acp:tool_call" | "acp:tool_call_update")
-        })
+        .filter(|(kind, _, _)| matches!(kind.as_str(), "acp:tool_call" | "acp:tool_call_update"))
         .cloned()
         .collect();
     Some(

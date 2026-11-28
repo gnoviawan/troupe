@@ -222,7 +222,9 @@ async fn a_run_starts_settles_completed_and_carries_the_result() {
     let Some(test) = engine_test("finish") else {
         return;
     };
-    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
     let summary = engine
@@ -238,7 +240,12 @@ async fn a_run_starts_settles_completed_and_carries_the_result() {
     assert_eq!(settled.title, "Mock Sub");
     assert!(settled.usage.is_some());
     assert!(
-        engine.ledger.lock().runs.get(&run).is_some_and(|entry| !entry.is_live()),
+        engine
+            .ledger
+            .lock()
+            .runs
+            .get(&run)
+            .is_some_and(|entry| !entry.is_live()),
         "the ledger keeps the settled run for status"
     );
     let status = engine
@@ -255,12 +262,21 @@ async fn wait_reports_the_budget_end_as_an_outcome() {
     let Some(test) = engine_test("hang") else {
         return;
     };
-    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
-    let summary = engine.start(caller.clone(), request("hang")).await.expect("run starts");
+    let summary = engine
+        .start(caller.clone(), request("hang"))
+        .await
+        .expect("run starts");
     let outcome = engine
-        .wait(caller.clone(), summary.run.clone(), Duration::from_millis(100))
+        .wait(
+            caller.clone(),
+            summary.run.clone(),
+            Duration::from_millis(100),
+        )
         .await
         .expect("wait answers");
     match outcome {
@@ -280,13 +296,21 @@ async fn stop_converges_and_settles_cancelled() {
     let Some(test) = engine_test("hang") else {
         return;
     };
-    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
-    let summary = engine.start(caller.clone(), request("hang")).await.expect("run starts");
+    let summary = engine
+        .start(caller.clone(), request("hang"))
+        .await
+        .expect("run starts");
     let run = summary.run.clone();
     assert_eq!(
-        engine.stop(caller.clone(), run.clone()).await.expect("stop"),
+        engine
+            .stop(caller.clone(), run.clone())
+            .await
+            .expect("stop"),
         crate::acp::orchestrator::StopOutcome::Sent
     );
     let settled = wait_settled(&engine, &caller, &run).await;
@@ -305,10 +329,15 @@ async fn every_waiter_resolves_exactly_once() {
     let Some(test) = engine_test("hang") else {
         return;
     };
-    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
-    let summary = engine.start(caller.clone(), request("hang")).await.expect("run starts");
+    let summary = engine
+        .start(caller.clone(), request("hang"))
+        .await
+        .expect("run starts");
     let run = summary.run.clone();
     let waiter = |engine: Arc<OrchestratorEngine>| {
         let (caller, run) = (caller.clone(), run.clone());
@@ -316,10 +345,20 @@ async fn every_waiter_resolves_exactly_once() {
     };
     let first = waiter(engine.clone());
     let second = waiter(engine.clone());
-    while engine.ledger.lock().runs.get(&run).map_or(0, |entry| entry.waiters.len()) < 2 {
+    while engine
+        .ledger
+        .lock()
+        .runs
+        .get(&run)
+        .map_or(0, |entry| entry.waiters.len())
+        < 2
+    {
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
-    engine.stop(test.caller.clone(), run.clone()).await.expect("stop");
+    engine
+        .stop(test.caller.clone(), run.clone())
+        .await
+        .expect("stop");
     let (first, second) = tokio::join!(first, second);
     for outcome in [first, second] {
         let outcome = outcome.expect("waiter task").expect("waiter resolves");
@@ -344,10 +383,15 @@ async fn chat_closed_stops_the_live_runs() {
     let Some(test) = engine_test("hang") else {
         return;
     };
-    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
-    let summary = engine.start(caller.clone(), request("hang")).await.expect("run starts");
+    let summary = engine
+        .start(caller.clone(), request("hang"))
+        .await
+        .expect("run starts");
     engine.chat_closed(CHAT).await;
     let settled = wait_settled(&engine, &caller, &summary.run).await;
     assert_eq!(settled.state, RunState::Cancelled);
@@ -358,10 +402,15 @@ async fn a_gone_parent_agent_stops_its_runs() {
     let Some(test) = engine_test("hang") else {
         return;
     };
-    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
-    let summary = engine.start(caller.clone(), request("hang")).await.expect("run starts");
+    let summary = engine
+        .start(caller.clone(), request("hang"))
+        .await
+        .expect("run starts");
     let cards = engine.on_agent_gone(&caller.agent);
     let settled = wait_settled(&engine, &caller, &summary.run).await;
     assert_eq!(settled.state, RunState::Cancelled);
@@ -375,14 +424,19 @@ async fn stop_from_ui_answers_only_this_engines_runs() {
     let Some(test) = engine_test("hang") else {
         return;
     };
-    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
     assert!(
         engine.stop_from_ui(CHAT, "sub-notours").await.is_none(),
         "an unknown id falls through to the native path"
     );
-    let summary = engine.start(caller.clone(), request("hang")).await.expect("run starts");
+    let summary = engine
+        .start(caller.clone(), request("hang"))
+        .await
+        .expect("run starts");
     let run = summary.run.clone();
     assert!(
         engine
@@ -411,6 +465,7 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
         run: run.clone(),
         root: CHAT.to_string(),
         parent_agent: AgentId("agent-parent".to_string()),
+        parent_session_id: CHAT.to_string(),
         parent_run: None,
         depth,
         identity: crate::acp::subagents::SubagentAgent {
@@ -418,6 +473,10 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
             config_id: None,
             agent_id: "agent-seeded".to_string(),
         },
+        profile_id: "mock-sub".to_string(),
+        execution_policy: None,
+        child_cwd: "/tmp".to_string(),
+        session_id: Some(SessionId(session.to_string())),
         title: "seeded".to_string(),
         task: "seeded task".to_string(),
         model: None,
@@ -438,6 +497,7 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
         result: None,
         waiters: Vec::new(),
         capture: Arc::new(RunCapture::default()),
+        queued_prompts: std::collections::VecDeque::new(),
     };
     engine.ledger.lock().insert(entry);
     run
@@ -477,7 +537,9 @@ async fn start_refuses_each_settings_gate() {
             "mock-sub".to_string()
         ))
     );
-    engine.set_settings(OrchestratorSettings::default()).expect("settings");
+    engine
+        .set_settings(OrchestratorSettings::default())
+        .expect("settings");
 
     let unknown = StartRequest {
         agent: "no-such-agent".to_string(),
@@ -539,19 +601,15 @@ async fn status_and_wait_refuse_another_chats_run() {
         agent: AgentId("agent-other".to_string()),
         session: SessionId("chat-9".to_string()),
     };
-    assert!(
-        engine
-            .wait(foreign.clone(), seeded.clone(), Duration::from_secs(1))
-            .await
-            .is_err()
+    assert!(engine
+        .wait(foreign.clone(), seeded.clone(), Duration::from_secs(1))
+        .await
+        .is_err());
+    assert!(engine.status(foreign, Some(vec![seeded.clone()])).is_err());
+    let unknown = engine.status(
+        test.caller.clone(),
+        Some(vec![RunId("sub-nope".to_string())]),
     );
-    assert!(
-        engine
-            .status(foreign, Some(vec![seeded.clone()]))
-            .is_err()
-    );
-    let unknown = engine
-        .status(test.caller.clone(), Some(vec![RunId("sub-nope".to_string())]));
     assert!(unknown.is_err());
     engine.ledger.lock().remove(&seeded);
 }
@@ -574,7 +632,10 @@ async fn worktree_mode_is_refused_outside_a_repository() {
 async fn the_listing_names_the_registry_agent_and_its_allowance() {
     let test = refusal_engine();
     let engine = &test.engine;
-    assert_eq!(engine.list_agents(), vec![listing("mock-sub", "Mock Sub", true)]);
+    assert_eq!(
+        engine.list_agents(),
+        vec![listing("mock-sub", "Mock Sub", true)]
+    );
     engine
         .set_settings(with_profiles(vec![blocked("mock-sub")]))
         .expect("settings");
@@ -732,8 +793,14 @@ async fn stopping_a_run_that_is_still_starting_cancels_the_start() {
         );
     }
     let outcome = engine.stop_from_ui(CHAT, run.as_str()).await;
-    assert_eq!(outcome, Some(Ok(crate::acp::orchestrator::StopOutcome::Sent)));
-    assert!(cancel.is_cancelled(), "the start is cancelled, not reported ended");
+    assert_eq!(
+        outcome,
+        Some(Ok(crate::acp::orchestrator::StopOutcome::Sent))
+    );
+    assert!(
+        cancel.is_cancelled(),
+        "the start is cancelled, not reported ended"
+    );
 }
 
 #[tokio::test]
@@ -741,7 +808,13 @@ async fn a_second_stop_before_the_run_settles_answers_sent() {
     let test = refusal_engine();
     let engine = &test.engine;
     let run = seeded_run(engine, "child-stopping", 1);
-    engine.ledger.lock().runs.get_mut(&run).expect("seeded").body = RunBody::Stopping {
+    engine
+        .ledger
+        .lock()
+        .runs
+        .get_mut(&run)
+        .expect("seeded")
+        .body = RunBody::Stopping {
         child_agent: AgentId("agent-seeded".to_string()),
         session: SessionId("child-stopping".to_string()),
         since_ms: 1,
@@ -762,7 +835,10 @@ async fn an_abandoned_start_leaves_no_run_and_frees_its_slot() {
         .start_until(test.caller.clone(), request("finish"), abandoned)
         .await;
     assert!(
-        matches!(outcome, Err(crate::acp::orchestrator::StartError::SpawnFailed(_))),
+        matches!(
+            outcome,
+            Err(crate::acp::orchestrator::StartError::SpawnFailed(_))
+        ),
         "{outcome:?}"
     );
     let ledger = engine.ledger.lock();
@@ -793,7 +869,9 @@ async fn a_gone_parent_agent_hands_back_its_runs_settle_cards() {
     );
     assert_eq!(*content, None);
     assert!(
-        engine.on_agent_gone(&AgentId("agent-parent".to_string())).is_empty(),
+        engine
+            .on_agent_gone(&AgentId("agent-parent".to_string()))
+            .is_empty(),
         "a settled run is not handed back twice"
     );
 }
@@ -860,7 +938,8 @@ async fn engine_with_saved_switches(
         .map(|(key, allowed)| (key.to_string(), json!(allowed)))
         .collect();
     std::fs::write(
-        data.path().join(crate::acp::orchestrator::settings::FILE_NAME),
+        data.path()
+            .join(crate::acp::orchestrator::settings::FILE_NAME),
         json!({
             "schema_version": 1,
             "enabled": true,
@@ -1021,8 +1100,11 @@ async fn a_bare_block_moves_when_its_agent_is_not_installed_yet() {
 #[tokio::test]
 async fn bare_switches_stay_when_the_registry_cannot_be_read() {
     let data = tempfile::tempdir().expect("data dir");
-    std::fs::write(data.path().join(crate::automation::agents::FILE_NAME), b"{not json")
-        .expect("registry");
+    std::fs::write(
+        data.path().join(crate::automation::agents::FILE_NAME),
+        b"{not json",
+    )
+    .expect("registry");
     let saved = with_profiles(vec![blocked("my-agent")]);
     crate::acp::orchestrator::settings::SettingsStore::open(data.path())
         .set(saved.clone())
@@ -1041,8 +1123,11 @@ async fn bare_switches_stay_when_the_registry_cannot_be_read() {
 #[tokio::test]
 async fn a_bare_block_holds_while_the_registry_cannot_be_read() {
     let data = tempfile::tempdir().expect("data dir");
-    std::fs::write(data.path().join(crate::automation::agents::FILE_NAME), b"{not json")
-        .expect("registry");
+    std::fs::write(
+        data.path().join(crate::automation::agents::FILE_NAME),
+        b"{not json",
+    )
+    .expect("registry");
     crate::acp::orchestrator::settings::SettingsStore::open(data.path())
         .set(with_profiles(vec![blocked("cursor")]))
         .expect("settings");
@@ -1073,7 +1158,8 @@ async fn a_bare_block_holds_while_the_registry_cannot_be_read() {
 async fn a_bare_block_holds_for_a_config_id_named_only_by_its_model() {
     let data = tempfile::tempdir().expect("data dir");
     std::fs::write(
-        data.path().join(crate::acp::orchestrator::settings::FILE_NAME),
+        data.path()
+            .join(crate::acp::orchestrator::settings::FILE_NAME),
         json!({
             "schema_version": 3,
             "enabled": true,
@@ -1213,7 +1299,10 @@ async fn a_profile_sets_the_childs_model_mode_and_config_options() {
         agent: "mock-fast".to_string(),
         ..request("report-profile")
     };
-    let summary = engine.start(caller.clone(), start).await.expect("run starts");
+    let summary = engine
+        .start(caller.clone(), start)
+        .await
+        .expect("run starts");
     assert_eq!(summary.title, "Mock Sub (mock-fast)");
     let settled = wait_settled(&engine, &caller, &summary.run).await;
     assert_eq!(
@@ -1226,7 +1315,10 @@ async fn a_profile_sets_the_childs_model_mode_and_config_options() {
         ..request("report-profile")
     };
     assert_eq!(
-        engine.start(caller.clone(), unknown).await.map(|summary| summary.run),
+        engine
+            .start(caller.clone(), unknown)
+            .await
+            .map(|summary| summary.run),
         Err(crate::acp::orchestrator::StartError::UnknownAgent {
             agent: "mock-sub".to_string(),
             allowed: vec!["mock-fast".to_string()],
@@ -1272,17 +1364,26 @@ async fn approvals_decide_who_answers_the_childs_permission_requests() {
         agent: "mock-asks".to_string(),
         ..request("ask-permission")
     };
-    let waiting = engine.start(caller.clone(), asks).await.expect("run starts");
+    let waiting = engine
+        .start(caller.clone(), asks)
+        .await
+        .expect("run starts");
     let mut state = RunState::Running;
     for _ in 0..200 {
-        state = engine.status(caller.clone(), Some(vec![waiting.run.clone()])).expect("status")[0]
+        state = engine
+            .status(caller.clone(), Some(vec![waiting.run.clone()]))
+            .expect("status")[0]
             .state;
         if state == RunState::RequiresAction {
             break;
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
-    assert_eq!(state, RunState::RequiresAction, "the request waits in the chat");
+    assert_eq!(
+        state,
+        RunState::RequiresAction,
+        "the request waits in the chat"
+    );
     engine
         .stop(caller.clone(), waiting.run.clone())
         .await

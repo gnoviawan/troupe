@@ -87,12 +87,14 @@ fn message_chunk_serializes_role_and_content() {
         content: ContentBlock::Text(agent_client_protocol::schema::v1::TextContent::new("hi")),
         message_id: Some("msg-1".to_string()),
         parent_tool_call_id: None,
+        sender: None,
     };
     let value = serde_json::to_value(&event).unwrap();
     assert_eq!(value["role"], "agent");
     assert_eq!(value["content"]["type"], "text");
     assert_eq!(value["content"]["text"], "hi");
     assert_eq!(value["messageId"], "msg-1");
+    assert!(value.get("sender").is_none());
 }
 
 #[test]
@@ -104,6 +106,7 @@ fn message_chunk_omits_message_id_when_absent() {
         content: ContentBlock::Text(agent_client_protocol::schema::v1::TextContent::new("hi")),
         message_id: None,
         parent_tool_call_id: None,
+        sender: None,
     };
     let value = serde_json::to_value(&event).unwrap();
     assert!(value.get("messageId").is_none());
@@ -210,8 +213,9 @@ fn turn_stop_is_timeout_only_for_the_typed_marker() {
 /// with a similar-looking message stays `error`.
 #[test]
 fn turn_stop_is_crashed_when_the_agent_transport_closed() {
-    let closed = agent_client_protocol::Error::internal_error()
-        .data(serde_json::json!({ "reason": agent_client_protocol::INCOMING_TRANSPORT_CLOSED_REASON }));
+    let closed = agent_client_protocol::Error::internal_error().data(
+        serde_json::json!({ "reason": agent_client_protocol::INCOMING_TRANSPORT_CLOSED_REASON }),
+    );
     assert_eq!(
         AcpErrorDetail::from(closed).turn_stop(),
         TurnFailureStop::Crashed
@@ -488,7 +492,10 @@ fn a_limit_that_blocks_the_chat_travels_only_as_limit_reached() {
             limit_reached,
         })
         .unwrap();
-        (value.get("rateLimit").cloned(), value.get("limitReached").cloned())
+        (
+            value.get("rateLimit").cloned(),
+            value.get("limitReached").cloned(),
+        )
     };
     let blocked = serde_json::json!({
         "status": "rejected", "resetsAt": 1_760_360_399, "kind": "five_hour",
@@ -1163,11 +1170,8 @@ fn agent_error_carries_provider_code_only_for_provider_failures() {
         .unwrap()
     };
     let limit = build(
-        agent_client_protocol::Error::new(
-            -32603,
-            "Internal error: You've hit your session limit",
-        )
-        .data(serde_json::json!({ "errorKind": "rate_limit" })),
+        agent_client_protocol::Error::new(-32603, "Internal error: You've hit your session limit")
+            .data(serde_json::json!({ "errorKind": "rate_limit" })),
     );
     assert_eq!(limit["providerCode"], "provider_session_limit");
     let quota = build(
