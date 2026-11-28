@@ -162,6 +162,7 @@ impl State {
             device_id: self.device_id.clone(),
             client_instance_id: String::new(),
             seed: 0,
+            host_local: None,
         });
         config.token = token;
         if let Ask::Restarted = ask {

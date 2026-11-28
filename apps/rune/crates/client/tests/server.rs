@@ -16,6 +16,7 @@ fn projects_against_local_test_server() {
         device_id: "test".into(),
         client_instance_id: "test".into(),
         seed: 1,
+        host_local: None,
     };
     let data =
         client::native::http_send(&config, &client::http::HttpRequest::get("/projects")).unwrap();

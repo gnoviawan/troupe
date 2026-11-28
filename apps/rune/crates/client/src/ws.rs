@@ -21,7 +21,7 @@ use troupe_protocol::ws::{
 use crate::cursor::{Cursor, Held, HeldItem, Verdict};
 use crate::ledger::{Carrier, Ledger, is_in_progress_receipt};
 use crate::link::{LinkEffect, LinkEvent, LinkMachine, Liveness, Status};
-use crate::machine::{CallId, Config, Effect, Event, Machine, SocketEvent};
+use crate::machine::{CallId, Config, Effect, Event, HostLocalCredential, Machine, SocketEvent};
 
 #[path = "ws_watch.rs"]
 mod watch;
@@ -242,7 +242,7 @@ impl WsClient {
                         protocol_version: WS_PROTOCOL_VERSION,
                         device_id: self.config.device_id.clone(),
                         client_instance_id: self.config.client_instance_id.clone(),
-                        host_local_token: None,
+                        host_local_token: self.config.host_local.as_ref().and_then(HostLocalCredential::read),
                     };
                     let payload = serde_json::to_value(payload).unwrap_or(Value::Null);
                     self.send(

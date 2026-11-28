@@ -72,7 +72,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    log::info!("[startup] server {:?} at {}", started.mode, started.config.base_url);
+    log::info!("[startup] server {:?} at {}", started.mode, launcher::redact_url(&started.config.base_url));
     let app = build(Launch { config: Some(started.config), route }, started.control.as_ref(), &paths);
     let _tray = services::tray(app.handle());
     *CONTROL.lock().unwrap_or_else(|e| e.into_inner()) = started.control;

@@ -23,7 +23,7 @@ pub mod native;
 #[cfg(target_arch = "wasm32")]
 pub mod web;
 
-pub use machine::{CallId, Config, Effect, Event, Machine, SocketEvent};
+pub use machine::{CallId, Config, Effect, Event, HostLocalCredential, Machine, SocketEvent};
 pub use rune_core::machine::{Attempt, Effects};
 
 #[cfg(test)]

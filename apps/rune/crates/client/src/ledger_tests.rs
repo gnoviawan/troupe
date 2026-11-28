@@ -50,6 +50,7 @@ fn distinct_clients_never_share_a_command_id() {
         first_command_id(
             &Config {
                 seed: 8,
+                host_local: None,
                 ..config()
             },
             Carrier::Ws,
