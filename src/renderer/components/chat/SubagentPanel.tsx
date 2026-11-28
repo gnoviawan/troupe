@@ -50,10 +50,11 @@ function Missing({ children }: { children: ReactNode }): React.JSX.Element {
 }
 
 /**
- * The task the subagent was given, as the opening user turn of its chat. A
- * long prompt is clamped to a few lines until the reader expands it.
+ * A prompt sent to the subagent (either the opening task or a follow-up from
+ * the parent agent via `subagent_send`). A long prompt is clamped to a few
+ * lines until the reader expands it.
  */
-function PromptTurn({ prompt }: { prompt: string }): React.JSX.Element {
+function PromptTurn({ prompt, sender }: { prompt: string; sender?: string }): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
   const [overflows, setOverflows] = useState(false)
   const ref = useRef<HTMLParagraphElement>(null)
@@ -66,6 +67,11 @@ function PromptTurn({ prompt }: { prompt: string }): React.JSX.Element {
   return (
     <Message align="end" className="py-2">
       <MessageContent className="w-fit max-w-[85%] items-end">
+        {sender && (
+          <span data-subagent-sender="" className="px-1 text-xs font-medium text-muted-foreground">
+            {sender}
+          </span>
+        )}
         <Bubble variant="tinted" align="end" className="max-w-full">
           <BubbleContent>
             <p ref={ref} className={cn('whitespace-pre-wrap', !expanded && 'line-clamp-3')}>
@@ -180,14 +186,14 @@ function useRecordFilePathContext(
   )
 }
 
-/** The subagent's messages as chat messages; only the newest streams, and only while it runs. */
+/** The subagent's messages (and parent follow-ups) as chat messages; only the newest agent message streams. */
 function subagentChatMessages(toolCall: ToolCall, running: boolean): ChatMessageType[] {
   const messages = toolCall.subagentMessages ?? []
   return messages.map((message, index) => ({
     id: `${toolCall.toolCallId}:${message.seq}`,
-    role: 'agent',
+    role: message.sender ? 'user' : 'agent',
     blocks: [{ type: 'text', text: message.text }],
-    streaming: running && index === messages.length - 1,
+    streaming: !message.sender && running && index === messages.length - 1,
     timestamp: message.timestamp,
     seq: message.seq
   }))
@@ -213,6 +219,15 @@ function Steps({
 }): React.JSX.Element | null {
   const filePathContext = useRecordFilePathContext(toolCall.subagent)
   const running = status === 'running'
+  const senderById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const message of toolCall.subagentMessages ?? []) {
+      if (message.sender) {
+        map.set(`${toolCall.toolCallId}:${message.seq}`, message.sender)
+      }
+    }
+    return map
+  }, [toolCall.toolCallId, toolCall.subagentMessages])
   const items = useMemo(
     () =>
       consolidateThoughtGroups(
@@ -245,6 +260,13 @@ function Steps({
         enter={enter}
         filePathContext={filePathContext}
         nested
+        renderUserMessage={(message) => {
+          const text = message.blocks
+            .filter((block) => block.type === 'text')
+            .map((block) => block.text ?? '')
+            .join('')
+          return <PromptTurn prompt={text} sender={senderById.get(message.id) ?? agentName} />
+        }}
       />
     </div>
   )
@@ -257,7 +279,10 @@ function Steps({
  */
 function endsTheSteps(toolCall: ToolCall, result: string): boolean {
   const answer = result.trim()
-  const written = (toolCall.subagentMessages ?? []).map((message) => message.text).join('')
+  const written = (toolCall.subagentMessages ?? [])
+    .filter((message) => !message.sender)
+    .map((message) => message.text)
+    .join('')
   return answer.length > 0 && written.trim().endsWith(answer)
 }
 

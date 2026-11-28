@@ -122,6 +122,7 @@ fn every_host_tool_input_schema_types_its_array_items() {
         "start_chat",
         "mcp_install",
         "subagent_start",
+        "subagent_send",
         "create_node",
         "browser",
     ] {

@@ -21,8 +21,11 @@ troupe-term = { path = "../term" }
 regex-lite = "0.1"
 ui = { path = "../ui" }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+troupe-canvas = { path = "../canvas" }
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3"
 wasm-bindgen-futures = "0.4"
 wasm-bindgen = { workspace = true }
-web-sys = { version = "0.3", features = ["History", "Location", "MediaQueryList", "Request", "RequestInit", "RequestMode", "Response", "Storage", "Window"] }
+web-sys = { version = "0.3", features = ["CssStyleDeclaration", "Document", "Element", "EventTarget", "History", "HtmlElement", "HtmlIFrameElement", "Location", "MediaQueryList", "MessageEvent", "Navigator", "Node", "Request", "RequestInit", "RequestMode", "Response", "Storage", "Window"] }

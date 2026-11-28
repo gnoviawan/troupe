@@ -222,6 +222,7 @@ impl FakeDriver {
                 )),
                 message_id: None,
                 parent_tool_call_id: None,
+                sender: None,
             };
             events::fan_out(
                 &self.sinks,

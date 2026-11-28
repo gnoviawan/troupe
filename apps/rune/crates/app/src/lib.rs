@@ -33,6 +33,10 @@ mod automations_tests;
 mod automations_view;
 #[cfg(test)]
 mod answers_tests;
+mod canvas_host;
+#[cfg(test)]
+mod canvas_host_tests;
+mod canvas_web;
 #[cfg(test)]
 mod cards_tests;
 mod chat;
@@ -254,6 +258,9 @@ pub struct State {
     pub ssh: ssh::SshUi,
     /// The Automations tab's reads, selection and canvases.
     pub automations: automations::AutomationsUi,
+    /// The design canvases (FigCraft): per-project sessions, persistence and gateway.
+    pub canvases: ui::canvas::Canvases,
+    pub(crate) canvas_host: canvas_host::CanvasHost,
     /// The window's waker, kept for `reload`.
     pub(crate) waker: Option<Waker>,
 }
@@ -323,6 +330,8 @@ impl Default for State {
             snapshots: snapshots::SnapshotsUi::default(),
             ssh: ssh::SshUi::default(),
             automations: automations::AutomationsUi::default(),
+            canvases: ui::canvas::Canvases::default(),
+            canvas_host: canvas_host::CanvasHost::default(),
             waker: None,
         }
     }
@@ -455,6 +464,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     }
     let next_automation = state.automations_tick(now);
     let next_preview = state.automation_editor_tick(now);
+    let (canvas_changed, next_canvas) = state.pump_canvases(tx);
+    changed |= canvas_changed;
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -472,6 +483,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_completion,
         next_automation,
         next_preview,
+        next_canvas,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

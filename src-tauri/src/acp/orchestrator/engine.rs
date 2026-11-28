@@ -26,9 +26,9 @@ use crate::web::EventSink;
 
 /// How long `start` may take end to end; every step below it has its own
 /// bound, so reaching this means a wedged host.
-const SPAWN_BOUND: Duration = Duration::from_secs(120);
-/// `subagent_start` task length bound.
-const MAX_TASK_CHARS: usize = 8_000;
+pub(super) const SPAWN_BOUND: Duration = Duration::from_secs(120);
+/// `subagent_start` task and `subagent_send` message length bound.
+pub(super) const MAX_TASK_CHARS: usize = 8_000;
 
 pub struct OrchestratorEngine {
     pub(super) manager: Arc<AcpManager>,
@@ -75,7 +75,7 @@ impl OrchestratorEngine {
 
     /// The root of the caller's chat: the root of its run, else the session
     /// itself. Lookups of another chat's run answer `NotFound`.
-    fn caller_root(&self, caller: &CallerRef) -> String {
+    pub(super) fn caller_root(&self, caller: &CallerRef) -> String {
         let ledger = self.ledger.lock();
         ledger
             .run_with_session(caller)
@@ -99,7 +99,7 @@ impl OrchestratorEngine {
     }
 
     /// The project of the chat the run renders in.
-    fn project_id(&self, root: &str) -> Option<String> {
+    pub(super) fn project_id(&self, root: &str) -> Option<String> {
         let persistence = self.manager.persistence()?;
         let metadata = persistence.metadata(root).ok()?;
         metadata
@@ -310,7 +310,8 @@ impl OrchestratorEngine {
                     let run = (*run).clone();
                     let progress = Arc::clone(&progress);
                     tokio::spawn(async move {
-                        let prepared = crate::acp::orchestrator::worktree::prepare(&cwd, &run).await?;
+                        let prepared =
+                            crate::acp::orchestrator::worktree::prepare(&cwd, &run).await?;
                         if let (Some(path), Some(branch)) =
                             (&prepared.workspace.path, &prepared.workspace.branch)
                         {
@@ -340,7 +341,10 @@ impl OrchestratorEngine {
         };
         let capture = Arc::new(RunCapture::default());
         let sinks: Vec<Arc<dyn EventSink>> = vec![
-            Arc::new(RerouteFilter::new(root.clone(), self.manager.sinks().to_vec())),
+            Arc::new(RerouteFilter::new(
+                root.clone(),
+                self.manager.sinks().to_vec(),
+            )),
             Arc::new(RunWatcher::new(
                 self.clone(),
                 (*run).clone(),
@@ -349,14 +353,12 @@ impl OrchestratorEngine {
         ];
         let run_log = crate::logging::redact_session_id(run.as_str());
         let chat_log = crate::logging::redact_session_id(&root);
-        log::info!(
-            "[orchestrator] run {run_log} starting in chat {chat_log} (depth {depth})"
-        );
+        log::info!("[orchestrator] run {run_log} starting in chat {chat_log} (depth {depth})");
         let project_id = self.project_id(&root);
         let spawned = self
             .manager
             .spawn_private(
-                config,
+                config.clone(),
                 project_id.as_deref(),
                 // The chat's own Claude account, as its agent runs on.
                 &crate::acp::claude_agent::LaunchChat::Existing(SessionId(root.clone())),
@@ -369,11 +371,18 @@ impl OrchestratorEngine {
             })?;
         progress.lock().child = Some(spawned.agent_id.clone());
         let child_agent = spawned.agent_id;
+        let child_cwd = match workspace.mode {
+            SubagentWorkspaceMode::Worktree => {
+                workspace.path.clone().unwrap_or_else(|| cwd.clone())
+            }
+            SubagentWorkspaceMode::Shared => cwd.clone(),
+        };
         let parent_dispatch_id = parent_run.as_ref().map(|parent| parent.dispatch_id());
         let entry = ChildRun {
             run: (*run).clone(),
             root: root.clone(),
             parent_agent,
+            parent_session_id: caller.session.0.clone(),
             parent_run,
             depth,
             identity: SubagentAgent {
@@ -381,6 +390,10 @@ impl OrchestratorEngine {
                 config_id,
                 agent_id: child_agent.0.clone(),
             },
+            profile_id: profile.id.clone(),
+            execution_policy: Some((config.clone(), profile.clone(), model.clone())),
+            child_cwd: child_cwd.clone(),
+            session_id: None,
             title: req.title.clone().unwrap_or_else(|| {
                 if profile.id == profile.agent_id {
                     agent_name.clone()
@@ -399,15 +412,10 @@ impl OrchestratorEngine {
             result: None,
             waiters: Vec::new(),
             capture,
+            queued_prompts: std::collections::VecDeque::new(),
         };
         self.ledger.lock().insert(entry);
 
-        let child_cwd = match self.ledger.lock().runs.get(&run) {
-            Some(entry) if entry.workspace.mode == SubagentWorkspaceMode::Worktree => {
-                entry.workspace.path.clone().unwrap_or_else(|| cwd.clone())
-            }
-            _ => cwd.clone(),
-        };
         let origin = ChildOrigin {
             root_session_id: root.clone(),
             parent_session_id: caller.session.0.clone(),
@@ -440,6 +448,7 @@ impl OrchestratorEngine {
         {
             let mut ledger = self.ledger.lock();
             if let Some(entry) = ledger.runs.get_mut(&run) {
+                entry.session_id = Some(session.clone());
                 entry.body = RunBody::Live {
                     child_agent: child_agent.clone(),
                     session: session.clone(),
@@ -465,7 +474,12 @@ impl OrchestratorEngine {
 
         // Announce: from here on, failures settle through the card path,
         // even while the announce itself is still queued on the driver.
-        let announce = self.ledger.lock().runs.get(&run).map(|entry| entry.record());
+        let announce = self
+            .ledger
+            .lock()
+            .runs
+            .get(&run)
+            .map(|entry| entry.record());
         if let Some(record) = announce {
             progress.lock().announced = true;
             if let Err(error) = self
@@ -506,9 +520,7 @@ impl OrchestratorEngine {
             .runs
             .get(&run)
             .map(|entry| entry.summary())
-            .ok_or_else(|| {
-                StartError::SpawnFailed("the run vanished during startup".to_string())
-            })
+            .ok_or_else(|| StartError::SpawnFailed("the run vanished during startup".to_string()))
     }
 
     fn parent_agent_of(&self, run: &RunId) -> AgentId {
@@ -527,13 +539,12 @@ impl OrchestratorEngine {
         run: RunId,
         budget: Duration,
     ) -> Result<WaitOutcome, RunLookupError> {
-        let root = self.caller_root(&caller);
         let waiter = {
             let mut ledger = self.ledger.lock();
             let Some(entry) = ledger.runs.get_mut(&run) else {
                 return Err(RunLookupError);
             };
-            if entry.root != root {
+            if entry.parent_session_id != caller.session.0 {
                 return Err(RunLookupError);
             }
             if !entry.is_live() {
@@ -592,7 +603,7 @@ impl OrchestratorEngine {
                     let Some(entry) = ledger.runs.get(&run) else {
                         return Err(RunLookupError);
                     };
-                    if entry.root != root {
+                    if entry.parent_session_id != caller.session.0 {
                         return Err(RunLookupError);
                     }
                     summaries.push(entry.summary());
@@ -602,6 +613,7 @@ impl OrchestratorEngine {
             None => Ok(ledger
                 .runs_of_root(&root)
                 .into_iter()
+                .filter(|entry| entry.parent_session_id == caller.session.0)
                 .map(|entry| entry.summary())
                 .collect()),
         }
@@ -615,6 +627,15 @@ impl OrchestratorEngine {
         run: RunId,
     ) -> Result<StopOutcome, StopError> {
         let root = self.caller_root(&caller);
+        if !self
+            .ledger
+            .lock()
+            .runs
+            .get(&run)
+            .is_some_and(|entry| entry.parent_session_id == caller.session.0)
+        {
+            return Err(StopError::NotFound);
+        }
         self.stop_run(&run, &root)
             .await
             .unwrap_or(Err(StopError::NotFound))
@@ -662,10 +683,10 @@ pub(super) struct StartProgress {
 }
 
 /// A held capacity slot; dropping it frees the slot.
-struct Reservation {
-    engine: Arc<OrchestratorEngine>,
-    run: RunId,
-    cancel: tokio_util::sync::CancellationToken,
+pub(super) struct Reservation {
+    pub(super) engine: Arc<OrchestratorEngine>,
+    pub(super) run: RunId,
+    pub(super) cancel: tokio_util::sync::CancellationToken,
 }
 
 impl Drop for Reservation {

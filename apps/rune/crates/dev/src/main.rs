@@ -36,5 +36,5 @@ fn main() {
         config: config(),
         route: Route::from_hash(&std::env::var("TROUPE_ROUTE").unwrap_or_default()),
     };
-    automation::install(troupe_app::app(launch)).run();
+    automation::install_with(troupe_app::app(launch), troupe_canvas::CanvasCompositor::new()).run();
 }

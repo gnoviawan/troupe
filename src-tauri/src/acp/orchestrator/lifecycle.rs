@@ -8,10 +8,10 @@ use std::sync::Arc;
 
 use parking_lot::Mutex;
 
-use crate::acp::config::AgentId;
+use crate::acp::config::{AgentId, SessionId};
 use crate::acp::manager::{AcpManager, StartedPrompt};
 use crate::acp::orchestrator::engine::{OrchestratorEngine, StartProgress};
-use crate::acp::orchestrator::run::{bounded, ChildRun, RunBody, RunEnd, RunId};
+use crate::acp::orchestrator::run::{bounded, ChildRun, QueuedPrompt, RunBody, RunEnd, RunId};
 use crate::acp::orchestrator::run::{StopError, StopOutcome};
 use crate::acp::subagents::{Subagent, SubagentWorkspaceMode};
 
@@ -35,7 +35,11 @@ impl OrchestratorEngine {
         let (child, worktree, announced) = {
             let mut progress = progress.lock();
             progress.abandoned = true;
-            (progress.child.take(), progress.worktree.take(), progress.announced)
+            (
+                progress.child.take(),
+                progress.worktree.take(),
+                progress.announced,
+            )
         };
         {
             let mut ledger = self.ledger.lock();
@@ -59,18 +63,186 @@ impl OrchestratorEngine {
         }
     }
 
-    /// The supervision task of one run: park on the child's turn, settle on
-    /// every outcome, then drop the lease (which kills the child,
-    /// idempotent).
-    pub(super) async fn supervise(self: Arc<Self>, run: RunId, lease: ChildLease, started: StartedPrompt) {
-        let outcome = self.manager.wait_prompt(started).await;
-        let end = match outcome {
-            Ok(agent_client_protocol::schema::v1::StopReason::Cancelled) => RunEnd::Cancelled,
-            Ok(_) => RunEnd::Completed,
-            Err(error) => RunEnd::Failed(bounded(&error, 512)),
+    /// The supervision task of one run: park on the child's turn, deliver any
+    /// queued follow-up prompts on the same live session when a turn finishes
+    /// normally or after a turn-only interrupt, then shut down the child and
+    /// settle when no follow-up remains.
+    pub(super) async fn supervise(
+        self: Arc<Self>,
+        run: RunId,
+        lease: ChildLease,
+        mut started: StartedPrompt,
+    ) {
+        enum Step {
+            Deliver {
+                child_agent: AgentId,
+                session: SessionId,
+                root: String,
+                parent_agent: AgentId,
+                queued: QueuedPrompt,
+            },
+            Settle {
+                child_agent: AgentId,
+            },
+            AlreadySettled,
+        }
+
+        loop {
+            let outcome = self.manager.wait_prompt(started).await;
+            let turn_end = match &outcome {
+                Ok(agent_client_protocol::schema::v1::StopReason::Cancelled) => RunEnd::Cancelled,
+                Ok(_) => RunEnd::Completed,
+                Err(error) => RunEnd::Failed(bounded(error, 512)),
+            };
+            let step = {
+                let mut ledger = self.ledger.lock();
+                let Some(entry) = ledger.runs.get_mut(&run) else {
+                    drop(lease);
+                    return;
+                };
+                match (&entry.body, &turn_end) {
+                    (
+                        RunBody::Live {
+                            child_agent,
+                            session,
+                            ..
+                        },
+                        RunEnd::Completed | RunEnd::Cancelled,
+                    ) => {
+                        if let Some(queued) = entry.queued_prompts.pop_front() {
+                            entry.capture.clear_text();
+                            Step::Deliver {
+                                child_agent: child_agent.clone(),
+                                session: session.clone(),
+                                root: entry.root.clone(),
+                                parent_agent: entry.parent_agent.clone(),
+                                queued,
+                            }
+                        } else {
+                            let (child_agent, session) = (child_agent.clone(), session.clone());
+                            entry.body = RunBody::Settling {
+                                child_agent: child_agent.clone(),
+                                session,
+                            };
+                            Step::Settle { child_agent }
+                        }
+                    }
+                    (RunBody::Settled { .. }, _) => Step::AlreadySettled,
+                    _ => {
+                        entry.queued_prompts.clear();
+                        let child_agent = entry
+                            .child_agent()
+                            .cloned()
+                            .unwrap_or_else(|| lease.child.clone());
+                        if let Some(session) = entry.session().cloned() {
+                            entry.body = RunBody::Settling {
+                                child_agent: child_agent.clone(),
+                                session,
+                            };
+                        }
+                        Step::Settle { child_agent }
+                    }
+                }
+            };
+            match step {
+                Step::AlreadySettled => {
+                    drop(lease);
+                    return;
+                }
+                Step::Settle { child_agent } => {
+                    // Join the child driver before waking waiters so an
+                    // immediate `subagent_send` resume cannot race teardown.
+                    let _ = self.manager.kill(&child_agent).await;
+                    self.finish(&run, turn_end).await;
+                    drop(lease);
+                    return;
+                }
+                Step::Deliver {
+                    child_agent,
+                    session,
+                    root,
+                    parent_agent,
+                    queued,
+                } => {
+                    let run_log = crate::logging::redact_session_id(run.as_str());
+                    log::info!("[orchestrator] run {run_log} delivering queued follow-up");
+                    self.emit_parent_message(
+                        &run,
+                        &root,
+                        &parent_agent,
+                        &queued.sender,
+                        &queued.message,
+                    );
+                    let content = vec![agent_client_protocol::schema::v1::ContentBlock::Text(
+                        agent_client_protocol::schema::v1::TextContent::new(queued.message),
+                    )];
+                    match self
+                        .manager
+                        .start_prompt(&child_agent, session.clone(), content, None, None)
+                        .await
+                    {
+                        Ok(next_started) => {
+                            let stopped = self.ledger.lock().runs.get(&run).is_some_and(|entry| {
+                                matches!(entry.body, RunBody::Stopping { .. })
+                            });
+                            if stopped {
+                                let _ = self.manager.cancel_prompt(&child_agent, session).await;
+                            }
+                            started = next_started;
+                        }
+                        Err(error) => {
+                            log::warn!(
+                                "[orchestrator] run {run_log} queued prompt failed: {error}"
+                            );
+                            if let Some(entry) = self.ledger.lock().runs.get_mut(&run) {
+                                entry.queued_prompts.clear();
+                            }
+                            let _ = self.manager.kill(&child_agent).await;
+                            self.finish(&run, RunEnd::Failed(bounded(&error, 512)))
+                                .await;
+                            drop(lease);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Emit a parent-attributed follow-up message onto the root chat's sinks
+    /// so it renders in the sub-agent panel transcript in chronological order
+    /// and persists into `tool-calls.jsonl`.
+    pub(super) fn emit_parent_message(
+        &self,
+        run: &RunId,
+        root: &str,
+        parent_agent: &AgentId,
+        sender: &str,
+        message: &str,
+    ) {
+        let sender = bounded(sender, crate::acp::subagents::MAX_TEXT_CHARS);
+        let sender = if sender.is_empty() {
+            "Parent agent".to_string()
+        } else {
+            sender
         };
-        self.finish(&run, end).await;
-        drop(lease);
+        let event = crate::acp::events::MessageChunkEvent {
+            agent_id: parent_agent.clone(),
+            session_id: SessionId(root.to_string()),
+            role: crate::acp::events::ChunkRole::User,
+            content: agent_client_protocol::schema::v1::ContentBlock::Text(
+                agent_client_protocol::schema::v1::TextContent::new(message.to_string()),
+            ),
+            message_id: Some(format!("parent-send-{}", uuid::Uuid::new_v4().simple())),
+            parent_tool_call_id: Some(run.dispatch_id()),
+            sender: Some(sender),
+        };
+        crate::acp::events::fan_out(
+            self.manager.sinks(),
+            Some(root),
+            crate::acp::events::EVENT_MESSAGE_CHUNK,
+            &event,
+        );
     }
 
     /// Settle the run (first wins), resolve its waiters, compute the diff
@@ -105,9 +277,11 @@ impl OrchestratorEngine {
         if let Some(workspace) = &mut record.workspace {
             if workspace.mode == SubagentWorkspaceMode::Worktree {
                 if let Some(path) = workspace.path.clone() {
-                    workspace.diff_stat =
-                        crate::acp::orchestrator::worktree::diff_stat(&path, base_commit.as_deref())
-                            .await;
+                    workspace.diff_stat = crate::acp::orchestrator::worktree::diff_stat(
+                        &path,
+                        base_commit.as_deref(),
+                    )
+                    .await;
                 }
             }
         }
@@ -116,6 +290,18 @@ impl OrchestratorEngine {
             if let Some(entry) = ledger.runs.get_mut(run) {
                 entry.workspace.diff_stat = Some(diff_stat);
             }
+        }
+        if self
+            .ledger
+            .lock()
+            .runs
+            .get(run)
+            .is_some_and(|entry| entry.is_live())
+        {
+            // A `subagent_send` already resumed the run while `diff_stat` was
+            // running; do not clobber the resumed Running card with an old
+            // Idle settle card.
+            return;
         }
         if let Err(error) = self
             .manager
@@ -150,7 +336,7 @@ impl OrchestratorEngine {
             if entry.root != root {
                 return None;
             }
-            if !entry.is_live() {
+            if !entry.is_live() && starting.is_none() {
                 return Some(Ok(StopOutcome::AlreadyEnded));
             }
             (entry.begin_stop(now_millis()), starting)
@@ -269,7 +455,10 @@ impl OrchestratorEngine {
     /// dying driver to deliver itself, before its session writers close:
     /// its command channel is already gone, so the usual card path cannot
     /// reach it. Sync, for the driver thread's teardown.
-    pub(crate) fn on_agent_gone(self: &Arc<Self>, agent: &AgentId) -> Vec<(Subagent, Option<String>)> {
+    pub(crate) fn on_agent_gone(
+        self: &Arc<Self>,
+        agent: &AgentId,
+    ) -> Vec<(Subagent, Option<String>)> {
         let (cards, children) = {
             let mut ledger = self.ledger.lock();
             ledger.cancel_starts(|start| &start.parent_agent == agent);
@@ -331,7 +520,7 @@ impl OrchestratorEngine {
         }
     }
 
-    async fn send_change_card(self: Arc<Self>, run: &RunId) {
+    pub(super) async fn send_change_card(self: Arc<Self>, run: &RunId) {
         let (parent_agent, record) = {
             let ledger = self.ledger.lock();
             let Some(entry) = ledger.runs.get(run) else {

@@ -112,6 +112,7 @@ pub(crate) enum Pending {
     ClearHistory(String),
     Snapshots(crate::snapshots::Call),
     Ssh(crate::ssh::Call),
+    Canvas(crate::canvas_host::CanvasWsPending),
 }
 
 /// A device read: not answered yet, or answered (`None` when the key is empty).
@@ -345,6 +346,7 @@ impl State {
                 crate::host::Fetch::BugReport(step) => self.bug_report_fetched(step, result),
                 crate::host::Fetch::Catalog(tag) => self.catalog_fetched(tag, result),
                 crate::host::Fetch::Automation(tag) => self.automation_replied(tag, result),
+                crate::host::Fetch::Canvas(tag) => self.canvas_fetched(tag, result),
                 tag => self.editor_fetched(tag, result),
             }
         }
@@ -358,7 +360,11 @@ impl State {
                 if let Status::Halted { code, message } = &status {
                     log::warn!("[app] the server refused this client: {code}: {message}");
                 }
+                let became_live = status == Status::Live && self.status != Status::Live;
                 self.status = status;
+                if became_live {
+                    self.canvas_reconnected();
+                }
             }
             Output::WatchState {
                 watch: WsWatchName::Projects,
@@ -398,6 +404,7 @@ impl State {
             }
             Output::Reply { call, result } => self.reply(call, result),
             Output::Event(event) => self.chat_event(event),
+            Output::Unhandled(frame) => self.canvas_ws_frame(*frame),
             _ => {}
         }
     }
@@ -532,6 +539,7 @@ impl State {
             Pending::ClearHistory(project) => self.history_cleared(project, result),
             Pending::Snapshots(call) => self.snapshots_replied(call, result),
             Pending::Ssh(call) => self.ssh_replied(call, result),
+            Pending::Canvas(call) => self.canvas_ws_reply(call, result),
             Pending::Mcp(effect) => self.mcp_loaded(*effect, result),
             Pending::McpSave(effect, action) => self.mcp_saved(*effect, action, result),
             Pending::Subagents(call) => self.subagents_answered(call, result),

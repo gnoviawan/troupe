@@ -271,6 +271,10 @@ enum AcpCommand {
         /// Record the replayed history as durable records of the session
         /// instead of dropping it (see `import_session_history`).
         import_history: bool,
+        /// Set when reloading an orchestrated subagent's private session so the
+        /// driver marks it ephemeral and seeds its child route once `session/load`
+        /// succeeds (after replayed history is dropped).
+        child_origin: Option<ChildOrigin>,
         reply: oneshot::Sender<Result<SessionReopenOutcome, String>>,
     },
     ResumeSession {
@@ -331,13 +335,17 @@ enum AcpCommand {
         >,
     },
     /// Upsert an orchestrated subagent's record into the chat it renders in
-    /// and deliver its card (announce, change or settle + result). Sent by
-    /// the orchestrator engine to the chat's agent driver; registers no
-    /// route.
+    /// and deliver its card (announce, change, resume, or settle + result).
+    /// Sent by the orchestrator engine to the chat's agent driver; registers
+    /// no route.
     UpsertSubagent {
         record: crate::acp::subagents::Subagent,
         /// The settle result text, when this is the settle card.
         content: Option<String>,
+        /// True only for an explicit resume (`subagent_send` on an idle run),
+        /// which intentionally transitions `Idle -> Running`. Normal change
+        /// cards leave this false so a late pre-settle card cannot undo settle.
+        allow_resume: bool,
         reply: oneshot::Sender<Result<(), String>>,
     },
     /// Session ids whose workspace roots are registered on this agent's
@@ -1642,6 +1650,7 @@ impl AcpManager {
             additional_directories: directories,
             mcp_servers,
             import_history,
+            child_origin: None,
             reply,
         })
         .await;
@@ -1651,6 +1660,55 @@ impl AcpManager {
             self.record_launch_recipe(agent_id, &session_key, cwd, mcp_servers, directories);
         }
         outcome
+    }
+
+    /// Reload an orchestrated subagent's private session on a newly spawned
+    /// child agent (`session/load`), injecting the host `troupe` MCP server
+    /// routed to the child's chat and seeding its child route once the load
+    /// succeeds.
+    pub(crate) async fn load_child_session(
+        &self,
+        agent_id: &AgentId,
+        session_id: SessionId,
+        cwd: String,
+        origin: ChildOrigin,
+    ) -> Result<SessionReopenOutcome, String> {
+        self.reject_session_owned_by_other_mid_turn(agent_id, &session_id)
+            .await?;
+        let caps = self.capabilities(agent_id)?;
+        gate_load_session(&caps)?;
+        let tx = self.command_tx(agent_id)?;
+        let (port, token, provisional_sid) = self.host_plan_server.register_session(&agent_id.0);
+        self.host_plan_server
+            .route_cards_to_chat(&token, &origin.root_session_id);
+        self.host_plan_server
+            .bind_reopen_session(&token, &session_id.0);
+        let combined = build_internal_plan_stdio(&agent_id.0, port, &token, &provisional_sid);
+        if let Err(error) = gate_mcp_servers(&caps, &combined) {
+            self.settle_reopen_plan_token(&session_id.0, Some(&token), false);
+            return Err(error);
+        }
+        let session_key = session_id.0.clone();
+        let outcome = send_command(&tx, |reply| AcpCommand::LoadSession {
+            session_id,
+            cwd,
+            additional_directories: Vec::new(),
+            mcp_servers: Some(combined),
+            import_history: false,
+            child_origin: Some(origin),
+            reply,
+        })
+        .await;
+        self.settle_reopen_plan_token(&session_key, Some(&token), reached_agent(&outcome));
+        outcome
+    }
+
+    /// Display name of a live agent, if registered.
+    pub(crate) fn agent_name(&self, agent_id: &AgentId) -> Option<String> {
+        self.agents
+            .lock()
+            .get(agent_id)
+            .map(|entry| entry.name.clone())
     }
 
     /// Resume a session. Gated on the agent's `sessionCapabilities.resume`.
@@ -2115,10 +2173,33 @@ impl AcpManager {
         record: crate::acp::subagents::Subagent,
         content: Option<String>,
     ) -> Result<(), String> {
+        self.upsert_subagent_record_with(agent_id, record, content, false)
+            .await
+    }
+
+    /// Deliver an orchestrated subagent card that explicitly transitions an
+    /// idle run back to running (`subagent_send` resume).
+    pub(crate) async fn resume_subagent_record(
+        &self,
+        agent_id: &AgentId,
+        record: crate::acp::subagents::Subagent,
+    ) -> Result<(), String> {
+        self.upsert_subagent_record_with(agent_id, record, None, true)
+            .await
+    }
+
+    async fn upsert_subagent_record_with(
+        &self,
+        agent_id: &AgentId,
+        record: crate::acp::subagents::Subagent,
+        content: Option<String>,
+        allow_resume: bool,
+    ) -> Result<(), String> {
         let tx = self.command_tx(agent_id)?;
         send_command(&tx, |reply| AcpCommand::UpsertSubagent {
             record,
             content,
+            allow_resume,
             reply,
         })
         .await
@@ -2300,9 +2381,7 @@ impl AcpManager {
     }
 
     #[cfg(test)]
-    pub fn host_plan_server_for_tests(
-        &self,
-    ) -> Arc<crate::acp::host_mcp::parent::HostPlanServer> {
+    pub fn host_plan_server_for_tests(&self) -> Arc<crate::acp::host_mcp::parent::HostPlanServer> {
         Arc::clone(&self.host_plan_server)
     }
 

@@ -799,4 +799,37 @@ describe('orchestrated subagents in the transcript', () => {
     expect(result).toHaveAttribute('data-cwd', '/work/sub')
     expect(result).toHaveAttribute('data-project-root', '/work')
   })
+
+  it('shows parent follow-up messages attributed to the parent agent in transcript order', () => {
+    renderChat({
+      toolCalls: [
+        orchestrated(
+          'sub-1',
+          { state: endedState() },
+          {
+            status: 'completed',
+            subagentMessages: [
+              { seq: 15, timestamp: 1_500, text: 'Initial pass done.' },
+              {
+                seq: 20,
+                timestamp: 1_600,
+                text: 'Also add a test for empty input.',
+                sender: 'Claude Code'
+              },
+              { seq: 25, timestamp: 1_700, text: 'Added empty-input test.' }
+            ],
+            rawOutput: { text: 'Added empty-input test.' }
+          }
+        )
+      ]
+    })
+    fireEvent.click(row(/^Implement the retry fix/))
+
+    const senderEl = panel().querySelector('[data-subagent-sender]')
+    expect(senderEl).toHaveTextContent('Claude Code')
+    expect(steps()).toHaveTextContent(
+      /Initial pass done\..*Claude Code.*Also add a test for empty input\..*Added empty-input test\./
+    )
+    expect(within(panel()).queryByTestId('agent-prose')).toBeNull()
+  })
 })

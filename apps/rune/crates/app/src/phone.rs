@@ -111,6 +111,9 @@ fn header_title(s: &State) -> String {
         model::workspace::Reply::Tab(Some(model::workspace::Tab::Editor { file_path, .. })) => {
             file_path.rsplit(['/', '\\']).next().unwrap_or(&file_path).to_owned()
         }
+        model::workspace::Reply::Tab(Some(model::workspace::Tab::Canvas { doc_path, .. })) => {
+            doc_path.rsplit(['/', '\\']).next().unwrap_or(&doc_path).to_owned()
+        }
         _ => "Troupe".to_owned(),
     }
 }

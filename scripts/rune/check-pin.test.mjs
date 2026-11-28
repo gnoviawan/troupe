@@ -39,6 +39,11 @@ test('passes when the dependency and all six patch revs equal rune.pin', () => {
   assert.deepEqual(check(toml(PIN), PIN), [])
 })
 
+test('allows non-Rune [patch.crates-io] entries such as FigCraft egui forks', () => {
+  const withEgui = `${toml(PIN)}egui = { git = "https://github.com/storytold/egui.git", rev = "${OTHER}" }\n`
+  assert.deepEqual(check(withEgui, PIN), [])
+})
+
 test('fails when one patch rev differs', () => {
   const errors = check(toml(PIN, { 'sctk-adwaita': OTHER }), PIN)
   assert.equal(errors.length, 1)
