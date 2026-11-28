@@ -545,7 +545,7 @@ impl State {
             Pending::Subagents(call) => self.subagents_answered(call, result),
             Pending::Accounts(call) => self.accounts_answered(call, result),
             Pending::ListChats => {
-                match result.map(|r| r.map(serde_json::from_value::<Vec<Chat>>)) {
+                match result.map(|r| r.map(parse_chat_list)) {
                     Ok(Some(Ok(list))) => self.chats.replace(list),
                     Ok(Some(Err(e))) => log::warn!("[app] unreadable chat list: {e}"),
                     Ok(None) => self.chats.replace(Vec::new()),
@@ -911,3 +911,21 @@ pub(crate) fn stored_value(reply: Option<Value>) -> Option<Value> {
         .map(persistence::unwrap_stored)
         .filter(|v| !v.is_null())
 }
+
+fn parse_chat_list(value: Value) -> Result<Vec<Chat>, &'static str> {
+    let rows = value.as_array().ok_or("expected chat list array")?;
+    Ok(rows.iter().filter_map(|row| {
+        match serde_json::from_value::<Chat>(row.clone()) {
+            Ok(chat) => Some(chat),
+            Err(_) => {
+                let id = row.get("sessionId").and_then(Value::as_str).unwrap_or("unknown");
+                log::warn!("[app] skipping unreadable chat id={id}");
+                None
+            }
+        }
+    }).collect())
+}
+
+#[cfg(test)]
+#[path = "sync_chat_tests.rs"]
+mod sync_chat_tests;
