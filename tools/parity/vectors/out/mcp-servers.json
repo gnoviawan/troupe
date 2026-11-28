@@ -2885,5 +2885,558 @@
     "state": null
    }
   ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "pasted_json_imports_like_the_dialog",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "jsonImport",
+     "args": [
+      "{\"mcpServers\": {\"b\": {\"command\": \" npx \", \"args\": [\" -y \", \"pkg\"], \"env\": {\"TOKEN\": \"x\", \"N\": 3, \"F\": false}}, \"1\": {\"url\": \" https://mcp.example.com/mcp \"}}}"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "servers": [
+      {
+       "type": "http",
+       "name": "1",
+       "url": "https://mcp.example.com/mcp"
+      },
+      {
+       "type": "stdio",
+       "name": "b",
+       "command": "npx",
+       "args": [
+        "-y",
+        "pkg"
+       ],
+       "env": [
+        {
+         "name": "TOKEN",
+         "value": "x"
+        },
+        {
+         "name": "N",
+         "value": "3"
+        },
+        {
+         "name": "F",
+         "value": "false"
+        }
+       ]
+      }
+     ],
+     "errors": []
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "jsonImport",
+     "args": [
+      "{\"mcpServers\": {\"ok\": {\"command\": \"x\"}, \"bad\": {\"env\": 3}, \"h\": {\"headers\": [{\"name\": \"A\"}], \"url\": \"https://h.dev\"}, \"noname\": {\"type\": \"sse\"}, \"list\": [], \"acp\": {\"type\": \"acp\", \"url\": \"https://a.dev/sse\"}, \"argz\": {\"command\": \"x\", \"args\": [1]}}}"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "servers": [
+      {
+       "type": "stdio",
+       "name": "ok",
+       "command": "x"
+      },
+      {
+       "type": "http",
+       "name": "acp",
+       "url": "https://a.dev/sse"
+      }
+     ],
+     "errors": [
+      "bad: env must be an object map or name/value pairs",
+      "h: headers must be an object map or name/value pairs",
+      "noname: URL is required.",
+      "list: expected a server object",
+      "argz: invalid server configuration"
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "jsonImport",
+     "args": [
+      "{\"name\": \"solo\", \"type\": \"sse\", \"url\": \"https://s.dev/sse\", \"headers\": [{\"name\": \"Authorization\", \"value\": \"Bearer t\", \"extra\": 1}], \"alwaysAllow\": []}"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "servers": [
+      {
+       "type": "sse",
+       "name": "solo",
+       "url": "https://s.dev/sse",
+       "headers": [
+        {
+         "name": "Authorization",
+         "value": "Bearer t"
+        }
+       ]
+      }
+     ],
+     "errors": []
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "jsonImport",
+     "args": [
+      "{\"command\": \"x\"}"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "servers": [],
+     "errors": [
+      "<unnamed>: Name is required."
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "jsonImport",
+     "args": [
+      "[1]"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "servers": [],
+     "errors": [
+      "Invalid JSON: expected a top-level object"
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "jsonImport",
+     "args": [
+      "{\"mcpServers\": 1}"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "servers": [],
+     "errors": [
+      "Invalid JSON: \"mcpServers\" must be an object"
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "jsonImport",
+     "args": [
+      "{\"mcpServers\": {\"u\": {\"url\": 5}}}"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "servers": [],
+     "errors": [
+      "u: Command is required for stdio."
+     ]
+    },
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "install_form_values_and_retry",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "installInitial",
+     "args": [
+      [
+       {
+        "id": "key",
+        "label": "key",
+        "target": {
+         "kind": "env",
+         "name": "KEY"
+        },
+        "variable": null,
+        "isRequired": true,
+        "isSecret": true,
+        "format": "string",
+        "choices": null,
+        "default": null,
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "dir",
+        "label": "dir",
+        "target": {
+         "kind": "env",
+         "name": "DIR"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "filepath",
+        "choices": null,
+        "default": "/tmp",
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "flag",
+        "label": "flag",
+        "target": {
+         "kind": "env",
+         "name": "FLAG"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "boolean",
+        "choices": null,
+        "default": " TRUE ",
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "off",
+        "label": "off",
+        "target": {
+         "kind": "env",
+         "name": "OFF"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "boolean",
+        "choices": null,
+        "default": null,
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "n",
+        "label": "n",
+        "target": {
+         "kind": "env",
+         "name": "N"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "number",
+        "choices": null,
+        "default": "3",
+        "placeholder": null,
+        "description": null
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "key": "",
+     "dir": "/tmp",
+     "flag": "true",
+     "off": "false",
+     "n": "3"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "installSplit",
+     "args": [
+      [
+       {
+        "id": "key",
+        "label": "key",
+        "target": {
+         "kind": "env",
+         "name": "KEY"
+        },
+        "variable": null,
+        "isRequired": true,
+        "isSecret": true,
+        "format": "string",
+        "choices": null,
+        "default": null,
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "dir",
+        "label": "dir",
+        "target": {
+         "kind": "env",
+         "name": "DIR"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "filepath",
+        "choices": null,
+        "default": "/tmp",
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "flag",
+        "label": "flag",
+        "target": {
+         "kind": "env",
+         "name": "FLAG"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "boolean",
+        "choices": null,
+        "default": " TRUE ",
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "off",
+        "label": "off",
+        "target": {
+         "kind": "env",
+         "name": "OFF"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "boolean",
+        "choices": null,
+        "default": null,
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "n",
+        "label": "n",
+        "target": {
+         "kind": "env",
+         "name": "N"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "number",
+        "choices": null,
+        "default": "3",
+        "placeholder": null,
+        "description": null
+       }
+      ],
+      {
+       "key": "s3cret",
+       "dir": "/w",
+       "flag": "true"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "inputs": {
+      "dir": "/w",
+      "flag": "true",
+      "off": "",
+      "n": ""
+     },
+     "secretValues": {
+      "key": "s3cret"
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "installSplit",
+     "args": [
+      [
+       {
+        "id": "key",
+        "label": "key",
+        "target": {
+         "kind": "env",
+         "name": "KEY"
+        },
+        "variable": null,
+        "isRequired": true,
+        "isSecret": true,
+        "format": "string",
+        "choices": null,
+        "default": null,
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "dir",
+        "label": "dir",
+        "target": {
+         "kind": "env",
+         "name": "DIR"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "filepath",
+        "choices": null,
+        "default": "/tmp",
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "flag",
+        "label": "flag",
+        "target": {
+         "kind": "env",
+         "name": "FLAG"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "boolean",
+        "choices": null,
+        "default": " TRUE ",
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "off",
+        "label": "off",
+        "target": {
+         "kind": "env",
+         "name": "OFF"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "boolean",
+        "choices": null,
+        "default": null,
+        "placeholder": null,
+        "description": null
+       },
+       {
+        "id": "n",
+        "label": "n",
+        "target": {
+         "kind": "env",
+         "name": "N"
+        },
+        "variable": null,
+        "isRequired": false,
+        "isSecret": false,
+        "format": "number",
+        "choices": null,
+        "default": "3",
+        "placeholder": null,
+        "description": null
+       }
+      ],
+      {}
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "inputs": {
+      "dir": "",
+      "flag": "",
+      "off": "",
+      "n": ""
+     },
+     "secretValues": {
+      "key": ""
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "canStartOver",
+     "args": [
+      {
+       "kind": "host",
+       "code": "MCP_CATALOG_NOT_FOUND"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "canStartOver",
+     "args": [
+      {
+       "kind": "host",
+       "code": "MCP_PLAN_EXPIRED"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "canStartOver",
+     "args": [
+      {
+       "kind": "save"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   }
+  ]
  }
 ]

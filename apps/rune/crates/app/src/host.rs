@@ -84,6 +84,10 @@ mod imp {
     }
 
     impl Host {
+        pub fn client_id(&self) -> &str {
+            &self.config.client_instance_id
+        }
+
         pub fn connect(config: Config, wake: Waker) -> Host {
             let (commands, inbox) = mpsc::channel::<ws::Command>();
             let (outbox, outputs) = mpsc::channel();
@@ -207,6 +211,10 @@ mod imp {
     }
 
     impl Host {
+        pub fn client_id(&self) -> &str {
+            &self.config.client_instance_id
+        }
+
         pub fn connect(config: Config, wake: Waker) -> Host {
             log::info!("[app] connecting to {}", config.base_url);
             let notify = wake.clone();
