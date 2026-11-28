@@ -24,11 +24,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "protocolVersion",
-        "deviceId",
-        "clientInstanceId"
-      ],
+      "required": ["protocolVersion", "deviceId", "clientInstanceId"],
       "type": "object"
     },
     "AcpAuthenticateReply": {
@@ -73,12 +69,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "turnTimeoutMs",
-        "promptInactivityTimeoutMs",
-        "pingIntervalMs",
-        "pongTimeoutMs"
-      ],
+      "required": ["turnTimeoutMs", "promptInactivityTimeoutMs", "pingIntervalMs", "pongTimeoutMs"],
       "type": "object"
     },
     "AddProjectPayload": {
@@ -101,12 +92,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "id",
-        "name",
-        "path",
-        "color"
-      ],
+      "required": ["id", "name", "path", "color"],
       "type": "object"
     },
     "AgentBackgroundCommands": {
@@ -127,10 +113,7 @@
           "type": "object"
         }
       },
-      "required": [
-        "revision",
-        "sessions"
-      ],
+      "required": ["revision", "sessions"],
       "type": "object"
     },
     "AgentCapabilities": {
@@ -191,10 +174,7 @@
         },
         "payload": true
       },
-      "required": [
-        "event",
-        "payload"
-      ],
+      "required": ["event", "payload"],
       "type": "object"
     },
     "AgentsWatchEvent": {
@@ -232,9 +212,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "state"
-          ],
+          "required": ["state"],
           "type": "object"
         },
         {
@@ -249,19 +227,13 @@
               "type": "string"
             }
           },
-          "required": [
-            "state",
-            "endedAtMs"
-          ],
+          "required": ["state", "endedAtMs"],
           "type": "object"
         }
       ],
       "properties": {
         "command": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "startedAtMs": {
           "description": "Wall clock when the tool call first appeared.",
@@ -277,12 +249,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "toolCallId",
-        "title",
-        "command",
-        "startedAtMs"
-      ],
+      "required": ["toolCallId", "title", "command", "startedAtMs"],
       "type": "object"
     },
     "BackgroundCommandList": {
@@ -300,18 +267,12 @@
           "type": "integer"
         }
       },
-      "required": [
-        "revision",
-        "commands"
-      ],
+      "required": ["revision", "commands"],
       "type": "object"
     },
     "CanvasLeaseLostReason": {
       "description": "Why a renderer lost its canvas mount.",
-      "enum": [
-        "takenOver",
-        "evicted"
-      ],
+      "enum": ["takenOver", "evicted"],
       "type": "string"
     },
     "ChatActivityRecord": {
@@ -327,10 +288,7 @@
         },
         "projectId": {
           "description": "The project the session was created in; `null` when the host has no\npersisted record of it.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "turnEnd": {
           "anyOf": [
@@ -347,12 +305,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "busy",
-        "needsYou",
-        "unread",
-        "turnEnd"
-      ],
+      "required": ["busy", "needsYou", "unread", "turnEnd"],
       "type": "object"
     },
     "ChatActivityWatchDelta": {
@@ -368,10 +321,7 @@
         },
         "projectId": {
           "description": "The project the session was created in; `null` when the host has no\npersisted record of it.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "sessionId": {
           "type": "string"
@@ -391,13 +341,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "sessionId",
-        "busy",
-        "needsYou",
-        "unread",
-        "turnEnd"
-      ],
+      "required": ["sessionId", "busy", "needsYou", "unread", "turnEnd"],
       "type": "object"
     },
     "ChatActivityWatchState": {
@@ -410,9 +354,7 @@
           "type": "object"
         }
       },
-      "required": [
-        "sessions"
-      ],
+      "required": ["sessions"],
       "type": "object"
     },
     "ChatHistoryWatchDelta": {
@@ -430,9 +372,7 @@
         },
         "payload": true
       },
-      "required": [
-        "changed"
-      ],
+      "required": ["changed"],
       "type": "object"
     },
     "ChatReadMark": {
@@ -451,10 +391,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "sessionId",
-        "seq"
-      ],
+      "required": ["sessionId", "seq"],
       "type": "object"
     },
     "ChatReadMarkReply": {
@@ -472,10 +409,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "sessionId",
-        "seq"
-      ],
+      "required": ["sessionId", "seq"],
       "type": "object"
     },
     "ChatTurnEnd": {
@@ -490,10 +424,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "seq",
-        "logEpoch"
-      ],
+      "required": ["seq", "logEpoch"],
       "type": "object"
     },
     "DeleteSessionPayload": {
@@ -504,9 +435,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "sessionId"
-      ],
+      "required": ["sessionId"],
       "type": "object"
     },
     "FsWatchChangeDelta": {
@@ -522,10 +451,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "root",
-        "paths"
-      ],
+      "required": ["root", "paths"],
       "type": "object"
     },
     "FsWatchDelta": {
@@ -550,10 +476,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "ended",
-        "reason"
-      ],
+      "required": ["ended", "reason"],
       "type": "object"
     },
     "FsWatchState": {
@@ -563,9 +486,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "root"
-      ],
+      "required": ["root"],
       "type": "object"
     },
     "GitStatus": {
@@ -600,22 +521,12 @@
           "type": "integer"
         }
       },
-      "required": [
-        "modified",
-        "staged",
-        "untracked",
-        "ahead",
-        "behind",
-        "hasChanges"
-      ],
+      "required": ["modified", "staged", "untracked", "ahead", "behind", "hasChanges"],
       "type": "object"
     },
     "HistoryMode": {
       "description": "Whether the host keeps session history.",
-      "enum": [
-        "server",
-        "live_only"
-      ],
+      "enum": ["server", "live_only"],
       "type": "string"
     },
     "McpCapabilities": {
@@ -636,11 +547,7 @@
     },
     "PersistedSessionStatus": {
       "description": "Lifecycle state of a persisted session.",
-      "enum": [
-        "active",
-        "closed",
-        "error"
-      ],
+      "enum": ["active", "closed", "error"],
       "type": "string"
     },
     "PersistedSessionSummary": {
@@ -707,10 +614,7 @@
           "type": "string"
         },
         "stableAgentNamespace": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "startedBy": {
           "description": "The chat whose agent started this one with `start_chat`.",
@@ -723,10 +627,7 @@
           "type": "string"
         },
         "title": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "titleSource": {
           "$ref": "#/$defs/TitleSource",
@@ -780,10 +681,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "sessions",
-        "terminals"
-      ],
+      "required": ["sessions", "terminals"],
       "type": "object"
     },
     "PromptCapabilities": {
@@ -823,22 +721,12 @@
           "type": "string"
         }
       },
-      "required": [
-        "sessionId",
-        "fromConfigId",
-        "toConfigId",
-        "newSessionId",
-        "summaryText"
-      ],
+      "required": ["sessionId", "fromConfigId", "toConfigId", "newSessionId", "summaryText"],
       "type": "object"
     },
     "ReliabilityTier": {
       "description": "How the relay delivers an event type to a slow client.",
-      "enum": [
-        "lossy",
-        "reliable",
-        "idempotent"
-      ],
+      "enum": ["lossy", "reliable", "idempotent"],
       "type": "string"
     },
     "RemoveProjectPayload": {
@@ -852,9 +740,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "projectId"
-      ],
+      "required": ["projectId"],
       "type": "object"
     },
     "RotatedClaim": {
@@ -864,9 +750,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "claim"
-      ],
+      "required": ["claim"],
       "type": "object"
     },
     "SessionCapabilities": {
@@ -901,10 +785,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "sessionId",
-        "watermark"
-      ],
+      "required": ["sessionId", "watermark"],
       "type": "object"
     },
     "SessionSnapshotEvent": {
@@ -950,13 +831,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "sessionId",
-        "watermark",
-        "headSeq",
-        "logEpoch",
-        "events"
-      ],
+      "required": ["sessionId", "watermark", "headSeq", "logEpoch", "events"],
       "type": "object"
     },
     "SessionSubscribeReply": {
@@ -996,12 +871,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "sessionId",
-        "replayed",
-        "logEpoch",
-        "headSeq"
-      ],
+      "required": ["sessionId", "replayed", "logEpoch", "headSeq"],
       "type": "object"
     },
     "SpawnedTerminal": {
@@ -1038,15 +908,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "id",
-        "shell",
-        "cwd",
-        "pid",
-        "cols",
-        "rows",
-        "claim"
-      ],
+      "required": ["id", "shell", "cwd", "pid", "cols", "rows", "claim"],
       "type": "object"
     },
     "SshHostKeyAnswer": {
@@ -1062,10 +924,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "sessionId",
-        "trust"
-      ],
+      "required": ["sessionId", "trust"],
       "type": "object"
     },
     "SshHostKeyPrompt": {
@@ -1102,14 +961,7 @@
           "$ref": "#/$defs/SshHostKeyStatus"
         }
       },
-      "required": [
-        "sessionId",
-        "status",
-        "host",
-        "port",
-        "keyType",
-        "fingerprint"
-      ],
+      "required": ["sessionId", "status", "host", "port", "keyType", "fingerprint"],
       "type": "object"
     },
     "SshHostKeyResolved": {
@@ -1119,34 +971,23 @@
           "type": "string"
         }
       },
-      "required": [
-        "sessionId"
-      ],
+      "required": ["sessionId"],
       "type": "object"
     },
     "SshHostKeyStatus": {
       "description": "Why a host key needs a person. A trusted key is never asked about and\na revoked one is refused without asking.",
-      "enum": [
-        "unknown",
-        "changed"
-      ],
+      "enum": ["unknown", "changed"],
       "type": "string"
     },
     "SshSessionEnded": {
       "description": "A session's shell ended: `exited` (with its code), `lost` (with a\ndetail) or `closed`.",
       "properties": {
         "detail": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "exitCode": {
           "format": "int32",
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": ["integer", "null"]
         },
         "reason": {
           "type": "string"
@@ -1155,19 +996,10 @@
           "type": "string"
         },
         "terminalId": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         }
       },
-      "required": [
-        "sessionId",
-        "terminalId",
-        "reason",
-        "exitCode",
-        "detail"
-      ],
+      "required": ["sessionId", "terminalId", "reason", "exitCode", "detail"],
       "type": "object"
     },
     "SshSessionProgress": {
@@ -1180,10 +1012,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "sessionId",
-        "stage"
-      ],
+      "required": ["sessionId", "stage"],
       "type": "object"
     },
     "SshTransferProgress": {
@@ -1203,10 +1032,7 @@
           "type": "string"
         },
         "error": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "localPath": {
           "type": "string"
@@ -1247,9 +1073,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "event"
-          ],
+          "required": ["event"],
           "type": "object"
         },
         {
@@ -1260,9 +1084,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "event"
-          ],
+          "required": ["event"],
           "type": "object"
         },
         {
@@ -1273,9 +1095,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "event"
-          ],
+          "required": ["event"],
           "type": "object"
         },
         {
@@ -1286,9 +1106,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "event"
-          ],
+          "required": ["event"],
           "type": "object"
         },
         {
@@ -1299,9 +1117,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "event"
-          ],
+          "required": ["event"],
           "type": "object"
         }
       ]
@@ -1316,9 +1132,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "hostKeys"
-      ],
+      "required": ["hostKeys"],
       "type": "object"
     },
     "StoreDeletePayload": {
@@ -1338,9 +1152,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "type": "object"
     },
     "StoreDeleteReply": {
@@ -1350,9 +1162,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "existed"
-      ],
+      "required": ["existed"],
       "type": "object"
     },
     "StoreDeviceWriteReply": {
@@ -1364,9 +1174,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "revision"
-      ],
+      "required": ["revision"],
       "type": "object"
     },
     "StoreReadPayload": {
@@ -1377,19 +1185,14 @@
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "type": "object"
     },
     "StoreReadReply": {
       "description": "`store_read` reply. Revision `0` means the key is absent.",
       "properties": {
         "clientInstanceId": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "revision": {
           "format": "uint64",
@@ -1398,11 +1201,7 @@
         },
         "value": true
       },
-      "required": [
-        "value",
-        "revision",
-        "clientInstanceId"
-      ],
+      "required": ["value", "revision", "clientInstanceId"],
       "type": "object"
     },
     "StoreSharedWriteReply": {
@@ -1418,11 +1217,7 @@
         },
         "value": true
       },
-      "required": [
-        "value",
-        "revision",
-        "merged"
-      ],
+      "required": ["value", "revision", "merged"],
       "type": "object"
     },
     "StoreWatchState": {
@@ -1433,9 +1228,7 @@
         },
         "value": true
       },
-      "required": [
-        "exists"
-      ],
+      "required": ["exists"],
       "type": "object"
     },
     "StoreWritePayload": {
@@ -1456,10 +1249,7 @@
         },
         "value": true
       },
-      "required": [
-        "key",
-        "value"
-      ],
+      "required": ["key", "value"],
       "type": "object"
     },
     "TerminalAttachResult": {
@@ -1526,10 +1316,7 @@
     },
     "TerminalKind": {
       "description": "What a terminal runs.",
-      "enum": [
-        "shell",
-        "agent"
-      ],
+      "enum": ["shell", "agent"],
       "type": "string"
     },
     "TerminalSpawnOptions": {
@@ -1583,26 +1370,17 @@
       "description": "A terminal's last known state, sent on attach so a late client can seed\nits store.",
       "properties": {
         "cwd": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "exitCode": {
           "format": "int32",
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": ["integer", "null"]
         },
         "exited": {
           "type": "boolean"
         },
         "gitBranch": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "gitStatus": {
           "anyOf": [
@@ -1615,13 +1393,7 @@
           ]
         }
       },
-      "required": [
-        "cwd",
-        "gitBranch",
-        "gitStatus",
-        "exitCode",
-        "exited"
-      ],
+      "required": ["cwd", "gitBranch", "gitStatus", "exitCode", "exited"],
       "type": "object"
     },
     "TerminalsWatchState": {
@@ -1634,19 +1406,12 @@
           "type": "array"
         }
       },
-      "required": [
-        "terminals"
-      ],
+      "required": ["terminals"],
       "type": "object"
     },
     "TitleSource": {
       "description": "Who named a chat; a local alias wins over every other source.",
-      "enum": [
-        "background_generated",
-        "agent_supplied",
-        "derived_first_message",
-        "local_alias"
-      ],
+      "enum": ["background_generated", "agent_supplied", "derived_first_message", "local_alias"],
       "type": "string"
     },
     "UpdateProjectPayload": {
@@ -1672,9 +1437,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "projectId"
-      ],
+      "required": ["projectId"],
       "type": "object"
     },
     "UserPromptEvent": {
@@ -1694,11 +1457,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "agentId",
-        "sessionId",
-        "content"
-      ],
+      "required": ["agentId", "sessionId", "content"],
       "type": "object"
     },
     "WatchResyncDelta": {
@@ -1709,9 +1468,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "resync"
-      ],
+      "required": ["resync"],
       "type": "object"
     },
     "WebTerminalDataFrame": {
@@ -1740,12 +1497,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type",
-        "terminalId",
-        "seq",
-        "data"
-      ],
+      "required": ["type", "terminalId", "seq", "data"],
       "type": "object"
     },
     "WebTerminalErrReply": {
@@ -1765,12 +1517,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "id",
-        "success",
-        "error",
-        "code"
-      ],
+      "required": ["id", "success", "error", "code"],
       "type": "object"
     },
     "WebTerminalErrorCode": {
@@ -1799,10 +1546,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type",
-        "payload"
-      ],
+      "required": ["type", "payload"],
       "type": "object"
     },
     "WebTerminalEventPayload": {
@@ -1811,17 +1555,11 @@
         {
           "properties": {
             "cwd": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "exit_code": {
               "format": "int32",
-              "type": [
-                "integer",
-                "null"
-              ]
+              "type": ["integer", "null"]
             },
             "kind": {
               "type": "string"
@@ -1830,18 +1568,12 @@
               "type": "boolean"
             },
             "nonce": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "prompt_generation": {
               "format": "uint64",
               "minimum": 0,
-              "type": [
-                "integer",
-                "null"
-              ]
+              "type": ["integer", "null"]
             },
             "prompt_suppressed": {
               "type": "boolean"
@@ -1875,17 +1607,11 @@
           "properties": {
             "exit_code": {
               "format": "int32",
-              "type": [
-                "integer",
-                "null"
-              ]
+              "type": ["integer", "null"]
             },
             "signal": {
               "format": "int32",
-              "type": [
-                "integer",
-                "null"
-              ]
+              "type": ["integer", "null"]
             },
             "terminal_id": {
               "type": "string"
@@ -1895,12 +1621,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "type",
-            "terminal_id",
-            "exit_code",
-            "signal"
-          ],
+          "required": ["type", "terminal_id", "exit_code", "signal"],
           "type": "object"
         },
         {
@@ -1916,20 +1637,13 @@
               "type": "string"
             }
           },
-          "required": [
-            "type",
-            "terminal_id",
-            "cwd"
-          ],
+          "required": ["type", "terminal_id", "cwd"],
           "type": "object"
         },
         {
           "properties": {
             "branch": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "terminal_id": {
               "type": "string"
@@ -1939,11 +1653,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "type",
-            "terminal_id",
-            "branch"
-          ],
+          "required": ["type", "terminal_id", "branch"],
           "type": "object"
         },
         {
@@ -1966,11 +1676,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "type",
-            "terminal_id",
-            "status"
-          ],
+          "required": ["type", "terminal_id", "status"],
           "type": "object"
         },
         {
@@ -1987,11 +1693,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "type",
-            "terminal_id",
-            "exit_code"
-          ],
+          "required": ["type", "terminal_id", "exit_code"],
           "type": "object"
         }
       ]
@@ -2032,11 +1734,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type",
-        "terminalId",
-        "lastSeq"
-      ],
+      "required": ["type", "terminalId", "lastSeq"],
       "type": "object"
     },
     "WebTerminalOkReply": {
@@ -2051,11 +1749,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "id",
-        "success",
-        "data"
-      ],
+      "required": ["id", "success", "data"],
       "type": "object"
     },
     "WebTerminalReplayChunk": {
@@ -2076,10 +1770,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "seq",
-        "data"
-      ],
+      "required": ["seq", "data"],
       "type": "object"
     },
     "WebTerminalReplayFrame": {
@@ -2158,11 +1849,7 @@
           "$ref": "#/$defs/WebTerminalRequestType"
         }
       },
-      "required": [
-        "id",
-        "type",
-        "payload"
-      ],
+      "required": ["id", "type", "payload"],
       "type": "object"
     },
     "WebTerminalRequestType": {
@@ -2225,11 +1912,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "id",
-        "name",
-        "capabilities"
-      ],
+      "required": ["id", "name", "capabilities"],
       "type": "object"
     },
     "WsCanvasAttached": {
@@ -2240,9 +1923,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "attached"
-      ],
+      "required": ["attached"],
       "type": "object"
     },
     "WsCanvasCallFrame": {
@@ -2279,14 +1960,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type",
-        "callId",
-        "projectId",
-        "mountSeq",
-        "method",
-        "params"
-      ],
+      "required": ["type", "callId", "projectId", "mountSeq", "method", "params"],
       "type": "object"
     },
     "WsCanvasError": {
@@ -2299,10 +1973,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "code",
-        "message"
-      ],
+      "required": ["code", "message"],
       "type": "object"
     },
     "WsCanvasFailure": {
@@ -2326,12 +1997,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "callId",
-        "mountSeq",
-        "ok",
-        "error"
-      ],
+      "required": ["callId", "mountSeq", "ok", "error"],
       "type": "object"
     },
     "WsCanvasLeaseLostFrame": {
@@ -2353,12 +2019,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type",
-        "projectId",
-        "mountSeq",
-        "reason"
-      ],
+      "required": ["type", "projectId", "mountSeq", "reason"],
       "type": "object"
     },
     "WsCanvasMountReply": {
@@ -2383,10 +2044,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "attached",
-        "heldElsewhere"
-      ],
+      "required": ["attached", "heldElsewhere"],
       "type": "object"
     },
     "WsCanvasReplyPayload": {
@@ -2425,12 +2083,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "callId",
-        "mountSeq",
-        "ok",
-        "result"
-      ],
+      "required": ["callId", "mountSeq", "ok", "result"],
       "type": "object"
     },
     "WsErrReply": {
@@ -2448,11 +2101,7 @@
         },
         "visible_at": true
       },
-      "required": [
-        "id",
-        "ok",
-        "err"
-      ],
+      "required": ["id", "ok", "err"],
       "type": "object"
     },
     "WsError": {
@@ -2470,10 +2119,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "code",
-        "message"
-      ],
+      "required": ["code", "message"],
       "type": "object"
     },
     "WsErrorCode": {
@@ -2523,21 +2169,13 @@
           "type": "integer"
         },
         "sid": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "type": {
           "$ref": "#/$defs/WsEventType"
         }
       },
-      "required": [
-        "sid",
-        "seq",
-        "type",
-        "payload"
-      ],
+      "required": ["sid", "seq", "type", "payload"],
       "type": "object"
     },
     "WsEventBatchFrame": {
@@ -2554,10 +2192,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type",
-        "events"
-      ],
+      "required": ["type", "events"],
       "type": "object"
     },
     "WsEventType": {
@@ -2612,10 +2247,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type",
-        "sid"
-      ],
+      "required": ["type", "sid"],
       "type": "object"
     },
     "WsHeartbeatFrame": {
@@ -2626,9 +2258,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "type": "object"
     },
     "WsOkReply": {
@@ -2646,10 +2276,7 @@
           "description": "The session log seq the effect is visible at, on session commands."
         }
       },
-      "required": [
-        "id",
-        "ok"
-      ],
+      "required": ["id", "ok"],
       "type": "object"
     },
     "WsReply": {
@@ -2681,11 +2308,7 @@
           "$ref": "#/$defs/WsRequestType"
         }
       },
-      "required": [
-        "id",
-        "type",
-        "payload"
-      ],
+      "required": ["id", "type", "payload"],
       "type": "object"
     },
     "WsRequestType": {
@@ -2869,12 +2492,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "terminalId",
-        "projectId",
-        "cwd",
-        "attached"
-      ],
+      "required": ["terminalId", "projectId", "cwd", "attached"],
       "type": "object"
     },
     "WsWatchDeltaFrame": {
@@ -2897,13 +2515,7 @@
           "$ref": "#/$defs/WsWatchName"
         }
       },
-      "required": [
-        "type",
-        "watch",
-        "scope",
-        "revision",
-        "delta"
-      ],
+      "required": ["type", "watch", "scope", "revision", "delta"],
       "type": "object"
     },
     "WsWatchFrame": {
@@ -2945,11 +2557,7 @@
           "$ref": "#/$defs/WsWatchName"
         }
       },
-      "required": [
-        "watch",
-        "scope",
-        "revision"
-      ],
+      "required": ["watch", "scope", "revision"],
       "type": "object"
     },
     "WsWatchRevision": {
@@ -2964,10 +2572,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "hostEpoch",
-        "n"
-      ],
+      "required": ["hostEpoch", "n"],
       "type": "object"
     },
     "WsWatchStateFrame": {
@@ -2993,14 +2598,7 @@
           "$ref": "#/$defs/WsWatchName"
         }
       },
-      "required": [
-        "type",
-        "watch",
-        "scope",
-        "revision",
-        "reset",
-        "state"
-      ],
+      "required": ["type", "watch", "scope", "revision", "reset", "state"],
       "type": "object"
     }
   },
