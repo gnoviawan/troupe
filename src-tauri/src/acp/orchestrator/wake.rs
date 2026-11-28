@@ -35,6 +35,14 @@ pub(crate) const MAX_WAKE_STREAK: u32 = 30;
 /// Maximum UTF-8 bytes of one run's result text inlined in a wake prompt.
 pub(crate) const MAX_INLINE_RESULT_BYTES: usize = 16_000;
 
+/// First delay of the retry that re-attempts a wake the root chat could not
+/// take (no live agent owns it, or the prompt was refused for a reason other
+/// than a running turn); it doubles up to [`MAX_RETRY_DELAY`].
+const FIRST_RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(5);
+const MAX_RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(60);
+/// Retries before a chat waits for its next prompt to flush (about 40 min).
+const MAX_RETRIES: u32 = 40;
+
 /// Opening instruction line of every wake prompt.
 pub(crate) const WAKE_PROMPT_HEADER: &str = "[Troupe] Sub-agent update. You started these \
 sub-agents; act on their results, then end your turn when nothing is left.";
@@ -87,6 +95,10 @@ struct RootMailbox {
     streak_epoch: u64,
     /// Ensures the loop-guard warning is logged once per streak saturation.
     limit_logged: bool,
+    /// A retry timer is pending for this chat.
+    retry_armed: bool,
+    /// Retries since the last accepted prompt on this chat.
+    retries: u32,
 }
 
 impl RootMailbox {
@@ -99,6 +111,8 @@ impl RootMailbox {
             streak: 0,
             streak_epoch: 0,
             limit_logged: false,
+            retry_armed: false,
+            retries: 0,
         }
     }
 }
@@ -330,18 +344,44 @@ impl WakeRegistry {
         }
     }
 
-    /// Reset the consecutive-wake streak when any non-wake prompt is accepted
-    /// on `root`.
+    /// Arm a retry for `root` when notices are pending and no retry timer is
+    /// pending. Returns the delay to wait, or `None` when nothing is pending,
+    /// a timer is already pending, or the retries ran out.
+    pub(crate) fn arm_retry(&self, root: &str) -> Option<std::time::Duration> {
+        let mut mailboxes = self.mailboxes.lock();
+        let mailbox = mailboxes.get_mut(root)?;
+        if mailbox.pending.is_empty() || mailbox.retry_armed || mailbox.retries >= MAX_RETRIES {
+            return None;
+        }
+        let delay = FIRST_RETRY_DELAY
+            .saturating_mul(1 << mailbox.retries.min(4))
+            .min(MAX_RETRY_DELAY);
+        mailbox.retries += 1;
+        mailbox.retry_armed = true;
+        Some(delay)
+    }
+
+    /// The retry timer of `root` fired.
+    pub(crate) fn disarm_retry(&self, root: &str) {
+        if let Some(mailbox) = self.mailboxes.lock().get_mut(root) {
+            mailbox.retry_armed = false;
+        }
+    }
+
+    /// Reset the retry budget on any accepted prompt, and the consecutive-wake
+    /// streak when the prompt is not a wake.
     pub(crate) fn on_prompt_accepted(&self, root: &str, turn_id: Option<&str>) {
+        let mut mailboxes = self.mailboxes.lock();
+        let Some(mailbox) = mailboxes.get_mut(root) else {
+            return;
+        };
+        mailbox.retries = 0;
         if turn_id.is_some_and(|id| id.starts_with(WAKE_TURN_PREFIX)) {
             return;
         }
-        let mut mailboxes = self.mailboxes.lock();
-        if let Some(mailbox) = mailboxes.get_mut(root) {
-            mailbox.streak = 0;
-            mailbox.limit_logged = false;
-            mailbox.streak_epoch = mailbox.streak_epoch.wrapping_add(1);
-        }
+        mailbox.streak = 0;
+        mailbox.limit_logged = false;
+        mailbox.streak_epoch = mailbox.streak_epoch.wrapping_add(1);
     }
 
     /// Dispose the root chat's mailbox on chat close.
@@ -454,6 +494,20 @@ impl OrchestratorEngine {
         }
     }
 
+    /// Re-attempt delivery later: the root chat could not take the wake for a
+    /// reason no flush trigger reports (no live owner yet, a refused prompt).
+    fn schedule_retry(self: &Arc<Self>, root: String) {
+        let Some(delay) = self.wake.arm_retry(&root) else {
+            return;
+        };
+        let engine = Arc::clone(self);
+        self.handle.spawn(async move {
+            tokio::time::sleep(delay).await;
+            engine.wake.disarm_retry(&root);
+            engine.spawn_try_deliver(root);
+        });
+    }
+
     fn spawn_try_deliver(self: &Arc<Self>, root: String) {
         if self.relay.is_none() {
             return;
@@ -475,24 +529,25 @@ impl OrchestratorEngine {
             let session_id = SessionId(root.clone());
             let owner =
                 crate::acp::limit_runtime::live_owner(&self.manager, &session_id, None).await;
-            let ready_agent = match owner {
+            // A running turn ends with `acp:prompt_complete`, which flushes;
+            // a chat with no live owner has no such trigger, so it retries.
+            let (ready_agent, retry) = match owner {
                 Some(agent_id) => {
                     let active = self
                         .manager
                         .is_turn_active(&agent_id, session_id.clone())
                         .await
                         .unwrap_or(true);
-                    if !active {
-                        Some(agent_id)
-                    } else {
-                        None
-                    }
+                    ((!active).then_some(agent_id), false)
                 }
-                None => None,
+                None => (None, true),
             };
             let Some(agent_id) = ready_agent else {
                 if self.wake.abort_starting(&root) {
                     continue;
+                }
+                if retry {
+                    self.schedule_retry(root);
                 }
                 return;
             };
@@ -561,6 +616,9 @@ impl OrchestratorEngine {
                     );
                     if is_busy && recheck {
                         continue;
+                    }
+                    if !is_busy {
+                        self.schedule_retry(root);
                     }
                     return;
                 }
