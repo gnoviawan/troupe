@@ -612,11 +612,25 @@ fn change(state: &mut DriverState, child: &str, edit: impl FnOnce(&mut Subagent)
 /// record the chat has not seen, a `tool_call_update` for a change, and the
 /// `content` blocks of a settle result. Registers no route: the orchestrated
 /// child's route lives on the child's own driver.
+#[cfg(test)]
 pub(super) fn orchestrated_updates(
     state: &mut DriverState,
     record: Subagent,
     content: Option<&str>,
     now_ms: u64,
+) -> Vec<Value> {
+    orchestrated_updates_with(state, record, content, now_ms, false)
+}
+
+/// [`orchestrated_updates`], optionally permitting an `Idle -> Running`
+/// transition for an explicit `subagent_send` resume while still rejecting
+/// stale pre-settle change cards when `allow_resume` is false.
+pub(super) fn orchestrated_updates_with(
+    state: &mut DriverState,
+    record: Subagent,
+    content: Option<&str>,
+    now_ms: u64,
+    allow_resume: bool,
 ) -> Vec<Value> {
     let mut after = record;
     if after.state.is_idle() && after.ended_at.is_none() {
@@ -625,11 +639,12 @@ pub(super) fn orchestrated_updates(
     let root = after.root_session_id.clone();
     let dispatch = after.dispatch_tool_call_id.clone();
     let before = state.subagent_records().record(&root, &dispatch).cloned();
-    // A run never resumes: a working snapshot that lands after the settle
-    // card (a change card queued before it) is stale.
-    if before
-        .as_ref()
-        .is_some_and(|before| before.state.is_idle() && !after.state.is_idle())
+    // A normal change card (permission flip queued before settle) cannot move
+    // an idle run back to running; only an explicit resume (`allow_resume`) may.
+    if !allow_resume
+        && before
+            .as_ref()
+            .is_some_and(|before| before.state.is_idle() && !after.state.is_idle())
     {
         return Vec::new();
     }

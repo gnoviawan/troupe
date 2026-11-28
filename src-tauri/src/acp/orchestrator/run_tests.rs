@@ -6,10 +6,18 @@ use std::sync::Arc;
 use super::*;
 
 fn child_run(body: RunBody) -> ChildRun {
+    let session_id = match &body {
+        RunBody::Live { session, .. }
+        | RunBody::Stopping { session, .. }
+        | RunBody::Settling { session, .. } => Some(session.clone()),
+        RunBody::Settled { .. } => Some(SessionId("sess-child".to_string())),
+        RunBody::Spawning { .. } => None,
+    };
     ChildRun {
         run: RunId("sub-9f2c1a".to_string()),
         root: "chat-1".to_string(),
         parent_agent: AgentId("agent-parent".to_string()),
+        parent_session_id: "chat-1".to_string(),
         parent_run: None,
         depth: 1,
         identity: SubagentAgent {
@@ -17,6 +25,10 @@ fn child_run(body: RunBody) -> ChildRun {
             config_id: Some("acp-registry:codex-acp".to_string()),
             agent_id: "agent-child".to_string(),
         },
+        profile_id: "acp-registry:codex-acp".to_string(),
+        requested_model: None,
+        child_cwd: "/repo/.termul/worktrees/sub-9f2c1a".to_string(),
+        session_id,
         title: "Codex".to_string(),
         task: "Run the test sweep and report failures.".to_string(),
         model: Some("gpt-5.5".to_string()),
@@ -33,6 +45,7 @@ fn child_run(body: RunBody) -> ChildRun {
         result: None,
         waiters: Vec::new(),
         capture: Arc::new(RunCapture::default()),
+        queued_prompts: std::collections::VecDeque::new(),
     }
 }
 
@@ -246,11 +259,7 @@ fn a_live_run_is_never_evicted() {
     let settled = ledger
         .by_root
         .get("chat-1")
-        .map(|ids| {
-            ids.iter()
-                .filter(|id| !ledger.runs[*id].is_live())
-                .count()
-        })
+        .map(|ids| ids.iter().filter(|id| !ledger.runs[*id].is_live()).count())
         .unwrap_or(0);
     assert_eq!(settled, 64, "the settled cap holds with a live run present");
     assert_eq!(ledger.runs.len(), 65);

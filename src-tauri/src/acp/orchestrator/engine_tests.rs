@@ -260,7 +260,11 @@ async fn wait_reports_the_budget_end_as_an_outcome() {
     let caller = test.caller.clone();
     let summary = engine.start(caller.clone(), request("hang")).await.expect("run starts");
     let outcome = engine
-        .wait(caller.clone(), summary.run.clone(), Duration::from_millis(100))
+        .wait(
+            caller.clone(),
+            summary.run.clone(),
+            Duration::from_millis(100),
+        )
         .await
         .expect("wait answers");
     match outcome {
@@ -411,6 +415,7 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
         run: run.clone(),
         root: CHAT.to_string(),
         parent_agent: AgentId("agent-parent".to_string()),
+        parent_session_id: CHAT.to_string(),
         parent_run: None,
         depth,
         identity: crate::acp::subagents::SubagentAgent {
@@ -418,6 +423,10 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
             config_id: None,
             agent_id: "agent-seeded".to_string(),
         },
+        profile_id: "mock-sub".to_string(),
+        requested_model: None,
+        child_cwd: "/tmp".to_string(),
+        session_id: Some(SessionId(session.to_string())),
         title: "seeded".to_string(),
         task: "seeded task".to_string(),
         model: None,
@@ -438,6 +447,7 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
         result: None,
         waiters: Vec::new(),
         capture: Arc::new(RunCapture::default()),
+        queued_prompts: std::collections::VecDeque::new(),
     };
     engine.ledger.lock().insert(entry);
     run
@@ -539,19 +549,15 @@ async fn status_and_wait_refuse_another_chats_run() {
         agent: AgentId("agent-other".to_string()),
         session: SessionId("chat-9".to_string()),
     };
-    assert!(
-        engine
-            .wait(foreign.clone(), seeded.clone(), Duration::from_secs(1))
-            .await
-            .is_err()
+    assert!(engine
+        .wait(foreign.clone(), seeded.clone(), Duration::from_secs(1))
+        .await
+        .is_err());
+    assert!(engine.status(foreign, Some(vec![seeded.clone()])).is_err());
+    let unknown = engine.status(
+        test.caller.clone(),
+        Some(vec![RunId("sub-nope".to_string())]),
     );
-    assert!(
-        engine
-            .status(foreign, Some(vec![seeded.clone()]))
-            .is_err()
-    );
-    let unknown = engine
-        .status(test.caller.clone(), Some(vec![RunId("sub-nope".to_string())]));
     assert!(unknown.is_err());
     engine.ledger.lock().remove(&seeded);
 }
@@ -1021,8 +1027,11 @@ async fn a_bare_block_moves_when_its_agent_is_not_installed_yet() {
 #[tokio::test]
 async fn bare_switches_stay_when_the_registry_cannot_be_read() {
     let data = tempfile::tempdir().expect("data dir");
-    std::fs::write(data.path().join(crate::automation::agents::FILE_NAME), b"{not json")
-        .expect("registry");
+    std::fs::write(
+        data.path().join(crate::automation::agents::FILE_NAME),
+        b"{not json",
+    )
+    .expect("registry");
     let saved = with_profiles(vec![blocked("my-agent")]);
     crate::acp::orchestrator::settings::SettingsStore::open(data.path())
         .set(saved.clone())
@@ -1041,8 +1050,11 @@ async fn bare_switches_stay_when_the_registry_cannot_be_read() {
 #[tokio::test]
 async fn a_bare_block_holds_while_the_registry_cannot_be_read() {
     let data = tempfile::tempdir().expect("data dir");
-    std::fs::write(data.path().join(crate::automation::agents::FILE_NAME), b"{not json")
-        .expect("registry");
+    std::fs::write(
+        data.path().join(crate::automation::agents::FILE_NAME),
+        b"{not json",
+    )
+    .expect("registry");
     crate::acp::orchestrator::settings::SettingsStore::open(data.path())
         .set(with_profiles(vec![blocked("cursor")]))
         .expect("settings");

@@ -23,6 +23,7 @@ pub(super) fn emit_chunk(host: &Host) {
         ),
         message_id: None,
         parent_tool_call_id: None,
+        sender: None,
     };
     let sinks: Vec<Arc<dyn crate::web::EventSink>> = vec![host.relay.clone()];
     events::fan_out(&sinks, Some(SESSION), events::EVENT_MESSAGE_CHUNK, &event);

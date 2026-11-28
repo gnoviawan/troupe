@@ -101,7 +101,8 @@ JSON, read it with your own tools and call `mcp_install`. The user approves on a
 /// the fallback when the orchestrator refuses.
 pub const DELEGATION_INSTRUCTIONS: &str = "Delegate long work through Troupe: for a long or \
 parallel task, or to use a cheaper agent, call `subagent_list_agents`, `subagent_start` \
-an allowed agent with a self-contained `task`, then `subagent_wait`. Use your client's built-in \
+an allowed agent with a self-contained `task`, then `subagent_wait`. Send corrections or \
+follow-ups to a running or finished subagent with `subagent_send`. Use your client's built-in \
 subagent tool for short lookups, or when Troupe sub-agents are off, none is allowed, or \
 `subagent_start` refuses.";
 
@@ -296,10 +297,7 @@ fn reject(text: String) -> Result<TermulBrowserInput, String> {
     Err(text)
 }
 
-fn string_field(
-    value: Option<serde_json::Value>,
-    key: &str,
-) -> Result<Option<String>, String> {
+fn string_field(value: Option<serde_json::Value>, key: &str) -> Result<Option<String>, String> {
     match value {
         None | Some(serde_json::Value::Null) => Ok(None),
         Some(serde_json::Value::String(s)) => Ok(Some(s)),

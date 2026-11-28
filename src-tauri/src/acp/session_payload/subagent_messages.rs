@@ -13,10 +13,13 @@ pub(crate) const MAX_DURABLE_SUBAGENT_MESSAGES: usize = 200;
 /// Longest ACP `messageId` a message keeps; a longer one counts as absent.
 /// Same bound as the renderer.
 const MAX_MESSAGE_ID_CHARS: usize = 256;
+/// Longest parent sender label a message keeps; matches `subagents::MAX_TEXT_CHARS`.
+const MAX_SENDER_CHARS: usize = 512;
 
 /// One stretch of text a subagent wrote between two of its tool calls
-/// (renderer `SubagentMessage`). `seq`/`timestamp` are those of the chunk
-/// that opened it, so it sorts among the subagent's tool calls.
+/// (renderer `SubagentMessage`), or a follow-up message sent by the parent
+/// agent (`sender` present). `seq`/`timestamp` are those of the chunk that
+/// opened it, so it sorts among the subagent's tool calls.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MaterializedSubagentMessage {
@@ -26,12 +29,16 @@ pub struct MaterializedSubagentMessage {
     /// ACP `messageId` of its chunks, when the agent sent one.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
+    /// Parent agent name when this message was sent to the subagent via
+    /// `subagent_send`. Absent for the subagent's own text.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
 }
 
 /// The fold of one dispatch's subagent text chunks, with the renderer's
 /// split rule: a chunk extends the last message unless it carries a
-/// different ACP `messageId`, or one of the subagent's tool calls first
-/// appeared after that message started.
+/// different ACP `messageId`, a `sender` (parent message), or one of the
+/// subagent's tool calls first appeared after that message started.
 #[derive(Debug, Default)]
 pub(super) struct SubagentMessages {
     messages: VecDeque<MaterializedSubagentMessage>,
@@ -48,12 +55,18 @@ impl SubagentMessages {
         seq: u64,
         timestamp: u64,
         message_id: Option<&str>,
+        sender: Option<&str>,
     ) {
-        let message_id = message_id
-            .filter(|id| !id.is_empty() && id.chars().count() <= MAX_MESSAGE_ID_CHARS);
+        let message_id =
+            message_id.filter(|id| !id.is_empty() && id.chars().count() <= MAX_MESSAGE_ID_CHARS);
+        let sender = sender
+            .map(str::trim)
+            .filter(|name| !name.is_empty() && name.chars().count() <= MAX_SENDER_CHARS);
         match self.messages.back_mut() {
             Some(last)
-                if !self.child_since_last
+                if sender.is_none()
+                    && last.sender.is_none()
+                    && !self.child_since_last
                     && message_id.is_none_or(|id| last.message_id.as_deref() == Some(id)) =>
             {
                 last.text.push_str(chunk);
@@ -64,6 +77,7 @@ impl SubagentMessages {
                     timestamp,
                     text: chunk.to_string(),
                     message_id: message_id.map(str::to_string),
+                    sender: sender.map(str::to_string),
                 });
                 self.child_since_last = false;
                 if self.messages.len() > MAX_DURABLE_SUBAGENT_MESSAGES {
