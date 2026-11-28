@@ -466,8 +466,19 @@ fn host_editor(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
     Modal::new(EDITOR, title).width(520.0).child(body.child(footer)).open(true).on_close(|s: &mut State| s.close(EDITOR)).build(t, layer);
 }
 
-/// A confirm with a destructive action: `title`, `message`, and the two buttons.
-pub(crate) fn confirm(t: &'static Tokens, key: &'static str, title: &str, message: String, label: &str, on_confirm: fn(&mut State), on_cancel: fn(&mut State), layer: &mut Vec<El>) {
+/// A confirm with a destructive action.
+pub(crate) struct Confirm<'a> {
+    pub key: &'static str,
+    pub title: &'a str,
+    pub message: String,
+    pub label: &'a str,
+    pub on_confirm: fn(&mut State),
+    pub on_cancel: fn(&mut State),
+}
+
+/// The confirm dialog: its message, Cancel (focused first) and the destructive action.
+pub(crate) fn confirm(t: &'static Tokens, spec: Confirm<'_>, layer: &mut Vec<El>) {
+    let Confirm { key, title, message, label, on_confirm, on_cancel } = spec;
     let c = &t.colors;
     let footer = row()
         .w_full()
@@ -490,19 +501,18 @@ pub(crate) fn confirm(t: &'static Tokens, key: &'static str, title: &str, messag
 fn delete_host(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
     let Some((id, name)) = s.ssh.delete_host.as_ref().filter(|_| s.overlays.is_open(DELETE_HOST)) else { return };
     let open = s.ssh.model.sessions_of(id).count();
-    confirm(
-        t,
-        DELETE_HOST,
-        "Delete host",
-        messages::delete_host_message(name, open),
-        "Delete",
-        State::ssh_confirm_delete,
-        |s| {
+    let spec = Confirm {
+        key: DELETE_HOST,
+        title: "Delete host",
+        message: messages::delete_host_message(name, open),
+        label: "Delete",
+        on_confirm: State::ssh_confirm_delete,
+        on_cancel: |s| {
             s.ssh.delete_host = None;
             s.close(DELETE_HOST);
         },
-        layer,
-    );
+    };
+    confirm(t, spec, layer);
 }
 
 fn close_session(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
@@ -512,14 +522,13 @@ fn close_session(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
         Some(p) => format!("“{}” on {} ends, and any command still running there stops.", p.name, messages::host_label(&p.host, p.port)),
         None => "The shell ends, and any command still running there stops.".to_owned(),
     };
-    confirm(
-        t,
-        CLOSE_SESSION,
-        "Close session?",
+    let spec = Confirm {
+        key: CLOSE_SESSION,
+        title: "Close session?",
         message,
-        "Close session",
-        State::ssh_confirm_close,
-        State::ssh_cancel_close,
-        layer,
-    );
+        label: "Close session",
+        on_confirm: State::ssh_confirm_close,
+        on_cancel: State::ssh_cancel_close,
+    };
+    confirm(t, spec, layer);
 }

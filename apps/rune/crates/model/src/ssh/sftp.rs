@@ -46,7 +46,7 @@ pub fn join_path(dir: &str, name: &str) -> String {
 /// `localFileName`: the last segment, Windows or POSIX.
 #[must_use]
 pub fn local_file_name(path: &str) -> String {
-    path.split(['/', '\\']).filter(|s| !s.is_empty()).next_back().unwrap_or(path).to_owned()
+    path.split(['/', '\\']).rfind(|s| !s.is_empty()).unwrap_or(path).to_owned()
 }
 
 /// Folders first, then by name.

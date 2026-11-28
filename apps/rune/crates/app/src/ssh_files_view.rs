@@ -14,7 +14,7 @@ use ui::{Button, ButtonSize, ButtonVariant};
 
 use crate::State;
 use crate::ssh::{FILE_EDITOR, NAME_DIALOG, NameKind, REMOTE_CONFIRM, RemoteConfirm};
-use crate::ssh_view::{confirm, glyph};
+use crate::ssh_view::{Confirm, confirm, glyph};
 
 fn fingerprint(t: &Tokens, value: &str, key: String) -> El {
     let c = &t.colors;
@@ -264,7 +264,8 @@ fn remote_confirm(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
             (title, message, "Replace")
         }
     };
-    confirm(t, REMOTE_CONFIRM, &title, message, label, State::sftp_confirm, State::sftp_cancel_confirm, layer);
+    let spec = Confirm { key: REMOTE_CONFIRM, title: &title, message, label, on_confirm: State::sftp_confirm, on_cancel: State::sftp_cancel_confirm };
+    confirm(t, spec, layer);
 }
 
 fn name_dialog(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
