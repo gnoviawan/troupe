@@ -34,6 +34,8 @@ pub enum Action {
     /// The dialog's Add, with how many servers it adds.
     Add(usize),
     Edit,
+    /// A catalog install's commit, saved into the registry.
+    Install,
 }
 
 impl Action {
@@ -45,6 +47,7 @@ impl Action {
             Action::Toggle => "Could not update the MCP server. Your previous setting was restored.",
             Action::Add(_) => "Could not save the MCP servers. Your previous settings were restored.",
             Action::Edit => "Could not save the MCP server. Your previous settings were restored.",
+            Action::Install => "Troupe couldn't save the server after you approved it. Start over to try again.",
         }
     }
 }
@@ -64,11 +67,14 @@ pub struct McpUi {
     /// Page writes in the order the model saves them.
     pub actions: VecDeque<Action>,
     pub rejection: Option<OnReject>,
+    /// The model may run a queued registry write in this step: a page write or a registry answer.
+    pub registry_step: bool,
     pub polls: Vec<Poll>,
     pub dialog: Option<crate::settings_mcp_dialog::ServerDialog>,
     pub paste: crate::settings_mcp_dialog::PasteUi,
     /// The catalog under the added servers.
     pub catalog: crate::mcp_catalog::CatalogUi,
+    pub install: crate::mcp_install::InstallUi,
     /// Every POST this client sent, for the tests (a test state has no host).
     #[cfg(test)]
     pub posted: Vec<(String, Value)>,
@@ -117,7 +123,7 @@ impl State {
         rules::status(enabled(server), self.mcp_flag(&self.chat.acp.mcp_probing, id), self.probe_status(id))
     }
 
-    fn mcp_project(&self) -> String {
+    pub(crate) fn mcp_project(&self) -> String {
         self.active_project().map(|p| p.id.clone()).unwrap_or_default()
     }
 
@@ -171,7 +177,9 @@ impl State {
     /// A page write: the model saves it, and `mcp_host` answers with what the page does next.
     pub(crate) fn mcp_write(&mut self, action: Action, event: Event) {
         self.mcp_ui.actions.push_back(action);
+        self.mcp_ui.registry_step = true;
         self.acp_step(event);
+        self.mcp_ui.registry_step = false;
     }
 
     /// The page's write landed.
@@ -193,6 +201,7 @@ impl State {
                 self.toasts.push(self.now, ui::overlay::ToastKind::Success, "MCP server updated", None);
                 self.close_mcp_dialog();
             }
+            Action::Install => self.install_saved(true),
         }
         self.mcp_settle();
     }

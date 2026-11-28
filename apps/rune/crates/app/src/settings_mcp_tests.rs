@@ -347,3 +347,73 @@ fn escape_does_not_dismiss_a_paste_that_is_completing() {
     assert!(rt.state.overlays.is_open(PASTE), "Escape waits for the paste");
     assert_eq!(rt.state.chat.acp.mcp_oauth_connecting.get("lin"), Some(&json!(true)), "the flow is not cancelled");
 }
+
+fn json_text(rt: &Runtime<State>) -> String {
+    rt.state.mcp_ui.dialog.as_ref().and_then(|d| d.json.as_ref()).map(|j| j.text.text.clone()).expect("the JSON view is open")
+}
+
+#[test]
+fn edit_as_json_shows_every_field_and_saves_an_edit_over_the_same_id() {
+    let mut rt = opened();
+    edit(&mut rt, |s| s.open_mcp_edit("off"));
+    tap(&mut rt, "show-json");
+    assert!(present(&rt, "mcp-json"));
+    assert_eq!(json_text(&rt), "{\n  \"type\": \"stdio\",\n  \"name\": \"old\",\n  \"command\": \"uvx\",\n  \"enabled\": false\n}");
+    edit(&mut rt, |s| {
+        let view = s.mcp_ui.dialog.as_mut().unwrap().json.as_mut().unwrap();
+        view.text = TextEdit::new(r#"{"name": "old", "command": "uvx", "args": ["tool"], "env": {"TOKEN": "t"}, "enabled": true}"#);
+    });
+    tap(&mut rt, "save-json");
+    let (call, list, _) = last_write(&rt);
+    assert_eq!(list[2], json!({ "type": "stdio", "name": "old", "command": "uvx", "args": ["tool"], "env": [{ "name": "TOKEN", "value": "t" }], "id": "off", "enabled": true }));
+    answer(&mut rt, call, Ok(json!({ "revision": 5 })));
+    assert!(toasts(&rt).contains(&"MCP server updated".to_owned()));
+    assert!(rt.state.mcp_ui.dialog.is_none());
+}
+
+#[test]
+fn the_form_and_the_json_round_trip_without_losing_fields() {
+    let mut rt = opened();
+    edit(&mut rt, |s| s.open_mcp_edit("fs"));
+    tap(&mut rt, "show-json");
+    let first = json_text(&rt);
+    tap(&mut rt, "use-form");
+    assert!(rt.state.mcp_ui.dialog.as_ref().unwrap().json.is_none());
+    tap(&mut rt, "show-json");
+    assert_eq!(json_text(&rt), first);
+    assert!(first.contains("\"args\": [\n    \"-y\",\n    \"@mcp/fs\"\n  ]"), "{first}");
+}
+
+#[test]
+fn import_json_adds_every_server_and_reports_the_bad_ones_without_saving() {
+    let mut rt = opened();
+    tap(&mut rt, "add-server");
+    tap(&mut rt, "show-json");
+    assert_eq!(json_text(&rt), "", "a blank form starts an empty import");
+    edit(&mut rt, |s| s.mcp_ui.dialog.as_mut().unwrap().json.as_mut().unwrap().text = TextEdit::new(r#"{"mcpServers": {"a": {"command": "x"}, "b": {"type": "http"}}}"#));
+    tap(&mut rt, "save-json");
+    assert_eq!(rt.state.mcp_ui.dialog.as_ref().unwrap().json.as_ref().unwrap().errors, ["b: URL is required."]);
+    assert_eq!(registry_calls(&rt).iter().filter(|(_, k, _)| *k == WsRequestType::StoreWrite).count(), 0);
+    edit(&mut rt, |s| s.mcp_ui.dialog.as_mut().unwrap().json.as_mut().unwrap().text = TextEdit::new(r#"{"mcpServers": {"a": {"command": "x"}, "b": {"url": "https://b.example.com/mcp"}}}"#));
+    tap(&mut rt, "save-json");
+    let (call, list, _) = last_write(&rt);
+    let names: Vec<_> = list.as_array().unwrap().iter().map(|s| s["name"].clone()).collect();
+    assert_eq!(names, [json!("files"), json!("Linear"), json!("old"), json!("a"), json!("b")]);
+    answer(&mut rt, call, Ok(json!({ "revision": 5 })));
+    assert!(toasts(&rt).contains(&"Added 2 MCP servers".to_owned()));
+}
+
+#[test]
+fn use_the_form_needs_exactly_one_server() {
+    let mut rt = opened();
+    tap(&mut rt, "add-server");
+    tap(&mut rt, "show-json");
+    edit(&mut rt, |s| s.mcp_ui.dialog.as_mut().unwrap().json.as_mut().unwrap().text = TextEdit::new(r#"{"mcpServers": {"a": {"command": "x"}, "b": {"command": "y"}}}"#));
+    tap(&mut rt, "use-form");
+    assert_eq!(rt.state.mcp_ui.dialog.as_ref().unwrap().json.as_ref().unwrap().errors, ["The form holds one valid server. Fix the JSON, or save it from here."]);
+    edit(&mut rt, |s| s.mcp_ui.dialog.as_mut().unwrap().json.as_mut().unwrap().text = TextEdit::new(r#"{"name": "a", "url": "https://a.example.com/sse"}"#));
+    tap(&mut rt, "use-form");
+    let d = rt.state.mcp_ui.dialog.as_ref().unwrap();
+    assert!(d.json.is_none());
+    assert_eq!((d.name.text.as_str(), d.url.text.as_str()), ("a", "https://a.example.com/sse"));
+}
