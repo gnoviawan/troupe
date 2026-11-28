@@ -370,11 +370,11 @@ describe('acp-store: composer-selection persistence', () => {
     ;(invoke as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined) // set_mode
 
     await useAcpStore.getState().setMode('sess-persist', 'plan')
-    await vi.waitFor(() => expect(mockPersistenceApi.writeDebounced).toHaveBeenCalled())
-
-    expect(mockPersistenceApi.writeDebounced).toHaveBeenCalledWith(
-      'agents/composer-options/cfg-1',
-      expect.objectContaining({ modeId: 'plan' })
+    await vi.waitFor(() =>
+      expect(mockPersistenceApi.writeDebounced).toHaveBeenCalledWith(
+        'agents/composer-options/cfg-1',
+        expect.objectContaining({ modeId: 'plan' })
+      )
     )
   })
 

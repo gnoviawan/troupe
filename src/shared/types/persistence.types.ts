@@ -224,9 +224,10 @@ export interface PersistedComposerOptions {
   baseBranch?: string | null
 }
 
-// Last-known model list for one agent config. `modelOption` is the agent's
-// `category: 'model'` config option when it has one; `models` is the native
-// ACP model state. Either may be null. Lists only: no current pick.
+// Last-known model and mode lists for one agent config. `modelOption` is the
+// agent's `category: 'model'` config option when it has one; `models` is the
+// native ACP model state; `modes` is the native ACP mode state. Any may be
+// null (and `modes` is absent on older saves). Lists only: no current pick.
 export interface PersistedModelCatalog {
   models: {
     currentModelId: string
@@ -237,6 +238,10 @@ export interface PersistedModelCatalog {
     name: string
     currentValue: string
     options: { value: string; name: string; description?: string | null }[]
+  } | null
+  modes?: {
+    currentModeId: string
+    availableModes: { id: string; name: string; description: string | null }[]
   } | null
   updatedAt: number
 }

@@ -12,11 +12,11 @@ import type { AcpSet, AgentOptionsCacheEntry } from './types'
 const MODEL_CATEGORY = 'model'
 
 /**
- * The model list part of an options-cache entry, or null when the entry has
- * no model list (nothing worth saving).
+ * The model and mode lists of an options-cache entry, or null when the entry
+ * has neither (nothing worth saving).
  */
 export function modelCatalogFromOptions(
-  entry: Pick<AgentOptionsCacheEntry, 'models' | 'configOptions'>
+  entry: Pick<AgentOptionsCacheEntry, 'models' | 'configOptions' | 'modes'>
 ): PersistedModelCatalog | null {
   const option = entry.configOptions.find(
     (o) =>
@@ -46,10 +46,22 @@ export function modelCatalogFromOptions(
           options: catalogModels(option)
         }
       : null
-  if (!modelOption && !models) return null
+  const modes =
+    entry.modes && entry.modes.availableModes.length > 0
+      ? {
+          currentModeId: entry.modes.currentModeId,
+          availableModes: entry.modes.availableModes.map((m) => ({
+            id: m.id,
+            name: m.name,
+            description: m.description ?? null
+          }))
+        }
+      : null
+  if (!modelOption && !models && !modes) return null
   return {
     models,
     modelOption,
+    modes,
     updatedAt: Date.now()
   }
 }
@@ -123,7 +135,11 @@ export function hydrateOptionsCacheFromCatalog(set: AcpSet, config: StoredAgentC
       if (s.agentOptionsCache[configId]) return s
       const current = s.agentConfigs.find((c) => c.id === configId)
       if (!current || agentConfigIdentityKey(current) !== identity) return s
-      const entry = { ...optionsFromPersisted(saved), modes: null, updatedAt: saved.updatedAt }
+      const entry: AgentOptionsCacheEntry = {
+        ...optionsFromPersisted(saved),
+        modes: saved.modes ?? null,
+        updatedAt: saved.updatedAt
+      }
       return { agentOptionsCache: { ...s.agentOptionsCache, [configId]: entry } }
     })
   })
