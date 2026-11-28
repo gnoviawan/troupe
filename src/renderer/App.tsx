@@ -11,6 +11,7 @@ import { useAntigravityLimitProbe } from '@/components/chat/antigravity-account/
 import { useClaudeLimitActions } from '@/components/chat/claude-account/limit-actions'
 import { useCodexLimitActions } from '@/components/chat/codex-account/limit-actions'
 import { useCodexLimitProbe } from '@/components/chat/codex-account/limit-probe'
+import { ComuConsentCardHost } from '@/components/comu/ComuConsentCardHost'
 import { DirectoryPicker } from '@/components/DirectoryPicker'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ExternalLinkConfirmHost } from '@/components/external-link/ExternalLinkConfirm'
@@ -338,6 +339,7 @@ const App = () => {
                   desktop-only responder (the component no-ops on web; the host
                   auto-denies). */}
                 <BrowserConsentCardHost />
+                <ComuConsentCardHost />
                 <RouterProvider router={router} future={{ v7_startTransition: true }} />
                 <WhatsNewModal
                   isOpen={isTauriContext() && whatsNew.isOpen}

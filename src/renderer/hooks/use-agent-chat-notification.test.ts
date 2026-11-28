@@ -1,11 +1,12 @@
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAgentChatInOwnProject } from '@/lib/open-agent-chat'
 import { sendDesktopNotification } from '@/lib/tauri-notification-api'
 import { mockProject, seedAppSettingsStore, seedProjectStore } from '@/lib/test-utils/store'
 import { type AcpSession, useAcpStore } from '@/stores/acp-store'
-import { useAgentChatNotification } from './use-agent-chat-notification'
+import { DEFERRED_FINISH_SETTLE_MS, useAgentChatNotification } from './use-agent-chat-notification'
 
+vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn(() => Promise.resolve()) }))
 vi.mock('@/lib/open-agent-chat', () => ({ openAgentChatInOwnProject: vi.fn() }))
 vi.mock('@/lib/tauri-notification-api', () => ({
   sendDesktopNotification: vi.fn()
@@ -103,5 +104,106 @@ describe('useAgentChatNotification', () => {
     const options = vi.mocked(sendDesktopNotification).mock.calls[0]?.[2]
     options?.onClick?.()
     expect(openAgentChatInOwnProject).toHaveBeenCalledWith('s1', 'useAgentChatNotification')
+  })
+
+  describe('with a background command still running', () => {
+    const running = {
+      agentId: 'agent-1',
+      revision: 1,
+      commands: [
+        {
+          toolCallId: 'tc-1',
+          title: 'timer',
+          command: 'sleep 60',
+          startedAtMs: 1,
+          state: 'running'
+        }
+      ]
+    } as unknown as AcpSession['backgroundCommands']
+    const ended = {
+      agentId: 'agent-1',
+      revision: 2,
+      commands: [
+        {
+          toolCallId: 'tc-1',
+          title: 'timer',
+          command: 'sleep 60',
+          startedAtMs: 1,
+          state: 'ended',
+          endedAtMs: 2
+        }
+      ]
+    } as unknown as AcpSession['backgroundCommands']
+    const idle = { activeTurn: false, openTurnId: null }
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    function finishTurnWithCommandRunning(): void {
+      act(() => {
+        useAcpStore.setState({
+          sessions: { s1: session({ ...idle, backgroundCommands: running }) },
+          turnEndNotices: { s1: { seq: 1, stopReason: 'end_turn' } }
+        })
+      })
+    }
+
+    it('waits until the command ends and the chat stays idle', () => {
+      renderHook(() => useAgentChatNotification())
+      finishTurnWithCommandRunning()
+      expect(sendDesktopNotification).not.toHaveBeenCalled()
+
+      act(() => {
+        useAcpStore.setState({ sessions: { s1: session({ ...idle, backgroundCommands: ended }) } })
+      })
+      act(() => {
+        vi.advanceTimersByTime(DEFERRED_FINISH_SETTLE_MS)
+      })
+      expect(sendDesktopNotification).toHaveBeenCalledTimes(1)
+      expect(sendDesktopNotification).toHaveBeenCalledWith('My Project', 'Deploy — finished', {
+        onClick: expect.any(Function)
+      })
+    })
+
+    it('restarts the settle window when the agent wakes up', () => {
+      renderHook(() => useAgentChatNotification())
+      finishTurnWithCommandRunning()
+      act(() => {
+        useAcpStore.setState({ sessions: { s1: session({ ...idle, backgroundCommands: ended }) } })
+      })
+      act(() => {
+        vi.advanceTimersByTime(DEFERRED_FINISH_SETTLE_MS - 1_000)
+        useAcpStore.setState({
+          sessions: { s1: session({ ...idle, agentWorking: true, backgroundCommands: ended }) }
+        })
+        vi.advanceTimersByTime(500)
+        useAcpStore.setState({ sessions: { s1: session({ ...idle, backgroundCommands: ended }) } })
+        vi.advanceTimersByTime(DEFERRED_FINISH_SETTLE_MS - 1)
+      })
+      expect(sendDesktopNotification).not.toHaveBeenCalled()
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(sendDesktopNotification).toHaveBeenCalledTimes(1)
+    })
+
+    it('drops the deferred finish when a later turn is cancelled', () => {
+      renderHook(() => useAgentChatNotification())
+      finishTurnWithCommandRunning()
+      act(() => {
+        useAcpStore.setState({
+          sessions: { s1: session({ ...idle, backgroundCommands: ended }) },
+          turnEndNotices: { s1: { seq: 2, stopReason: 'cancelled' } }
+        })
+      })
+      act(() => {
+        vi.advanceTimersByTime(DEFERRED_FINISH_SETTLE_MS * 2)
+      })
+      expect(sendDesktopNotification).not.toHaveBeenCalled()
+    })
   })
 })

@@ -198,6 +198,11 @@ impl UnpromptedWork {
         self.sessions.values().map(Work::deadline).min()
     }
 
+    /// Whether `session_id` works outside a prompt turn now.
+    pub(crate) fn is_working(&self, session_id: &str) -> bool {
+        self.sessions.contains_key(session_id)
+    }
+
     /// Sessions that work outside a prompt turn now.
     pub(crate) fn session_ids(&self) -> Vec<String> {
         self.sessions.keys().cloned().collect()

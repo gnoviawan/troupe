@@ -71,6 +71,7 @@ describe('ComposerAddMenu', () => {
     expect(rows).toEqual([
       'BrowserOpen, click and read pages',
       'CanvasDesign on the project canvasClosed',
+      'Computer UseOperate desktop apps in the background',
       'AutomationsSchedule background work',
       'OrchestrateHand parts of the task to other agents'
     ])

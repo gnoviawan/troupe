@@ -1,4 +1,5 @@
 import { BROWSER_ANCHORS } from '@/components/settings/browser-policy-copy'
+import { COMU_ANCHORS } from '@/components/settings/ComuPolicySettings'
 import { rowId } from '@/components/settings/row-id'
 import { isTranslucentRailSupported } from '@/hooks/use-translucent-rail'
 import type { SettingsSearchEntry } from '@/lib/settings-search'
@@ -319,6 +320,42 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
     description: 'Actions agents may take on the shared agent profile without asking.',
     keywords: ['browser', 'upload', 'download', 'approve', 'automation'],
     anchorId: BROWSER_ANCHORS.appPreapprovals
+  },
+  {
+    categoryId: 'comu',
+    label: 'Enable Computer Use (Troupe Comu)',
+    description: 'Let agents inspect and operate native desktop apps on this machine.',
+    keywords: [
+      'comu',
+      'computer use',
+      'desktop',
+      'native apps',
+      'automation',
+      'os permissions',
+      'screen recording'
+    ],
+    anchorId: COMU_ANCHORS.appEnabled
+  },
+  {
+    categoryId: 'comu',
+    label: 'Show virtual agent cursor',
+    description: 'Draw a click-through agent cursor badge while an agent drives desktop apps.',
+    keywords: ['comu', 'computer use', 'cursor', 'overlay', 'badge', 'pointer'],
+    anchorId: COMU_ANCHORS.appCursor
+  },
+  {
+    categoryId: 'comu',
+    label: 'Show screen-edge indicator',
+    description: 'Glow around the screen edges while an agent uses this computer.',
+    keywords: ['comu', 'computer use', 'screen', 'edge', 'glow', 'border', 'remote', 'indicator'],
+    anchorId: COMU_ANCHORS.appScreenIndicator
+  },
+  {
+    categoryId: 'comu',
+    label: 'Allowed apps in every project',
+    description: 'Desktop apps agents may operate across all projects without asking.',
+    keywords: ['comu', 'computer use', 'allowed apps', 'allowlist', 'bundle id'],
+    anchorId: COMU_ANCHORS.appAllowedApps
   },
   // App
   {

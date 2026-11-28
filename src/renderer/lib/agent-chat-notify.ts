@@ -4,6 +4,11 @@
  * The first snapshot is silent so chats that are already waiting at startup
  * do not ping. A later busy-to-idle close pings only for a finished turn with
  * an empty prompt queue. A new permission or question pings once.
+ *
+ * A turn that ends with a command still running in the background (a timer
+ * the agent waits on) is not finished: the agent wakes up when the command
+ * ends and keeps working. Its ping is deferred until the chat is idle with no
+ * background command left.
  */
 import type { SessionId, StopReason } from '@/lib/acp-api'
 
@@ -45,6 +50,8 @@ export interface AgentChatNotifySession {
   queueLength: number
   turnEndSeq: number
   stopReason: StopReason | null
+  /** A command the agent left running in the background has not ended. */
+  backgroundRunning: boolean
 }
 
 export interface AgentChatNotifyRequest {
@@ -60,10 +67,13 @@ export interface AgentChatNotifySnapshot {
   viewingSessionId: SessionId | null
   notifyTurnFinished: boolean
   notifyNeedsYou: boolean
+  /** Sessions whose finished ping waits on a background command. */
+  deferredFinishes?: ReadonlySet<SessionId>
 }
 
 export type AgentChatNotifyEvent =
-  | { kind: 'turn-finished'; sessionId: SessionId }
+  | { kind: 'turn-finished'; sessionId: SessionId; deferred?: true }
+  | { kind: 'turn-finish-deferred'; sessionId: SessionId }
   | { kind: 'needs-approval'; sessionId: SessionId; requestId: string }
   | { kind: 'has-question'; sessionId: SessionId; questionId: string }
 
@@ -89,7 +99,18 @@ export function decideAgentChatNotifications(
       if (session.busy || session.queueLength > 0) continue
       if (!isNotifiableStopReason(session.stopReason)) continue
       if (next.viewingSessionId === sessionId) continue
+      if (session.backgroundRunning) {
+        events.push({ kind: 'turn-finish-deferred', sessionId })
+        continue
+      }
       events.push({ kind: 'turn-finished', sessionId })
+    }
+
+    for (const sessionId of next.deferredFinishes ?? []) {
+      const session = next.sessions[sessionId]
+      if (!session || events.some((event) => event.sessionId === sessionId)) continue
+      if (session.busy || session.backgroundRunning || session.queueLength > 0) continue
+      events.push({ kind: 'turn-finished', sessionId, deferred: true })
     }
   }
 

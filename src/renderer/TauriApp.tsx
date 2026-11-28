@@ -11,6 +11,7 @@ import { useAntigravityLimitProbe } from '@/components/chat/antigravity-account/
 import { useClaudeLimitActions } from '@/components/chat/claude-account/limit-actions'
 import { useCodexLimitActions } from '@/components/chat/codex-account/limit-actions'
 import { useCodexLimitProbe } from '@/components/chat/codex-account/limit-probe'
+import { ComuConsentCardHost } from '@/components/comu/ComuConsentCardHost'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ExternalLinkConfirmHost } from '@/components/external-link/ExternalLinkConfirm'
 import { GlobalContextMenu } from '@/components/GlobalContextMenu'
@@ -240,6 +241,7 @@ export default function TauriApp(): React.JSX.Element {
                 for pending consents no visible chat-panel card hosts; the
                 in-pane strip and in-chat card own the prompt otherwise. */}
               <BrowserConsentCardHost />
+              <ComuConsentCardHost />
               <RouterProvider router={router} future={{ v7_startTransition: true }} />
               <WhatsNewModal
                 isOpen={whatsNew.isOpen}

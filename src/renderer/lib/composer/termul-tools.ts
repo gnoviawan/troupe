@@ -15,7 +15,7 @@ const HOST_MCP_SERVER = 'troupe'
 /** The server name 0.4.x hosts registered; persisted prompts still carry it. */
 const LEGACY_MCP_SERVER = 'termul'
 
-export type TermulToolId = 'browser' | 'canvas' | 'automations' | 'orchestrate'
+export type TermulToolId = 'browser' | 'canvas' | 'comu' | 'automations' | 'orchestrate'
 
 /**
  * `closed`: the agent can call the tool, but it fails until the user opens
@@ -70,6 +70,15 @@ export const TERMUL_TOOLS: readonly TermulToolEntry[] = [
     description: 'Design on the project canvas',
     ...wire('the canvas tools'),
     state: ({ canvasReady }) => (canvasReady ? 'available' : 'closed')
+  },
+  {
+    id: 'comu',
+    label: 'Computer Use',
+    description: 'Operate desktop apps in the background',
+    ...wire('the computer use tools'),
+    // Listed on every surface; Preferences can disable it and headless
+    // troupe-server refuses with capability_unavailable.
+    state: always
   },
   {
     id: 'automations',

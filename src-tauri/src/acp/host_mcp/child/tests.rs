@@ -274,6 +274,7 @@ async fn initialize_advertises_the_chat_and_canvas_instructions() {
             "`subagent_list_agents`, `subagent_start` an allowed agent",
             "`subagent_send`",
             "Use your client's built-in subagent tool for short lookups",
+            "call `comu_guide` first, then use the `comu_*` tools",
         ] {
             assert!(instructions.contains(needle), "missing {needle:?}");
         }
@@ -671,7 +672,7 @@ fn without_a_host_the_browser_tool_is_advertised_fail_closed() {
     }
 }
 
-const HOST_TOOLS: [&str; 24] = [
+const HOST_TOOLS: [&str; 25] = [
     "ask_user",
     "mcp_install",
     "automation_apply_ops",
@@ -682,6 +683,7 @@ const HOST_TOOLS: [&str; 24] = [
     "automation_list",
     "automation_propose",
     "browser",
+    "comu_guide",
     "get_canvas_style",
     "list_started_chats",
     "plan",

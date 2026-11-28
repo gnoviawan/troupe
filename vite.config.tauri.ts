@@ -82,7 +82,11 @@ export default defineConfig({
     outDir: 'dist-tauri',
     emptyOutDir: true,
     rolldownOptions: {
-      input: path.resolve(__dirname, 'tauri-index.html')
+      input: {
+        main: path.resolve(__dirname, 'tauri-index.html'),
+        // Computer Use screen-edge indicator (src-tauri/src/comu_screen_overlay.rs).
+        comuOverlay: path.resolve(__dirname, 'comu-overlay.html')
+      }
     },
     target: 'esnext'
   },

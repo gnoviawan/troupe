@@ -27,25 +27,17 @@ document; change it only through these tools, never by editing files): ";
 
 /// The canvas section of the session `instructions`, followed by figcraft's
 /// own guide to its tools.
-const CANVAS_GUIDE: &str = "Design canvas: this project has a design canvas, Troupe Canvas, a \
-Figma-class editor. Its document is the project's .figcraft file (design.figcraft by default). \
-When the user asks for a design, mockup, wireframe, screen or anything \"on the canvas\", build it \
-with this server's canvas tools: create_node, set_properties, list_commands, run_command, batch, \
-list_issues, inspect_document, get_node, select, screenshot, export, undo and redo (pointer, key, \
-type_text and inspect_ui drive the editor UI and need the canvas on screen). wait_for_changes \
-returns new comment events only (layer edits are not reported, so a `document` topic never wakes \
-it) and waits up to `timeoutMs` (20 s by default, 25 s at most); pass the `cursor` it returns as \
-`after` on your next call. save_file saves the document; \
-Troupe chooses the file and ignores any path you pass. Do not create or edit .figcraft, .pen or \
-.op files on disk, do not call open_file, and do not look for other design tools, MCP servers or \
-canvas apps: these tools are the canvas. Agents cannot open the canvas. A CANVAS_CLOSED error \
-means it is not open, so ask the user to open it with the Canvas button in Troupe's left rail, \
-then retry. Before your first canvas edit in a session, call read_canvas_guide with no topic to \
-read the troupe-canvas skill index (SKILL.md), then call it again for the required topics \
-canvas-basics and working-protocol and for the guide that fits the request. When the user \
-gives no brand or style, call get_canvas_style, pick one, run its apply batch and tell the user \
-which style you chose. The canvas editor is FigCraft, and the rest of this section is its own \
-guide.";
+const CANVAS_GUIDE: &str = "Design canvas (Troupe Canvas, a Figma-class editor on design.figcraft): \
+for designs, mockups, wireframes or screens \"on the canvas\", use create_node, set_properties, \
+list_commands, run_command, batch, list_issues, inspect_document, get_node, select, screenshot, \
+export, undo and redo (pointer, key, type_text and inspect_ui need the canvas on screen). \
+wait_for_changes returns new comment events only (up to `timeoutMs`, 20 s default / 25 s max; \
+pass `cursor` as `after`). save_file saves the document (path ignored). Do not create or edit \
+.figcraft, .pen or .op files on disk, do not call open_file, and do not look for other design tools: \
+these tools are the canvas. On CANVAS_CLOSED, ask the user to open it with the Canvas button in \
+Troupe's left rail, then retry. Before your first canvas edit, call read_canvas_guide (no topic, \
+then canvas-basics, working-protocol and the matching domain guide); with no brand, call \
+get_canvas_style, run its apply batch and name the style. FigCraft's own guide follows.";
 
 /// The canvas part of the session `instructions`.
 #[must_use]

@@ -73,6 +73,7 @@ pub const AGENT_TRANSIENT_EVENTS: &[&str] = &[
     "agent_sign_in_request",
     "agent_sign_in_resolved",
     "browser_policy_changed",
+    "comu_policy_changed",
 ];
 
 /// Full state of the `projects` watch.

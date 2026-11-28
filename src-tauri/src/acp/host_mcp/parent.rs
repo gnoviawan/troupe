@@ -33,8 +33,10 @@ use crate::web::EventSink;
 mod ask;
 mod automation;
 mod canvas;
+mod comu;
 mod mcp_install;
 mod read_chat;
+mod routes;
 mod subagents;
 mod worker_chats;
 pub use ask::IdleSignal;
@@ -76,11 +78,12 @@ pub struct HostPlanServer {
     sinks: Vec<Arc<dyn EventSink>>,
     /// token -> SessionAuth. One entry per registered session.
     sessions: Mutex<HashMap<String, SessionAuth>>,
-    /// Runtime agent id -> sessions with an accepted prompt currently in flight.
-    /// Some agents reuse an older session's MCP child for later sessions; this
-    /// authoritative turn registry lets `process_request` repair that stale
-    /// token binding when exactly one session for the agent is active.
-    active_turns: Mutex<HashMap<String, HashSet<String>>>,
+    /// Per runtime agent: sessions with a prompt turn in flight or with the
+    /// agent working on its own. Some agents reuse an older session's MCP
+    /// child for later sessions; this authoritative registry lets
+    /// `process_request` repair that stale token binding when exactly one
+    /// session for the agent is active.
+    active_turns: routes::TurnRoutes,
     /// Sessions that have already set a title. Per-session (not per-turn): the
     /// first `set_session_title` call persists + broadcasts; subsequent calls
     /// for the same session return a success no-op so the agent stops
@@ -150,7 +153,7 @@ impl HostPlanServer {
             port: std::sync::OnceLock::new(),
             sinks,
             sessions: Mutex::new(HashMap::new()),
-            active_turns: Mutex::new(HashMap::new()),
+            active_turns: routes::TurnRoutes::default(),
             pending_asks: Mutex::new(HashMap::new()),
             pending_installs: Mutex::new(HashMap::new()),
             finished_installs: Mutex::new(VecDeque::new()),
@@ -330,11 +333,7 @@ impl HostPlanServer {
 
     /// Mark an accepted prompt turn as active before the agent can call tools.
     pub fn begin_turn(&self, agent_id: &str, real_session_id: &str) {
-        self.active_turns
-            .lock()
-            .entry(agent_id.to_string())
-            .or_default()
-            .insert(real_session_id.to_string());
+        self.active_turns.begin_prompt(agent_id, real_session_id);
         log::debug!(
             "[host-mcp] registered active plan route for session {} (agent {})",
             crate::logging::redact_session_id(real_session_id),
@@ -344,17 +343,44 @@ impl HostPlanServer {
 
     /// Remove a completed, rejected-to-start, cancelled, or failed prompt turn.
     pub fn end_turn(&self, agent_id: &str, real_session_id: &str) {
-        let mut active_turns = self.active_turns.lock();
-        if let Some(sessions) = active_turns.get_mut(agent_id) {
-            sessions.remove(real_session_id);
-            if sessions.is_empty() {
-                active_turns.remove(agent_id);
-            }
+        self.active_turns.end_prompt(agent_id, real_session_id);
+        // Work the agent started on its own in this session keeps the cursor
+        // and the Computer Use indicator until it goes quiet.
+        if !self.active_turns.unprompted_active(agent_id, real_session_id) {
+            self.presence.hide(real_session_id);
+            crate::comu::turn_ended(real_session_id);
         }
-        drop(active_turns);
-        self.presence.hide(real_session_id);
         log::debug!(
             "[host-mcp] removed active plan route for session {} (agent {})",
+            crate::logging::redact_session_id(real_session_id),
+            agent_id
+        );
+    }
+
+    /// The agent works in `real_session_id` with no prompt turn open
+    /// (`acp::session::unprompted`): Claude Code woke up after a background
+    /// task finished. Its host tool calls route like a prompt turn's.
+    pub fn begin_unprompted_work(&self, agent_id: &str, real_session_id: &str) {
+        if !self.active_turns.begin_unprompted(agent_id, real_session_id) {
+            return;
+        }
+        log::info!(
+            "[host-mcp] registered unprompted work route for session {} (agent {})",
+            crate::logging::redact_session_id(real_session_id),
+            agent_id
+        );
+    }
+
+    /// The agent's own work in `real_session_id` went quiet, was stopped, or a
+    /// prompt turn took over.
+    pub fn end_unprompted_work(&self, agent_id: &str, real_session_id: &str) {
+        self.active_turns.end_unprompted(agent_id, real_session_id);
+        if !self.active_turns.prompt_active(agent_id, real_session_id) {
+            self.presence.hide(real_session_id);
+            crate::comu::turn_ended(real_session_id);
+        }
+        log::info!(
+            "[host-mcp] removed unprompted work route for session {} (agent {})",
             crate::logging::redact_session_id(real_session_id),
             agent_id
         );
@@ -400,12 +426,7 @@ impl HostPlanServer {
                 || auth.real_session_id.as_deref() != Some(real_session_id)
         });
         drop(sessions);
-        let mut active_turns = self.active_turns.lock();
-        active_turns.retain(|_, sessions| {
-            sessions.remove(real_session_id);
-            !sessions.is_empty()
-        });
-        drop(active_turns);
+        self.active_turns.forget_session(real_session_id);
         self.title_set_for_session.lock().remove(real_session_id);
         self.branch_attempted_for_session
             .lock()
@@ -416,6 +437,15 @@ impl HostPlanServer {
         // Close agent-controlled browser tabs + drop the consent grant. The
         // host no-ops when no browser feature was used by this session.
         crate::browser_automation::session_ended(real_session_id);
+        if keep_token.is_none() {
+            crate::comu::session_ended(real_session_id);
+        }
+    }
+
+    /// Test seam: whether host tool calls of `agent_id` route to `real_session_id`.
+    #[cfg(test)]
+    pub(crate) fn routes_for_test(&self, agent_id: &str, real_session_id: &str) -> bool {
+        self.active_turns.routable(agent_id).contains(real_session_id)
     }
 
     /// Test seam: the tokens currently bound to `real_session_id`.
@@ -453,14 +483,16 @@ impl HostPlanServer {
         }
     }
 
-    /// `agent_id`'s display name, shown on its sessions' canvas cursors.
+    /// `agent_id`'s display name, shown on its sessions' canvas and Comu cursors.
     pub fn name_agent(&self, agent_id: &str, name: &str) {
         self.presence.name_agent(agent_id, name);
+        crate::comu::name_agent(agent_id, name);
     }
 
-    /// `agent_id` exited; presence forgets its name.
+    /// `agent_id` exited; presence and Comu forget its name.
     pub fn forget_agent(&self, agent_id: &str) {
         self.presence.forget_agent(agent_id);
+        crate::comu::forget_agent(agent_id);
     }
 
     /// The canvas router: renderers report mounts and replies to it.
@@ -571,6 +603,9 @@ impl HostPlanServer {
         if req.kind == FrameKind::Describe {
             return describe_reply();
         }
+        if req.kind == FrameKind::DescribeComu {
+            return comu::describe_comu_reply();
+        }
 
         // The real session_id must be bound (post `session/new`). If not, the
         // agent called the tool before the session was created — shouldn't
@@ -587,9 +622,11 @@ impl HostPlanServer {
         };
 
         // Agents may retain and call an MCP child created for an older session.
-        // Prefer the token's bound session when it is active. Otherwise, repair
-        // the route only when this runtime agent has exactly one active turn;
-        // multiple active sessions are ambiguous and must never cross-route.
+        // Prefer the token's bound session while its registration is open: it
+        // may be in a prompt turn, working on its own after a background job
+        // woke it, or idle. Otherwise, repair the route only when this runtime
+        // agent has exactly one routable session (a prompt turn or unprompted
+        // work); multiple are ambiguous and must never cross-route.
         // This host registry tracks successfully bound sessions and is evicted
         // on close/dispose/driver teardown. Persisted chat history alone is not
         // evidence that a session is still loaded on this host.
@@ -618,10 +655,10 @@ impl HostPlanServer {
                     .all(|entry| entry.agent_id == auth.agent_id)
         };
         let real_session_id = {
-            let active_turns = self.active_turns.lock();
-            match active_turns.get(&auth.agent_id) {
+            let sessions = self.active_turns.routable(&auth.agent_id);
+            match sessions.len() {
                 _ if bound_is_open => bound_session_id.clone(),
-                Some(sessions) if sessions.len() == 1 => {
+                1 => {
                     let active_session_id = sessions.iter().next().expect("len checked").clone();
                     log::info!(
                         "[host-mcp] rerouted stale binding for agent {} from session {} to active session {}",
@@ -631,7 +668,7 @@ impl HostPlanServer {
                     );
                     active_session_id
                 }
-                Some(sessions) if sessions.len() > 1 => {
+                2.. => {
                     log::warn!(
                         "[host-mcp] rejected ambiguous stale binding for agent {} (bound session {}, {} active turns)",
                         auth.agent_id,
@@ -720,6 +757,17 @@ impl HostPlanServer {
                 }
             }
             FrameKind::Describe => describe_reply(),
+            FrameKind::DescribeComu => comu::describe_comu_reply(),
+            FrameKind::Comu => {
+                self.comu_call(
+                    &real_session_id,
+                    &auth.agent_id,
+                    req.comu_tool,
+                    req.comu_input,
+                    hung_up,
+                )
+                .await
+            }
             FrameKind::Canvas => {
                 self.canvas_call(
                     &real_session_id,
