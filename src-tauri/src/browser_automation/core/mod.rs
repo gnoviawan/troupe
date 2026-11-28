@@ -46,7 +46,6 @@ pub use reply::{
     Success, ERR_CAPABILITY, ERR_CONFIRMATION, ERR_INTERNAL, ERR_INVALID_PARAMS, ERR_STALE_REF,
     ERR_TAB_NOT_FOUND, ERR_TIMEOUT,
 };
-pub(crate) use events::TabProjection;
 pub use tabs::TabView;
 #[cfg(any(test, feature = "conformance"))]
 pub use teardown::session_dir;
