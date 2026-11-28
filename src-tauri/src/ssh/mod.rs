@@ -26,6 +26,8 @@ use tauri::Emitter;
 
 /// Top-level SSH manager that coordinates all SSH subsystems
 pub struct SSHManager {
+    /// Server-side attempt ownership, registered before connect emits.
+    pub owners: Arc<parking_lot::Mutex<std::collections::HashMap<String, String>>>,
     pub profiles: Arc<ProfileManager>,
     pub sessions: Arc<SshSessionManager>,
     /// Where session progress, host-key questions, session ends, transfer
@@ -44,6 +46,7 @@ impl SSHManager {
             }
         });
         Self {
+            owners: Arc::default(),
             profiles,
             sessions: SshSessionManager::new(emit.clone()),
             emit,
@@ -53,6 +56,7 @@ impl SSHManager {
     /// The server's manager: profiles in `data_dir`, events to `emit`.
     pub fn for_server(data_dir: &Path, emit: Emit) -> Self {
         Self {
+            owners: Arc::default(),
             profiles: Arc::new(ProfileManager::in_dir(data_dir)),
             sessions: SshSessionManager::new(emit.clone()),
             emit,

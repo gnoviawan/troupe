@@ -65,3 +65,15 @@ async fn read_capped_stops_one_byte_past_the_limit() {
     let mut over = std::io::Cursor::new(vec![b'a'; 9]);
     assert_eq!(read_capped(&mut over, 8).await.unwrap(), None);
 }
+
+#[test]
+fn upload_defaults_to_exclusive_create_and_only_confirmed_replace_truncates() {
+    let request: crate::ssh::service::SFTPTransferRequest = serde_json::from_value(
+        serde_json::json!({"connectionId": "s", "remotePath": "/r", "localPath": "/l"})
+    ).unwrap();
+    assert!(!request.overwrite);
+    assert!(upload_flags(request.overwrite).contains(OpenFlags::EXCLUDE));
+    assert!(!upload_flags(request.overwrite).contains(OpenFlags::TRUNCATE));
+    assert!(upload_flags(true).contains(OpenFlags::TRUNCATE));
+    assert!(!upload_flags(true).contains(OpenFlags::EXCLUDE));
+}

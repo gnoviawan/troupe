@@ -332,3 +332,49 @@ async fn end_sends_a_last_delta_and_releases_the_subscription() {
     assert_eq!(frames[1].delta_value(), Some(&json!({ "ended": true })));
     assert_eq!(hub.subscriber_count(WatchKind::Fs, "p-1"), 0);
 }
+
+#[tokio::test]
+async fn ssh_principals_receive_only_their_own_snapshots_and_prompts() {
+    let hub = WatchHub::new();
+    let (a, mut arx) = connection(16);
+    let (b, mut brx) = connection(16);
+    hub.subscribe(
+        WatchKind::Ssh,
+        "principal-a",
+        &a,
+        || json!({"hostKeys": [{"sessionId": "a"}]}),
+    )
+    .unwrap();
+    hub.subscribe(
+        WatchKind::Ssh,
+        "principal-b",
+        &b,
+        || json!({"hostKeys": [{"sessionId": "b"}]}),
+    )
+    .unwrap();
+    assert_eq!(
+        next_frame(&mut arx).state_value().unwrap()["hostKeys"][0]["sessionId"],
+        "a"
+    );
+    assert_eq!(
+        next_frame(&mut brx).state_value().unwrap()["hostKeys"][0]["sessionId"],
+        "b"
+    );
+    hub.publish(
+        WatchKind::Ssh,
+        "principal-a",
+        || json!({"event": "host_key", "sessionId": "a"}),
+    );
+    hub.publish(
+        WatchKind::Ssh,
+        "principal-b",
+        || json!({"event": "host_key", "sessionId": "b"}),
+    );
+    let af = next_frame(&mut arx);
+    let bf = next_frame(&mut brx);
+    assert_eq!(af.delta_value().unwrap()["sessionId"], "a");
+    assert_eq!(bf.delta_value().unwrap()["sessionId"], "b");
+    assert!(drain(&mut arx).is_empty());
+    assert!(drain(&mut brx).is_empty());
+    assert_eq!(serde_json::to_value(af).unwrap()["scope"], "");
+}

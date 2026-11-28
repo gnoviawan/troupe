@@ -49,6 +49,9 @@ pub struct SFTPPathRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SFTPTransferRequest {
+    /// Only an explicit replacement confirmation permits truncation.
+    #[serde(default)]
+    pub overwrite: bool,
     pub connection_id: String,
     pub remote_path: String,
     pub local_path: String,
@@ -377,10 +380,18 @@ pub async fn sftp_upload(ssh: &SSHManager, r: SFTPTransferRequest) -> SshResult<
             &r.remote_path,
             &*sink,
             &r.connection_id,
+            r.overwrite,
         )
         .await
     })
     .await
+    .map_err(|failure| {
+        if failure.message.starts_with("SFTP_ALREADY_EXISTS:") {
+            SshFailure::new("The remote path already exists", "SFTP_ALREADY_EXISTS")
+        } else {
+            failure
+        }
+    })
 }
 
 pub async fn sftp_delete(ssh: &SSHManager, r: SFTPPathRequest) -> SshResult<()> {

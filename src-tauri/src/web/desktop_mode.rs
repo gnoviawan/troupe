@@ -126,12 +126,21 @@ pub fn spawn_legacy_history_import(persistence: Arc<SessionPersistence>, state_d
 /// that holds an SSH lock.
 pub fn attach_ssh(relay: &WsRelaySink, state_dir: &Path) {
     let hub = Arc::clone(relay.watches());
+    let owners: Arc<parking_lot::Mutex<std::collections::HashMap<String, String>>> = Arc::default();
+    let publishing_owners = Arc::clone(&owners);
     let (deltas, inbox) = std::sync::mpsc::channel::<Value>();
     let publisher = std::thread::Builder::new()
         .name("ssh-watch".into())
         .spawn(move || {
             while let Ok(delta) = inbox.recv() {
-                hub.publish(WatchKind::Ssh, "", || delta);
+                let attempt = delta
+                    .get("sessionId")
+                    .or_else(|| delta.get("connectionId"))
+                    .and_then(Value::as_str);
+                let owner = attempt.and_then(|id| publishing_owners.lock().get(id).cloned());
+                if let Some(owner) = owner {
+                    hub.publish(WatchKind::Ssh, &owner, || delta);
+                }
             }
         });
     if let Err(error) = publisher {
@@ -148,9 +157,9 @@ pub fn attach_ssh(relay: &WsRelaySink, state_dir: &Path) {
         }
         None => debug!(target: "termul::desktop_mode", event, "SSH event has no watch delta"),
     });
-    relay.set_ssh(Arc::new(crate::ssh::SSHManager::for_server(
-        state_dir, emit,
-    )));
+    let mut ssh = crate::ssh::SSHManager::for_server(state_dir, emit);
+    ssh.owners = owners;
+    relay.set_ssh(Arc::new(ssh));
     info!(
         target: "termul::desktop_mode",
         "SSH manager attached; profiles in '{}'",
@@ -177,12 +186,6 @@ pub(crate) fn ssh_delta(event: &str, payload: Value) -> Option<Value> {
     Some(Value::Object(fields))
 }
 
-/// `ssh` watch state: the host-key questions open now.
-#[must_use]
-pub fn ssh_state(ssh: &crate::ssh::SSHManager) -> Value {
-    serde_json::json!({ "hostKeys": ssh.sessions.host_key_prompts() })
-}
-
 /// Check that the OS keychain persists secrets. When it does not, stored SSH
 /// passwords and passphrases are lost silently, so the failure is logged
 /// loudly.
@@ -197,4 +200,20 @@ pub fn keychain_self_test() {
             "credential keychain self-test FAILED: {error}; stored SSH credentials will not persist"
         ),
     }
+}
+
+/// Snapshot restricted to attempts opened by this authenticated principal.
+pub fn ssh_state_for(ssh: &crate::ssh::SSHManager, owner: &str) -> Value {
+    let prompts = ssh.sessions.host_key_prompts();
+    let owners = ssh.owners.lock();
+    let prompts: Vec<_> = prompts
+        .into_iter()
+        .filter(|p| {
+            p.get("sessionId")
+                .and_then(Value::as_str)
+                .and_then(|id| owners.get(id))
+                .is_some_and(|o| o == owner)
+        })
+        .collect();
+    serde_json::json!({ "hostKeys": prompts })
 }
