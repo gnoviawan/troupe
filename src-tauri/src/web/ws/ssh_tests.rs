@@ -102,7 +102,7 @@ impl Client {
 fn every_ssh_request_is_forbidden_to_a_writer_that_is_not_host_local() {
     let mut access = test_access();
     assert!(access.capabilities().write && !access.capabilities().host_local);
-    for type_ in SSH_WS_REQUESTS {
+    for type_ in SSH_WS_REQUESTS.iter().chain(LISTENERS_WS_REQUESTS) {
         let mut authed = true;
         let reply = handle_sync_with_access(
             &frame(type_, json!({})),
@@ -399,4 +399,70 @@ fn the_tauri_commands_save_and_open_through_the_same_service() {
         !commands.contains("cached_secret("),
         "ssh_session_open uses the target-blind cache"
     );
+}
+
+#[tokio::test]
+async fn a_moved_key_profile_loses_its_stored_passphrase() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("ssh-profiles.json"),
+        json!({ "profiles": [{
+            "id": "k1",
+            "name": "box",
+            "host": "a.example",
+            "port": 22,
+            "username": "deploy",
+            "authMethod": "key",
+            "privateKeyPath": "~/.ssh/id_ed25519",
+            "jumpHostId": null,
+            "portForwards": [],
+            "tags": null,
+            "lastConnected": null,
+            "importedFrom": null,
+            "hasStoredPassphrase": true,
+        }]})
+        .to_string(),
+    )
+    .unwrap();
+    let mut client = Client::new(&relay_with_ssh(dir.path()));
+    let key_profile = |host: &str| {
+        json!({ "profile": {
+            "id": "k1",
+            "name": "box",
+            "host": host,
+            "port": 22,
+            "username": "deploy",
+            "authMethod": "key",
+            "privateKeyPath": "~/.ssh/id_ed25519",
+            "portForwards": [],
+            "hasStoredPassword": false,
+            "hasStoredPassphrase": true,
+        }})
+    };
+    let passphrase =
+        |reply: &WsReply| reply.payload.as_ref().unwrap()[0]["hasStoredPassphrase"].clone();
+
+    assert!(
+        client
+            .send("ssh_save_profile", key_profile("a.example"))
+            .await
+            .ok
+    );
+    let kept = client.send("ssh_list_profiles", json!({})).await;
+    assert_eq!(passphrase(&kept), json!(true), "the same host keeps it");
+
+    for attempt in 0..2 {
+        assert!(
+            client
+                .send("ssh_save_profile", key_profile("b.example"))
+                .await
+                .ok
+        );
+        let moved = client.send("ssh_list_profiles", json!({})).await;
+        assert_eq!(
+            passphrase(&moved),
+            json!(false),
+            "save {attempt} to the new host must not bring the old passphrase back"
+        );
+    }
 }

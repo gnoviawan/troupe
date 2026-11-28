@@ -33,6 +33,10 @@ mod automations_tests;
 mod automations_view;
 #[cfg(test)]
 mod answers_tests;
+mod canvas_host;
+#[cfg(test)]
+mod canvas_host_tests;
+mod canvas_web;
 #[cfg(test)]
 mod cards_tests;
 mod chat;
@@ -89,16 +93,22 @@ mod rail;
 mod rail_forms;
 mod rail_menus;
 mod mcp_catalog;
+mod mcp_install;
+mod mcp_install_view;
 mod mcp_host;
 mod project_settings;
 mod project_settings_view;
 mod rail_view;
 mod settings;
+mod settings_accounts;
+mod settings_accounts_dialogs;
 mod settings_mcp;
 mod settings_mcp_dialog;
+mod settings_mcp_json;
 mod settings_pages;
 mod settings_profiles;
 mod settings_shortcuts;
+mod settings_subagents;
 #[cfg(test)]
 mod settings_tests;
 mod settings_view;
@@ -232,6 +242,8 @@ pub struct State {
     pub project_ui: project_settings::ProjectSettingsUi,
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
+    pub subagents_ui: settings_subagents::SubagentsUi,
+    pub accounts_ui: settings_accounts::AccountsUi,
     pub(crate) sync: sync::Sync,
     /// The Report a Bug dialog.
     pub bug: bug_report::BugReportUi,
@@ -241,6 +253,9 @@ pub struct State {
     pub snapshots: snapshots::SnapshotsUi,
     /// The Automations tab's reads, selection and canvases.
     pub automations: automations::AutomationsUi,
+    /// The design canvases (FigCraft): per-project sessions, persistence and gateway.
+    pub canvases: ui::canvas::Canvases,
+    pub(crate) canvas_host: canvas_host::CanvasHost,
     /// The window's waker, kept for `reload`.
     pub(crate) waker: Option<Waker>,
 }
@@ -302,11 +317,15 @@ impl Default for State {
             settings_ui: settings_view::SettingsUi::default(),
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
+            subagents_ui: settings_subagents::SubagentsUi::default(),
+            accounts_ui: settings_accounts::AccountsUi::default(),
             sync: sync::Sync::default(),
             bug: bug_report::BugReportUi::default(),
             first_run: first_run::FirstRun::default(),
             snapshots: snapshots::SnapshotsUi::default(),
             automations: automations::AutomationsUi::default(),
+            canvases: ui::canvas::Canvases::default(),
+            canvas_host: canvas_host::CanvasHost::default(),
             waker: None,
         }
     }
@@ -429,6 +448,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_github = state.github_tick();
     let next_mcp = state.mcp_tick(now);
     let next_catalog = state.catalog_tick(now);
+    let next_accounts = state.accounts_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let next_first_run = state.first_run_tick(now);
@@ -438,6 +458,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     }
     let next_automation = state.automations_tick(now);
     let next_preview = state.automation_editor_tick(now);
+    let (canvas_changed, next_canvas) = state.pump_canvases(tx);
+    changed |= canvas_changed;
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -451,9 +473,11 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_mcp,
         next_first_run,
         next_catalog,
+        next_accounts,
         next_completion,
         next_automation,
         next_preview,
+        next_canvas,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

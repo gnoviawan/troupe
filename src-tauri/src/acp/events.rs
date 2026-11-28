@@ -351,6 +351,11 @@ pub struct MessageChunkEvent {
     /// renderer keeps such text out of the main reply.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_tool_call_id: Option<String>,
+    /// Host-stamped sender name when the parent agent sent a follow-up to an
+    /// orchestrated subagent (`subagent_send`). Never populated from agent wire
+    /// updates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
 }
 
 /// `acp:tool_call`

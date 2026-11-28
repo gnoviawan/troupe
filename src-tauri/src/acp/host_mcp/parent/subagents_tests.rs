@@ -23,7 +23,10 @@ fn every_start_refusal_has_its_contract_code() {
         (StartError::Capacity { max: 4 }, "capacity"),
         (StartError::Depth { max: 2 }, "depth"),
         (StartError::InvalidInput("task"), "invalid_input"),
-        (StartError::WorkspaceUnavailable("w".into()), "workspace_failed"),
+        (
+            StartError::WorkspaceUnavailable("w".into()),
+            "workspace_failed",
+        ),
         (StartError::SpawnFailed("s".into()), "spawn_failed"),
     ];
     for (error, code) in cases {
@@ -33,6 +36,57 @@ fn every_start_refusal_has_its_contract_code() {
         assert_eq!(reply.result.as_ref().unwrap()["code"], code);
         assert_eq!(reply.result.as_ref().unwrap()["message"], error.to_string());
     }
+}
+
+#[test]
+fn every_send_refusal_has_its_contract_code() {
+    let cases = [
+        (SendError::NotFound, "not_found"),
+        (SendError::InvalidInput("message"), "invalid_input"),
+        (SendError::Disabled, "disabled"),
+        (SendError::UnknownAgent("x".into()), "unknown_agent"),
+        (SendError::AgentNotAllowed("x".into()), "agent_not_allowed"),
+        (SendError::Capacity { max: 4 }, "capacity"),
+        (SendError::Busy("busy"), "busy"),
+        (SendError::NotResumable("failed"), "not_resumable"),
+        (
+            SendError::SessionUnloadable("not supported".into()),
+            "session_unloadable",
+        ),
+        (SendError::SpawnFailed("boom".into()), "spawn_failed"),
+    ];
+    for (error, code) in cases {
+        let reply = send_refusal(&error);
+        assert!(!reply.ok);
+        assert_eq!(reply.code.as_deref(), Some(code));
+        assert_eq!(reply.result.as_ref().unwrap()["code"], code);
+        assert_eq!(reply.result.as_ref().unwrap()["message"], error.to_string());
+    }
+}
+
+#[test]
+fn subagent_send_schema_and_input_match_contract() {
+    let schema = serde_json::to_value(rmcp::schemars::schema_for!(SubagentSendInput)).unwrap();
+    assert_eq!(schema["properties"]["message"]["minLength"], 1);
+    assert_eq!(schema["properties"]["message"]["maxLength"], 8000);
+    let mut props: Vec<&str> = schema["properties"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    props.sort_unstable();
+    assert_eq!(props, ["interrupt", "message", "subagentId"]);
+
+    let parsed: SubagentSendInput = parse(Some(json!({
+        "subagentId": "sub-1",
+        "message": "fix the lint",
+        "interrupt": true,
+    })))
+    .expect("send input parses");
+    assert_eq!(parsed.subagent_id, "sub-1");
+    assert_eq!(parsed.message, "fix the lint");
+    assert_eq!(parsed.interrupt, Some(true));
 }
 
 #[tokio::test]

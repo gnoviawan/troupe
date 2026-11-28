@@ -3,7 +3,7 @@
 //! transitions only. The engine (`engine.rs`) owns the ledger and every
 //! side effect.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::sync::Arc;
 
 use tokio::sync::oneshot;
@@ -61,11 +61,23 @@ impl RunEnd {
     }
 }
 
+/// Follow-up prompts queued per live run before `subagent_send` refuses with `busy`.
+pub(crate) const MAX_QUEUED_PROMPTS: usize = 8;
+
+/// A follow-up prompt queued on a live run, delivered when the current turn ends.
+#[derive(Debug, Clone)]
+pub(crate) struct QueuedPrompt {
+    pub(crate) message: String,
+    pub(crate) sender: String,
+}
+
 /// One run's state machine.
 #[derive(Debug, Clone)]
 pub(crate) enum RunBody {
     /// Spawned, no session yet; capacity held.
-    Spawning { child_agent: AgentId },
+    Spawning {
+        child_agent: AgentId,
+    },
     Live {
         child_agent: AgentId,
         session: SessionId,
@@ -77,7 +89,16 @@ pub(crate) enum RunBody {
         session: SessionId,
         since_ms: u64,
     },
-    Settled { end: RunEnd, at_ms: u64 },
+    /// Turn ended with no queued prompt; shutting down the child driver before
+    /// settling so a subsequent `subagent_send` resume cannot race teardown.
+    Settling {
+        child_agent: AgentId,
+        session: SessionId,
+    },
+    Settled {
+        end: RunEnd,
+        at_ms: u64,
+    },
 }
 
 /// Longest result text kept, tail-capped.
@@ -99,7 +120,11 @@ impl RunCapture {
     pub(crate) fn note_chunk(&self, text: &str) {
         let mut capture = self.inner.lock();
         capture.text.push_str(text);
-        let overflow = capture.text.chars().count().saturating_sub(MAX_RESULT_CHARS);
+        let overflow = capture
+            .text
+            .chars()
+            .count()
+            .saturating_sub(MAX_RESULT_CHARS);
         if overflow > 0 {
             let cut = capture
                 .text
@@ -117,6 +142,12 @@ impl RunCapture {
     pub(crate) fn result_text(&self) -> String {
         self.inner.lock().text.clone()
     }
+
+    /// Clear captured text at the start of a follow-up turn while keeping
+    /// cumulative `tool_uses`.
+    pub(crate) fn clear_text(&self) {
+        self.inner.lock().text.clear();
+    }
 }
 
 /// One orchestrated child run. The record is derived ([`ChildRun::record`]),
@@ -128,11 +159,24 @@ pub(crate) struct ChildRun {
     pub(crate) root: String,
     /// The driver that receives the cards (the root chat's agent).
     pub(crate) parent_agent: AgentId,
+    /// The session that spawned this run (the chat or a nested parent run).
+    pub(crate) parent_session_id: String,
     /// The spawning run, for nesting.
     pub(crate) parent_run: Option<RunId>,
     /// 1 = the chat's agent spawned it directly.
     pub(crate) depth: u8,
     pub(crate) identity: SubagentAgent,
+    /// Profile id resolved at start; re-checked against current settings on resume.
+    pub(crate) profile_id: String,
+    pub(crate) execution_policy: Option<(
+        crate::acp::config::AgentConfig,
+        super::profiles::SubagentProfile,
+        Option<String>,
+    )>,
+    /// Working directory the child session ran in (worktree path or shared cwd).
+    pub(crate) child_cwd: String,
+    /// Kept ACP session id so `subagent_send` can reload the session after settle.
+    pub(crate) session_id: Option<SessionId>,
     pub(crate) title: String,
     pub(crate) task: String,
     pub(crate) model: Option<String>,
@@ -145,12 +189,17 @@ pub(crate) struct ChildRun {
     pub(crate) result: Option<String>,
     pub(crate) waiters: Vec<oneshot::Sender<()>>,
     pub(crate) capture: Arc<RunCapture>,
+    /// Follow-up prompts queued while the run is live, delivered FIFO when the
+    /// current turn ends.
+    pub(crate) queued_prompts: VecDeque<QueuedPrompt>,
 }
 
 impl ChildRun {
     pub(crate) fn session(&self) -> Option<&SessionId> {
         match &self.body {
-            RunBody::Live { session, .. } | RunBody::Stopping { session, .. } => Some(session),
+            RunBody::Live { session, .. }
+            | RunBody::Stopping { session, .. }
+            | RunBody::Settling { session, .. } => Some(session),
             RunBody::Spawning { .. } | RunBody::Settled { .. } => None,
         }
     }
@@ -159,7 +208,8 @@ impl ChildRun {
         match &self.body {
             RunBody::Spawning { child_agent }
             | RunBody::Live { child_agent, .. }
-            | RunBody::Stopping { child_agent, .. } => Some(child_agent),
+            | RunBody::Stopping { child_agent, .. }
+            | RunBody::Settling { child_agent, .. } => Some(child_agent),
             RunBody::Settled { .. } => None,
         }
     }
@@ -167,9 +217,12 @@ impl ChildRun {
     /// The run's observable state.
     pub(crate) fn state(&self) -> RunState {
         match &self.body {
-            RunBody::Spawning { .. } | RunBody::Stopping { .. } => RunState::Running,
+            RunBody::Spawning { .. } | RunBody::Stopping { .. } | RunBody::Settling { .. } => {
+                RunState::Running
+            }
             RunBody::Live {
-                awaiting_permission, ..
+                awaiting_permission,
+                ..
             } => {
                 if *awaiting_permission {
                     RunState::RequiresAction
@@ -195,22 +248,28 @@ impl ChildRun {
         if !self.is_live() {
             return false;
         }
-        self.body = RunBody::Settled {
-            end,
-            at_ms: now_ms,
-        };
+        self.queued_prompts.clear();
+        self.body = RunBody::Settled { end, at_ms: now_ms };
         true
     }
 
     /// Move a live run into `Stopping` (the cancel is going out). Returns
     /// the cancel target, or `None` when the run is already stopping,
-    /// spawning (the lease drop stops it) or settled.
+    /// settling, spawning (the lease drop stops it) or settled.
     pub(crate) fn begin_stop(&mut self, now_ms: u64) -> Option<(AgentId, SessionId)> {
-        match std::mem::replace(&mut self.body, RunBody::Settled {
-            end: RunEnd::Cancelled,
-            at_ms: now_ms,
-        }) {
-            RunBody::Live { child_agent, session, .. } => {
+        match std::mem::replace(
+            &mut self.body,
+            RunBody::Settled {
+                end: RunEnd::Cancelled,
+                at_ms: now_ms,
+            },
+        ) {
+            RunBody::Live {
+                child_agent,
+                session,
+                ..
+            } => {
+                self.queued_prompts.clear();
                 self.body = RunBody::Stopping {
                     child_agent: child_agent.clone(),
                     session: session.clone(),
@@ -229,7 +288,8 @@ impl ChildRun {
     /// true when the flag changed.
     pub(crate) fn set_awaiting(&mut self, awaiting: bool) -> bool {
         let RunBody::Live {
-            awaiting_permission, ..
+            awaiting_permission,
+            ..
         } = &mut self.body
         else {
             return false;
@@ -261,9 +321,12 @@ impl ChildRun {
     /// The derived record. Never synced: the engine sends it on every card.
     pub(crate) fn record(&self) -> Subagent {
         let state = match &self.body {
-            RunBody::Spawning { .. } | RunBody::Stopping { .. } => SubagentState::Running,
+            RunBody::Spawning { .. } | RunBody::Stopping { .. } | RunBody::Settling { .. } => {
+                SubagentState::Running
+            }
             RunBody::Live {
-                awaiting_permission, ..
+                awaiting_permission,
+                ..
             } => {
                 if *awaiting_permission {
                     SubagentState::RequiresAction
@@ -411,10 +474,17 @@ pub struct StartRequest {
 pub enum StartError {
     Disabled,
     /// `allowed`: the profile ids a start may name, for the error text.
-    UnknownAgent { agent: String, allowed: Vec<String> },
+    UnknownAgent {
+        agent: String,
+        allowed: Vec<String>,
+    },
     AgentNotAllowed(String),
-    Capacity { max: u32 },
-    Depth { max: u8 },
+    Capacity {
+        max: u32,
+    },
+    Depth {
+        max: u8,
+    },
     /// Names the field, never the value.
     InvalidInput(&'static str),
     WorkspaceUnavailable(String),
@@ -453,7 +523,9 @@ pub struct RunLookupError;
 pub enum WaitOutcome {
     Settled(Box<RunSummary>),
     /// The budget ended; an outcome, never an error.
-    TimedOut { state: RunState },
+    TimedOut {
+        state: RunState,
+    },
 }
 
 /// The outcome of `stop`.
@@ -474,6 +546,62 @@ impl std::fmt::Display for StopError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NotFound => f.write_str("no such subagent in this chat"),
+        }
+    }
+}
+
+/// What `send` was asked for.
+#[derive(Debug, Clone)]
+pub struct SendRequest {
+    pub(crate) subagent_id: String,
+    pub(crate) message: String,
+    pub(crate) interrupt: bool,
+}
+
+/// The outcome of `subagent_send`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SendOutcome {
+    pub(crate) run: RunId,
+    pub(crate) state: RunState,
+    /// True when queued onto a running subagent; false when an idle run was
+    /// resumed and started immediately.
+    pub(crate) queued: bool,
+}
+
+/// A `subagent_send` the engine refused or could not deliver.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SendError {
+    /// No run of the caller's chat has this id.
+    NotFound,
+    /// Names the invalid field, never its value.
+    InvalidInput(&'static str),
+    Disabled,
+    UnknownAgent(String),
+    AgentNotAllowed(String),
+    Capacity {
+        max: u32,
+    },
+    Busy(&'static str),
+    NotResumable(&'static str),
+    SessionUnloadable(String),
+    SpawnFailed(String),
+}
+
+impl std::fmt::Display for SendError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotFound => f.write_str("no such subagent in this chat"),
+            Self::InvalidInput(field) => write!(f, "invalid {field}"),
+            Self::Disabled => f.write_str("subagents are disabled in the settings"),
+            Self::UnknownAgent(agent) => write!(f, "unknown agent {agent}"),
+            Self::AgentNotAllowed(agent) => write!(f, "agent {agent} is not allowed"),
+            Self::Capacity { max } => write!(f, "too many running subagents (max {max})"),
+            Self::Busy(reason) => f.write_str(reason),
+            Self::NotResumable(reason) => f.write_str(reason),
+            Self::SessionUnloadable(error) => {
+                write!(f, "could not reload the subagent session: {error}")
+            }
+            Self::SpawnFailed(error) => write!(f, "could not resume the subagent: {error}"),
         }
     }
 }
@@ -556,7 +684,10 @@ impl RunLedger {
                 ids.iter()
                     .enumerate()
                     .filter_map(|(order, id)| {
-                        let run = self.runs.get(id).filter(|run| !run.is_live())?;
+                        let run = self
+                            .runs
+                            .get(id)
+                            .filter(|run| !run.is_live() && !self.starting.contains_key(id))?;
                         Some(((run.ended_at_ms(), order), id))
                     })
                     .min_by_key(|(key, _)| *key)

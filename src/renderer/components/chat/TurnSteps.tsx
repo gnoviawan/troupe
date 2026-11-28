@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { Fragment, type ReactNode, useCallback, useMemo, useState } from 'react'
 import type { ToolCall } from '@/lib/acp-api'
 import type { FilePathResolutionContext } from '@/lib/file-path-links'
 import { cn } from '@/lib/utils'
+import type { ChatMessage as ChatMessageType } from '@/stores/acp-store'
 import { ChatMessage } from './ChatMessage'
 import { CHAT_ROW_MIN_H } from './chat-layout'
 import type { TimelineItem } from './chat-timeline'
@@ -143,6 +144,8 @@ interface TurnStepsProps {
   filePathContext?: FilePathResolutionContext
   /** The steps sit inside a subagent's panel: a subagent opened from them returns to it on Back. */
   nested?: boolean
+  /** Custom renderer for user-role messages inside the steps (e.g. parent follow-ups in SubagentPanel). */
+  renderUserMessage?: (message: ChatMessageType) => ReactNode
 }
 
 /** A turn's steps in order: work runs, subagent groups, thoughts and narration between them. */
@@ -154,7 +157,8 @@ export function TurnSteps({
   parentTurn,
   enter,
   filePathContext,
-  nested = false
+  nested = false,
+  renderUserMessage
 }: TurnStepsProps): React.JSX.Element {
   const { workRuns, subagentGroups } = layout
   const { stepLimit, showEarlier } = stepWindow
@@ -245,6 +249,9 @@ export function TurnSteps({
           item.kind === 'reload'
         )
           return null
+        if (item.message.role === 'user' && renderUserMessage) {
+          return <Fragment key={item.key}>{renderUserMessage(item.message)}</Fragment>
+        }
         return (
           <ChatMessage
             key={item.key}

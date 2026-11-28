@@ -268,7 +268,34 @@ pub async fn log_tunnel_reachability(url: String) {
     }
 }
 
-/// Spawn `cloudflared tunnel --url http://localhost:{port}` and wait (up to
+/// The quick tunnel's arguments. `config` is an isolated config file, so a
+/// user's `~/.cloudflared/config.yml` (a named tunnel, a catch-all ingress)
+/// can never take over the quick tunnel.
+pub(crate) fn quick_tunnel_args(port: u16, config: &std::path::Path) -> Vec<String> {
+    vec![
+        "tunnel".to_string(),
+        "--config".to_string(),
+        config.to_string_lossy().into_owned(),
+        "--url".to_string(),
+        format!("http://localhost:{port}"),
+    ]
+}
+
+/// Write the isolated config: only `no-autoupdate`, nothing a named tunnel
+/// or an ingress rule could come from.
+pub(crate) fn write_isolated_config() -> Result<std::path::PathBuf, String> {
+    let path = std::env::temp_dir().join(format!(
+        "troupe-quick-tunnel-{}-{}.yml",
+        std::process::id(),
+        uuid::Uuid::new_v4()
+    ));
+    std::fs::write(&path, "no-autoupdate: true\n")
+        .map_err(|e| format!("cannot write the cloudflared config {}: {e}", path.display()))?;
+    Ok(path)
+}
+
+/// Spawn `cloudflared tunnel --config <isolated> --url http://localhost:{port}`
+/// and wait (up to
 /// [`TUNNEL_URL_TIMEOUT_SECS`]) for the ephemeral trycloudflare URL.
 ///
 /// # Errors
@@ -281,10 +308,18 @@ pub async fn log_tunnel_reachability(url: String) {
 ///
 /// On any error the child is killed before returning — no orphaned process.
 pub async fn start_quick_tunnel(port: u16) -> Result<QuickTunnel, String> {
+    let config = write_isolated_config()?;
+    let started = start_quick_tunnel_on(port, &config).await;
+    // cloudflared reads its config at start, before it prints the URL.
+    let _ = std::fs::remove_file(&config);
+    started
+}
+
+async fn start_quick_tunnel_on(port: u16, config: &std::path::Path) -> Result<QuickTunnel, String> {
     let path = detect_cloudflared_path();
     let mut command = Command::new(&path);
     command
-        .args(["tunnel", "--url", &format!("http://localhost:{port}")])
+        .args(quick_tunnel_args(port, config))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())

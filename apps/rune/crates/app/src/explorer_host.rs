@@ -67,6 +67,7 @@ impl State {
                             self.workspace.step(model::workspace::Event::RemoveTab(model::workspace::editor_tab_id(&path)));
                         }
                     }
+                    self.canvas_file_changed(&gone);
                 }
                 Effect::Reveal(_) => {}
                 Effect::Toast(message) => {

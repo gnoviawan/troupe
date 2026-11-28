@@ -30,8 +30,13 @@ pub struct EditorHost {
 }
 
 impl State {
-    /// Opens `path` in the active pane (the explorer, a file link).
+    /// Opens `path` in the active pane (the explorer, a file link). `.figcraft` documents open
+    /// in the project's singleton canvas tab instead of the text editor.
     pub fn open_file(&mut self, path: &str) {
+        if ui::canvas::is_canvas_doc_path(path) {
+            self.open_canvas_for_active(path);
+            return;
+        }
         self.workspace.step(model::workspace::Event::AddEditorTab(path.to_owned(), None));
         self.sync_editors();
     }
@@ -303,6 +308,9 @@ pub(crate) fn on_ime(s: &mut State, ime: &rune::Ime, tx: &mut rune::Tx) -> bool 
     if let Some(id) = tx.focused().and_then(crate::command_editor::field_terminal) {
         let id = id.to_owned();
         return s.command_editor_ime(&id, ime);
+    }
+    if s.canvas_ime(ime, tx) {
+        return true;
     }
     s.editors.ime(ime)
 }

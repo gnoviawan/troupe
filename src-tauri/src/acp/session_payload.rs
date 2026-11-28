@@ -581,8 +581,9 @@ fn child_parent<'a>(
     dispatches.get(parent).copied()
 }
 
-/// Add a subagent's text chunk to its dispatch, as the renderer's
-/// `appendSubagentChunk` does live: agent text only, for a known dispatch.
+/// Add a subagent's text chunk (or a host-attributed parent follow-up message)
+/// to its dispatch, as the renderer's `appendSubagentChunk` does live: agent
+/// text, or `user` text carrying a non-empty `sender`, for a known dispatch.
 fn fold_subagent_text(
     folds: &mut [ToolSummaryFold],
     index: &std::collections::HashMap<String, usize>,
@@ -590,7 +591,17 @@ fn fold_subagent_text(
 ) {
     let payload = &record.payload;
     let role = payload.get("role").and_then(Value::as_str);
-    if role.is_some_and(|role| role != "agent") {
+    let sender = payload
+        .get("sender")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|name| !name.is_empty());
+    let keep = match role {
+        None | Some("agent") => sender.is_none(),
+        Some("user") => sender.is_some(),
+        _ => false,
+    };
+    if !keep {
         return;
     }
     let Some(content) = payload.get("content") else {
@@ -616,7 +627,7 @@ fn fold_subagent_text(
     let message_id = payload.get("messageId").and_then(Value::as_str);
     folds[*slot]
         .messages
-        .push(text, record.seq, record.recorded_at, message_id);
+        .push(text, record.seq, record.recorded_at, message_id, sender);
 }
 
 /// Path-only locations from a durable record; `None` when absent or when no

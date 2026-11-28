@@ -973,6 +973,38 @@ fn a_restored_dispatch_carries_its_result_and_its_subagents_text() {
 }
 
 #[test]
+fn a_restored_dispatch_keeps_parent_followup_messages_with_sender_attribution() {
+    let record = json!({"id": "child-1", "activity": "idle", "end": {"reason": "completed"}});
+    let mut parent_msg = subagent_chunk(4, "d1", "user", "Also cover error cases.");
+    parent_msg.payload["sender"] = json!("Claude Code");
+    let echoed_user = subagent_chunk(5, "d1", "user", "echoed without sender");
+    let records = vec![
+        user_prompt(1, Some("turn-1"), "delegate"),
+        tool_record(
+            2,
+            "tool_call",
+            json!({"toolCallId": "d1", "kind": "think", "_meta": {"termul/subagent": record}}),
+        ),
+        subagent_chunk(3, "d1", "agent", "First pass done."),
+        parent_msg,
+        echoed_user,
+        subagent_chunk(6, "d1", "agent", "Added error cases."),
+        prompt_complete(7, "turn-1"),
+    ];
+    let payload = materialize_session_payload(&metadata(), &records);
+    let value = serde_json::to_value(&payload).unwrap();
+    assert_eq!(
+        value["toolCalls"][0]["subagentMessages"],
+        json!([
+            {"seq": 3, "timestamp": 103, "text": "First pass done."},
+            {"seq": 4, "timestamp": 104, "text": "Also cover error cases.", "sender": "Claude Code"},
+            {"seq": 6, "timestamp": 106, "text": "Added error cases."},
+        ])
+    );
+    assert_eq!(payload.messages.len(), 1);
+}
+
+#[test]
 fn a_restored_subagent_keeps_only_its_newest_text_and_calls() {
     let record = json!({"id": "child-1", "activity": "running"});
     let mut records = vec![tool_record(

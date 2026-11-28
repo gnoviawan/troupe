@@ -10,9 +10,14 @@ use tracing::{info, warn};
 /// How often the parent is checked.
 const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
 
-/// Resolves once `pid` no longer runs. On Unix, when `pid` is this process's
-/// parent at the start, the parent is also gone once this process is
-/// re-parented, which covers a pid reused by an unrelated process.
+/// Resolves once `pid` no longer runs.
+///
+/// PID reuse: on Unix, when `pid` is this process's direct parent at the
+/// start, the parent also counts as gone once this process is re-parented,
+/// which covers a reused pid. A `pid` that is not the direct parent has no
+/// such check: if it exits and an unrelated process takes the pid before the
+/// next poll, the server keeps running. On Windows the open handle pins the
+/// pid, so it cannot be reused while watched.
 pub async fn parent_exited(pid: u32) {
     #[cfg(unix)]
     unix::exited(pid, POLL_INTERVAL).await;
@@ -104,7 +109,9 @@ mod windows {
             warn!(
                 target: "termul::parent_watch",
                 parent_pid = pid,
-                "cannot open the parent process; treating it as exited"
+                os_error = %std::io::Error::last_os_error(),
+                "OpenProcess failed on the --parent-pid process (already gone, or access denied); \
+                 the server stops now as if it had exited"
             );
             return;
         }

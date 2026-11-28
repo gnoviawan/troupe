@@ -250,3 +250,19 @@ async fn spawn_hanging_listener() -> std::net::SocketAddr {
     });
     addr
 }
+
+#[test]
+fn the_quick_tunnel_runs_on_an_isolated_config() {
+    let config = write_isolated_config().unwrap();
+    let args = quick_tunnel_args(8191, &config);
+    assert_eq!(args[0], "tunnel");
+    let at = args.iter().position(|a| a == "--config").expect("--config passed");
+    assert_eq!(std::path::Path::new(&args[at + 1]), config.as_path());
+    assert!(args.ends_with(&["--url".to_string(), "http://localhost:8191".to_string()]));
+    assert_eq!(
+        std::fs::read_to_string(&config).unwrap(),
+        "no-autoupdate: true\n",
+        "nothing a named tunnel or an ingress could come from"
+    );
+    let _ = std::fs::remove_file(config);
+}

@@ -22,20 +22,21 @@ mod engine;
 mod lifecycle;
 mod profiles;
 mod run;
+mod send;
 mod settings;
 mod sinks;
 mod worktree;
 
-pub use engine::OrchestratorEngine;
 #[cfg(test)]
 pub(crate) use engine::engine_with_installed;
-#[allow(unused_imports)]
-pub use run::{
-    AgentListing, CallerRef, RunId, RunLookupError, RunState, RunSummary, StartError, StartRequest,
-    StopError, StopOutcome, WaitOutcome,
-};
+pub use engine::OrchestratorEngine;
 #[allow(unused_imports)]
 pub use profiles::{Launchable, ResolvedProfile, SubagentApprovals, SubagentProfile};
+#[allow(unused_imports)]
+pub use run::{
+    AgentListing, CallerRef, RunId, RunLookupError, RunState, RunSummary, SendError, SendOutcome,
+    SendRequest, StartError, StartRequest, StopError, StopOutcome, WaitOutcome,
+};
 #[allow(unused_imports)]
 pub use settings::{OrchestratorSettings, SettingsInput};
 

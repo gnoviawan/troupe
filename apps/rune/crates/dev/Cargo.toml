@@ -13,3 +13,4 @@ path = "src/main.rs"
 automation = { path = "../automation", features = ["tooling"] }
 client = { path = "../client" }
 troupe-app = { path = "../app" }
+troupe-canvas = { path = "../canvas" }

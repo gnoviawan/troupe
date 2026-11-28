@@ -4,7 +4,7 @@
 # `rune` dependency and every `[patch.crates-io]` entry below.
 [workspace]
 resolver = "3"
-members = ["crates/app", "crates/automation", "crates/client", "crates/desktop", "crates/dev", "crates/editor", "crates/flow", "crates/gallery", "crates/hello", "crates/model", "crates/probe", "crates/term", "crates/theme", "crates/ui", "crates/web"]
+members = ["crates/app", "crates/automation", "crates/canvas", "crates/client", "crates/desktop", "crates/dev", "crates/editor", "crates/flow", "crates/gallery", "crates/hello", "crates/model", "crates/probe", "crates/term", "crates/theme", "crates/ui", "crates/web"]
 
 [workspace.package]
 edition = "2024"
@@ -35,3 +35,15 @@ parley_engine = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636
 wgpu-hal = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d172053a0b6469a334c0bfc227" }
 accesskit_windows = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d172053a0b6469a334c0bfc227" }
 accesskit_macos = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d172053a0b6469a334c0bfc227" }
+
+# FigCraft's egui fork (`crates/canvas`), the same rev and crates the figcraft workspace patches
+# at the tag `canvas/figcraft.pin` names. Its winit patch is not repeated: Rune's wins here, and
+# figcraft-ui-egui links no winit. Bump these with that tag.
+ecolor = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+emath = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint_default_fonts = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui-wgpu = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_extras = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+krilla = { git = "https://github.com/storytold/craft-libs", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }

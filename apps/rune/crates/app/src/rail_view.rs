@@ -47,7 +47,15 @@ pub fn body(
                 .key("rail-search")
                 .on_press(|s: &mut State| s.open_palette(false)),
         )
-        .child(shell::nav_row(t, &i::CANVAS, "Canvas", collapsed, !can_canvas).key("rail-canvas"))
+        .child(
+            shell::nav_row(t, &i::CANVAS, "Canvas", collapsed, !can_canvas)
+                .key("rail-canvas")
+                .label("Open canvas")
+                .on_press(|s: &mut State| {
+                    s.overlays.close(crate::DRAWER);
+                    s.open_project_canvas();
+                }),
+        )
         .child(
             shell::nav_row(
                 t,

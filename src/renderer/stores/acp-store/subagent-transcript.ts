@@ -17,6 +17,8 @@ import type { AcpState } from './types'
 const MAX_PARENT_ID_CHARS = 512
 /** Longest ACP `messageId` a subagent message keeps; a longer one counts as absent. */
 const MAX_MESSAGE_ID_CHARS = 256
+/** Longest parent sender label kept; matches host `subagents::MAX_TEXT_CHARS`. */
+const MAX_SENDER_CHARS = 512
 /** Text kept across a dispatch's subagent messages; the oldest goes first. */
 export const MAX_SUBAGENT_TEXT_CHARS = 8_000
 /** Subagent messages kept on a dispatch call; the oldest go first. */
@@ -58,12 +60,15 @@ function isSubagentMessage(value: unknown): value is SubagentMessage {
 /** A wire `subagentMessages` value as messages: well-formed entries only, within the bounds. */
 export function parseSubagentMessages(value: unknown): SubagentMessage[] | undefined {
   if (!Array.isArray(value)) return undefined
-  const messages = value.filter(isSubagentMessage).map(({ seq, timestamp, text, messageId }) => ({
-    seq,
-    timestamp,
-    text,
-    ...boundedMessageId(messageId)
-  }))
+  const messages = value
+    .filter(isSubagentMessage)
+    .map(({ seq, timestamp, text, messageId, sender }) => ({
+      seq,
+      timestamp,
+      text,
+      ...boundedMessageId(messageId),
+      ...boundedSender(sender)
+    }))
   return messages.length > 0 ? boundSubagentMessages(messages) : undefined
 }
 
@@ -99,31 +104,61 @@ function boundedMessageId(id: unknown): { messageId?: string } {
   return count <= MAX_MESSAGE_ID_CHARS ? { messageId: id } : {}
 }
 
-/** The subagent text a chunk adds; null for thought, user, and non-text chunks. */
-export function subagentChunkText(role: unknown, content: unknown): string | null {
-  const block = asRecord(content)
-  if (role !== 'agent' || block?.type !== 'text') return null
-  return typeof block.text === 'string' && block.text.length > 0 ? block.text : null
+/** Parent agent label, counted in code points to match the host bound. */
+function boundedSender(sender: unknown): { sender?: string } {
+  if (typeof sender !== 'string') return {}
+  const trimmed = sender.trim()
+  if (trimmed.length === 0 || trimmed.length > 2 * MAX_SENDER_CHARS) return {}
+  let count = 0
+  for (const _ of trimmed) count++
+  return count <= MAX_SENDER_CHARS ? { sender: trimmed } : {}
 }
 
 /**
- * `call` with a subagent text chunk added. The chunk extends the last message,
- * unless it carries a different ACP `messageId`, or one of the subagent's
- * tool calls arrived after that message started: then it opens a new message
- * stamped with `stamp`, so messages stay apart and text and tool calls keep
- * their order.
+ * The subagent text a chunk adds: agent text chunks, or `user` text chunks
+ * stamped with a parent `sender` (`subagent_send`). Returns null for thought,
+ * unattributed user echoes, and non-text chunks.
+ */
+export function subagentChunkText(
+  role: unknown,
+  content: unknown,
+  sender?: unknown
+): { text: string; sender?: string } | null {
+  const block = asRecord(content)
+  if (block?.type !== 'text' || typeof block.text !== 'string' || block.text.length === 0) {
+    return null
+  }
+  const { sender: validSender } = boundedSender(sender)
+  if (role === 'agent' && validSender === undefined) {
+    return { text: block.text }
+  }
+  if (role === 'user' && validSender !== undefined) {
+    return { text: block.text, sender: validSender }
+  }
+  return null
+}
+
+/**
+ * `call` with a subagent text chunk (or parent follow-up) added. An agent chunk
+ * extends the last agent message, unless it carries a different ACP `messageId`,
+ * or one of the subagent's tool calls arrived after that message started. A
+ * parent-attributed message (`sender` present) always opens its own message,
+ * and the next agent chunk starts a fresh message after it.
  */
 export function withSubagentText(
   call: ToolCall,
   text: string,
-  stamp: { seq: number; timestamp: number; messageId?: string },
+  stamp: { seq: number; timestamp: number; messageId?: string; sender?: string },
   calls: readonly ToolCall[]
 ): ToolCall {
   const messages = call.subagentMessages ?? []
   const last = messages[messages.length - 1]
   const { messageId } = boundedMessageId(stamp.messageId)
+  const { sender } = boundedSender(stamp.sender)
   const opens =
     !last ||
+    sender !== undefined ||
+    last.sender !== undefined ||
     (messageId !== undefined && last.messageId !== messageId) ||
     calls.some(
       (tc) =>
@@ -132,16 +167,23 @@ export function withSubagentText(
   const next = opens
     ? [
         ...messages,
-        { seq: stamp.seq, timestamp: stamp.timestamp, text, ...(messageId ? { messageId } : {}) }
+        {
+          seq: stamp.seq,
+          timestamp: stamp.timestamp,
+          text,
+          ...(messageId ? { messageId } : {}),
+          ...(sender ? { sender } : {})
+        }
       ]
     : [...messages.slice(0, -1), { ...last, text: last.text + text }]
   return { ...call, subagentMessages: boundSubagentMessages(next) }
 }
 
 /**
- * Append a subagent text chunk to its dispatch call. Thought chunks and
- * non-text blocks are not kept. A chunk whose dispatch call is unknown is
- * dropped (logged once per parent id): it never joins the main reply.
+ * Append a subagent text chunk to its dispatch call. Thought chunks,
+ * unattributed user echoes, and non-text blocks are not kept. A chunk whose
+ * dispatch call is unknown is dropped (logged once per parent id): it never
+ * joins the main reply.
  */
 export function appendSubagentChunk(
   s: AcpState,
@@ -151,8 +193,8 @@ export function appendSubagentChunk(
 ): Partial<AcpState> {
   const session = s.sessions[e.sessionId]
   if (!session || (session.status === 'closed' && !session.replaying)) return {}
-  const text = subagentChunkText(e.role, e.content)
-  if (text === null) return {}
+  const parsed = subagentChunkText(e.role, e.content, e.sender)
+  if (parsed === null) return {}
   const list = s.toolCalls[e.sessionId] ?? []
   const idx = list.findIndex((tc) => tc.toolCallId === e.parentToolCallId)
   if (idx === -1) {
@@ -171,8 +213,13 @@ export function appendSubagentChunk(
   const next = [...list]
   next[idx] = withSubagentText(
     list[idx],
-    text,
-    { seq: replaySeq ?? nextSeq(), timestamp: Date.now(), messageId: e.messageId },
+    parsed.text,
+    {
+      seq: replaySeq ?? nextSeq(),
+      timestamp: Date.now(),
+      messageId: e.messageId,
+      sender: parsed.sender
+    },
     list
   )
   return { toolCalls: { ...s.toolCalls, [e.sessionId]: next } }
