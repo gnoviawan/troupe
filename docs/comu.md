@@ -19,7 +19,8 @@ Troupe Comu gives ACP agents inside Troupe structured, per-app-consented local d
    - **Ask before foreground or full-desktop actions** (default: **On**): Prompts before raising windows, capturing the full desktop without `pid`, or moving the real OS cursor.
    - **Ask before reading clipboard text** (default: **On**): Prompts once per `comu_clipboard_get` call; clipboard text is never logged.
    - **750 ms Anti-Clickjacking Floor**: Enforced in both `HostTickets` (`ANSWER_FLOOR`) and `ComuConsentCard` (`useConsentArmed`). Unattended runs fail fast instead of hanging.
-3. **Session Stop Latch (`src-tauri/src/comu/stop.rs`)**: Clicking **Stop** on the live in-chat `ComuAgentIndicator` latches the session stopped, cancels pending Comu consent tickets, hides the virtual agent cursor, and refuses subsequent `comu_*` calls until the user's next prompt.
+3. **Session Stop Latch (`src-tauri/src/comu/stop.rs`)**: Clicking **Stop** on the live in-chat `ComuAgentIndicator` latches the session stopped, cancels pending Comu consent tickets, hides the virtual agent cursor, and refuses subsequent `comu_*` calls until the user's next prompt. The indicator itself shows only while a turn drives Computer Use and clears when that turn ends.
+4. **Turn Routing (`src-tauri/src/acp/host_mcp/parent/routes.rs`)**: `comu_*` calls are accepted during a prompt turn and while the agent works on its own outside one (Claude Code waking up after a background command; `src-tauri/src/acp/session/unprompted.rs`). Calls outside both fail with `NO_ACTIVE_TURN`.
 
 ## Virtual Agent Cursor
 

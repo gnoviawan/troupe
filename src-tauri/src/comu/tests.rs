@@ -661,3 +661,35 @@ async fn run_steps_rejects_nested_batches_normalizes_raw_names_and_preserves_ste
 }
 
 
+
+/// The in-chat "The agent is using Computer Use on this machine." bar must
+/// clear when the turn (or the agent's own work) that drove Computer Use ends,
+/// not linger until the chat closes.
+#[test]
+fn turn_end_clears_the_active_computer_use_indicator() {
+    use crate::web::sink::{AcpEvent, EventSink};
+
+    #[derive(Default)]
+    struct ActiveEvents(Mutex<Vec<bool>>);
+    impl EventSink for ActiveEvents {
+        fn emit(&self, event: &AcpEvent) {
+            if event.type_ == super::stop::EVENT_COMU_SESSION_ACTIVE {
+                self.0.lock().push(event.payload["active"] == true);
+            }
+        }
+    }
+
+    let sink = Arc::new(ActiveEvents::default());
+    let registry = super::stop::ComuStopRegistry::new(vec![sink.clone()]);
+    let session = "sess-comu-indicator";
+    registry.mark_active(session);
+    assert!(super::stop::session_runtime_state(session).active);
+
+    registry.mark_inactive(session);
+    assert!(!super::stop::session_runtime_state(session).active);
+    // A second end is a no-op; the next action shows the bar again.
+    registry.mark_inactive(session);
+    registry.mark_active(session);
+    assert_eq!(*sink.0.lock(), vec![true, false, true]);
+    registry.forget_session(session);
+}

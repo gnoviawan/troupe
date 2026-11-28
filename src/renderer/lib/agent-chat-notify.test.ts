@@ -14,6 +14,7 @@ function session(overrides: Partial<AgentChatNotifySession> = {}): AgentChatNoti
     queueLength: 0,
     turnEndSeq: 0,
     stopReason: null,
+    backgroundRunning: false,
     ...overrides
   }
 }
@@ -60,6 +61,38 @@ describe('decideAgentChatNotifications', () => {
     })
     expect(decideAgentChatNotifications(prev, next)).toEqual([
       { kind: 'turn-finished', sessionId: 's1' }
+    ])
+  })
+
+  it('defers the finished ping while a background command still runs', () => {
+    const prev = snapshot({ sessions: { s1: session({ busy: true, turnEndSeq: 1 }) } })
+    const next = snapshot({
+      sessions: {
+        s1: session({ turnEndSeq: 2, stopReason: 'end_turn', backgroundRunning: true })
+      }
+    })
+    expect(decideAgentChatNotifications(prev, next)).toEqual([
+      { kind: 'turn-finish-deferred', sessionId: 's1' }
+    ])
+  })
+
+  it('settles a deferred finish only once the chat is idle with no background command', () => {
+    const deferredFinishes = new Set(['s1'])
+    const base = { turnEndSeq: 2, stopReason: 'end_turn' as const }
+    const waiting = snapshot({
+      deferredFinishes,
+      sessions: { s1: session({ ...base, backgroundRunning: true }) }
+    })
+    const wokeUp = snapshot({
+      deferredFinishes,
+      sessions: { s1: session({ ...base, busy: true }) }
+    })
+    const idle = snapshot({ deferredFinishes, sessions: { s1: session(base) } })
+
+    expect(decideAgentChatNotifications(waiting, waiting)).toEqual([])
+    expect(decideAgentChatNotifications(waiting, wokeUp)).toEqual([])
+    expect(decideAgentChatNotifications(wokeUp, idle)).toEqual([
+      { kind: 'turn-finished', sessionId: 's1', deferred: true }
     ])
   })
 
