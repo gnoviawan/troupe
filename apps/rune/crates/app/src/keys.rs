@@ -223,6 +223,11 @@ impl State {
             "zoomIn" => self.set_zoom(self.zoom.zoom_in()),
             "zoomOut" => self.set_zoom(self.zoom.zoom_out()),
             "zoomReset" => self.set_zoom(ui::Zoom::DEFAULT),
+            "saveFile" => {
+                if !self.save_active_canvas() {
+                    self.toast_later(&label);
+                }
+            }
             "worktreeSwitchRoot" | "worktreeSwitchNext" | "worktreeSwitchPrev" => {
                 self.toast_later(&label);
             }
