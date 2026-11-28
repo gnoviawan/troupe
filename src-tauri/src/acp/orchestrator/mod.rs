@@ -27,6 +27,7 @@ mod run;
 mod send;
 mod settings;
 mod sinks;
+mod stored_agents;
 mod wake;
 mod worktree;
 
@@ -78,13 +79,15 @@ pub fn install(
     wake_sink: Arc<WakeSink>,
     data_dir: PathBuf,
     installed_agents: Option<Arc<AcpInstallService>>,
+    store: Option<Arc<crate::web::store::WebStore>>,
     project_roots: Vec<PathBuf>,
     handle: Handle,
 ) -> Arc<OrchestratorEngine> {
     let host_plan_server = manager.host_plan_server();
-    let engine = Arc::new(
-        OrchestratorEngine::new(manager, data_dir, installed_agents, handle).with_relay(relay),
-    );
+    let mut engine =
+        OrchestratorEngine::new(manager, data_dir, installed_agents, handle).with_relay(relay);
+    engine.store = store;
+    let engine = Arc::new(engine);
     wake_sink.attach(&engine);
     host_plan_server.set_orchestrator(Arc::clone(&engine));
     worktree::sweep(&engine.handle, project_roots);

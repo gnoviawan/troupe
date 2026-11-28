@@ -65,6 +65,7 @@ impl OrchestratorEngine {
     /// never leave the host.
     pub(crate) fn launchable(&self) -> Launchable {
         self.registry.reload();
+        let stored = super::stored_agents::read(self.store.as_deref());
         let mut agents: Vec<LaunchableAgent> = self
             .registry
             .list()
@@ -74,6 +75,15 @@ impl OrchestratorEngine {
                 name: known.name,
             })
             .collect();
+        if let Some(configs) = &stored {
+            agents = configs
+                .iter()
+                .map(|config| LaunchableAgent {
+                    key: config.config_id.clone().unwrap(),
+                    name: config.name.clone(),
+                })
+                .collect();
+        }
         if let Some(installed) = &self.installed {
             for agent in installed.installed_agents() {
                 let key = format!("{REGISTRY_PREFIX}{}", agent.agent_id);
@@ -88,7 +98,8 @@ impl OrchestratorEngine {
         agents.sort_by(|a, b| a.key.cmp(&b.key));
         Launchable {
             agents,
-            bare_fallback: !self.registry.loaded(),
+            // Saved composer keys are authoritative; bare migration fallback is legacy only.
+            bare_fallback: stored.is_none() && !self.registry.loaded(),
         }
     }
 
@@ -127,7 +138,13 @@ impl OrchestratorEngine {
                 .iter()
                 .any(|known| known.agent_id == agent)
         });
-        if installed && !self.registry.contains(agent) {
+        if installed
+            && !self
+                .launchable()
+                .agents
+                .iter()
+                .any(|known| known.key == agent)
+        {
             format!("{REGISTRY_PREFIX}{agent}")
         } else {
             agent.to_string()
@@ -140,7 +157,25 @@ impl OrchestratorEngine {
         // The spawn path records launch configs into the automation
         // service's registry; read the file it writes, not a startup copy.
         self.registry.reload();
+        if !self
+            .launchable()
+            .agents
+            .iter()
+            .any(|known| known.key == agent)
+        {
+            return Err(StartError::UnknownAgent {
+                agent: agent.to_string(),
+                allowed: Vec::new(),
+            });
+        }
         if let Some(config) = self.registry.resolve(agent) {
+            return Ok(config);
+        }
+        if let Some(config) = super::stored_agents::read(self.store.as_deref())
+            .unwrap_or_default()
+            .into_iter()
+            .find(|config| config.config_id.as_deref() == Some(agent))
+        {
             return Ok(config);
         }
         if let Some(installed) = &self.installed {

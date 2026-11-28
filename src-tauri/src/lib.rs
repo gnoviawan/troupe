@@ -1892,6 +1892,7 @@ pub fn run() {
                 orchestrator_wake,
                 app_data_dir.clone(),
                 acp_install_service.clone(),
+                Some(handle.state::<remote::SharedLiveData>().store.clone()),
                 sweep_roots,
                 tauri::async_runtime::handle().inner().clone(),
             );
