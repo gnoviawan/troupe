@@ -2537,8 +2537,8 @@
         "fs",
         "store",
         "terminals",
-        "chat_activity",
-        "ssh"
+        "ssh",
+        "chat_activity"
       ],
       "type": "string"
     },

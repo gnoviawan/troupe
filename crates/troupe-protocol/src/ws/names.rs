@@ -369,8 +369,8 @@ wire_enum! {
         Fs = "fs",
         Store = "store",
         Terminals = "terminals",
-        ChatActivity = "chat_activity",
         Ssh = "ssh",
+        ChatActivity = "chat_activity",
     }
 }
 
