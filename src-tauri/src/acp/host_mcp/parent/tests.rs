@@ -124,6 +124,8 @@ fn pending_reopen_without_an_active_turn_is_rejected() {
     let sink = Arc::new(CapturingSink::default());
     let server = HostPlanServer::start(vec![sink.clone()], None);
     let (port, token, provisional) = server.register_session("agent-1");
+    let (_, older, _) = server.register_session("agent-1");
+    server.bind_session(&older, "sess-real");
     server.bind_reopen_session(&token, "sess-real");
 
     let runtime = Runtime::new().unwrap();
@@ -148,6 +150,7 @@ fn open_bound_session_routes_without_a_turn() {
     let server = HostPlanServer::start(vec![sink.clone()], None);
     let (port, token, provisional) = server.register_session("agent-1");
     server.bind_session(&token, "sess-open");
+    server.begin_turn("agent-1", "sess-other");
     let runtime = Runtime::new().unwrap();
     let reply = runtime.block_on(connect_and_send(
         port,
@@ -166,13 +169,7 @@ fn unknown_or_foreign_bound_session_has_no_turn_route() {
         let server = HostPlanServer::start(vec![], None);
         let (port, token, provisional) = server.register_session("agent-1");
         server.bind_session(&token, "sess-real");
-        // Keep the calling child's stale binding, but remove its live status.
-        server
-            .sessions
-            .lock()
-            .get_mut(&token)
-            .unwrap()
-            .reopen_pending = true;
+        server.sessions.lock().remove(&token);
         if foreign {
             let (_, other, _) = server.register_session("agent-2");
             server.bind_session(&other, "sess-real");
@@ -183,8 +180,7 @@ fn unknown_or_foreign_bound_session_has_no_turn_route() {
                 "token": token, "session_id": provisional, "todos": []
             }),
         ));
-        assert_eq!(reply["error"], "no active turn");
-        assert_eq!(reply["code"], "NO_ACTIVE_TURN");
+        assert_eq!(reply["error"], "auth rejected");
     }
 }
 
@@ -209,9 +205,9 @@ fn stale_binding_routes_to_the_agents_only_active_turn() {
 
     let captured = sink.events.lock().unwrap();
     assert_eq!(captured.len(), 1);
-    assert_eq!(captured[0].1["sessionId"], "sess-current");
-    assert!(server.plan_store.get("sess-old").is_none());
-    assert_eq!(server.plan_store.get("sess-current").unwrap().len(), 1);
+    assert_eq!(captured[0].1["sessionId"], "sess-old");
+    assert!(server.plan_store.get("sess-current").is_none());
+    assert_eq!(server.plan_store.get("sess-old").unwrap().len(), 1);
 }
 
 #[test]
@@ -239,7 +235,7 @@ fn bound_active_session_wins_when_agent_has_multiple_active_turns() {
 }
 
 #[test]
-fn ambiguous_stale_binding_is_rejected_instead_of_cross_routed() {
+fn open_binding_wins_even_with_multiple_other_turns() {
     let sink = Arc::new(CapturingSink::default());
     let server = HostPlanServer::start(vec![sink.clone()], None);
     let (port, token, provisional) = server.register_session("agent-1");
@@ -255,12 +251,10 @@ fn ambiguous_stale_binding_is_rejected_instead_of_cross_routed() {
             "todos": [{"content": "ambiguous work"}],
         });
         let reply = connect_and_send(port, &frame).await;
-        assert_eq!(reply["ok"], false);
-        assert_eq!(reply["error"], "ambiguous active session");
-        assert_eq!(reply["code"], "AMBIGUOUS_SESSION");
+        assert_eq!(reply["ok"], true);
     });
 
-    assert!(sink.events.lock().unwrap().is_empty());
+    assert_eq!(sink.events.lock().unwrap()[0].1["sessionId"], "sess-old");
 }
 
 #[test]
@@ -1698,4 +1692,19 @@ fn a_child_ask_user_shows_on_its_chat_and_is_answered_from_there() {
     assert_eq!(payloads.len(), 1, "exactly one question event");
     assert_eq!(payloads[0]["sessionId"], "chat-root");
     assert_eq!(payloads[0]["agentId"], "child-agent");
+}
+
+#[test]
+fn dispatch_rejects_removed_or_replaced_authenticated_registration() {
+    let server = HostPlanServer::start(vec![], None);
+    let (_, token, _) = server.register_session("agent-1");
+    server.bind_session(&token, "sess-real");
+    let authenticated = server.sessions.lock().get(&token).unwrap().clone();
+    assert!(server.registration_is_live(&token, &authenticated));
+    server.sessions.lock().remove(&token);
+    assert!(!server.registration_is_live(&token, &authenticated));
+    let mut replacement = authenticated.clone();
+    replacement.generation = uuid::Uuid::new_v4();
+    server.sessions.lock().insert(token.clone(), replacement);
+    assert!(!server.registration_is_live(&token, &authenticated));
 }

@@ -46,6 +46,7 @@ use crate::acp::host_mcp::presence::Presence;
 /// Per-session auth + routing context, keyed by the random token.
 #[derive(Clone)]
 struct SessionAuth {
+    generation: Uuid,
     /// Host-generated provisional id (passed to the child via env, echoed in
     /// the frame for defense-in-depth — does NOT match the real ACP id).
     provisional_sid: String,
@@ -249,6 +250,7 @@ impl HostPlanServer {
             sessions.insert(
                 token.clone(),
                 SessionAuth {
+                    generation: Uuid::new_v4(),
                     provisional_sid: provisional_sid.clone(),
                     agent_id: agent_id.to_string(),
                     real_session_id: None,
@@ -524,6 +526,14 @@ impl HostPlanServer {
         Ok(())
     }
 
+    /// Dispatch accepts only the exact registration captured during authentication.
+    fn registration_is_live(&self, token: &str, auth: &SessionAuth) -> bool {
+        self.sessions
+            .lock()
+            .get(token)
+            .is_some_and(|current| current.generation == auth.generation && !current.reopen_pending)
+    }
+
     /// Authenticate + dispatch a validated frame. Returns the reply (ok/err).
     /// `hung_up` resolves when the child closes the connection.
     async fn process_request(
@@ -583,19 +593,25 @@ impl HostPlanServer {
         // evidence that a session is still loaded on this host.
         let bound_is_open = {
             let sessions = self.sessions.lock();
-            let mut owners = sessions
-                .values()
-                .filter(|entry| {
-                    !entry.reopen_pending
-                        && entry.real_session_id.as_deref() == Some(&bound_session_id)
-                })
-                .peekable();
-            owners.peek().is_some() && owners.all(|entry| entry.agent_id == auth.agent_id)
+            let Some(current) = sessions.get(&req.token) else {
+                return FrameReply::err_code(
+                    CanvasErrorCode::NoActiveTurn.as_str(),
+                    "no active turn",
+                );
+            };
+            if current.generation != auth.generation || current.reopen_pending {
+                return FrameReply::err_code(
+                    CanvasErrorCode::NoActiveTurn.as_str(),
+                    "no active turn",
+                );
+            }
+            current.agent_id == auth.agent_id
+                && current.real_session_id.as_deref() == Some(&bound_session_id)
         };
         let real_session_id = {
             let active_turns = self.active_turns.lock();
             match active_turns.get(&auth.agent_id) {
-                Some(sessions) if sessions.contains(&bound_session_id) => bound_session_id.clone(),
+                _ if bound_is_open => bound_session_id.clone(),
                 Some(sessions) if sessions.len() == 1 => {
                     let active_session_id = sessions.iter().next().expect("len checked").clone();
                     log::info!(
@@ -618,14 +634,6 @@ impl HostPlanServer {
                         "ambiguous active session",
                     );
                 }
-                _ if bound_is_open => {
-                    log::info!(
-                        "[host-mcp] routed agent-initiated call for agent {} to open bound session {}",
-                        auth.agent_id,
-                        crate::logging::redact_session_id(&bound_session_id)
-                    );
-                    bound_session_id.clone()
-                }
                 _ => {
                     log::warn!(
                         "[host-mcp] rejected tool call for agent {} with no active turn (bound session {})",
@@ -639,6 +647,10 @@ impl HostPlanServer {
                 }
             }
         };
+
+        if !self.registration_is_live(&req.token, &auth) {
+            return FrameReply::err_code(CanvasErrorCode::NoActiveTurn.as_str(), "no active turn");
+        }
 
         let card_session_id = auth
             .card_session_id
