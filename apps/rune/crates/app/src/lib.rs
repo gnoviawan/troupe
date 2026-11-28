@@ -104,6 +104,9 @@ mod settings_tests;
 mod settings_view;
 mod snapshots;
 mod snapshots_view;
+mod ssh;
+mod ssh_files_view;
+mod ssh_view;
 #[cfg(test)]
 mod snapshots_tests;
 mod sync;
@@ -239,6 +242,8 @@ pub struct State {
     pub first_run: first_run::FirstRun,
     /// The snapshots page, its dialogs and `model::snapshots`.
     pub snapshots: snapshots::SnapshotsUi,
+    /// SSH in the desktop app: `model::ssh`, its forms, explorers and confirms.
+    pub ssh: ssh::SshUi,
     /// The Automations tab's reads, selection and canvases.
     pub automations: automations::AutomationsUi,
     /// The window's waker, kept for `reload`.
@@ -306,6 +311,7 @@ impl Default for State {
             bug: bug_report::BugReportUi::default(),
             first_run: first_run::FirstRun::default(),
             snapshots: snapshots::SnapshotsUi::default(),
+            ssh: ssh::SshUi::default(),
             automations: automations::AutomationsUi::default(),
             waker: None,
         }

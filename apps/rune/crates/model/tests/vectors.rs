@@ -11,6 +11,7 @@ mod github;
 mod settings;
 mod setup;
 mod snapshots;
+mod ssh;
 mod terminal;
 
 use common::{Replay, call, diff, out_dir, parse, read_json, source_hash, to_value};
@@ -23,7 +24,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 /// One store under replay.
-trait Store {
+pub(crate) trait Store {
     type State: Serialize;
     fn setup(context: &Value, initial: &Value) -> Result<Self::State, String>;
     /// Apply a step; the effects and the reply, if the action returns one.
@@ -338,6 +339,7 @@ fn replays_every_vector() {
                 "project-settings" => settings::replay_project_settings(vector),
                 "mcp-servers" => settings::replay_mcp_servers(vector),
                 "snapshots" => snapshots::replay(vector),
+                "ssh" => replay::<ssh::Ssh>(vector),
                 "setup" => setup::replay(vector),
                 "bug-report" => bug_report::replay(vector),
                 "automation-draft" => replay::<automations::DraftStore>(vector),

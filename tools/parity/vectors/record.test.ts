@@ -252,6 +252,7 @@ const { projectSettingsRecorder, projectSettingsScenarios } = await import(
 )
 const { mcpServersRecorder, mcpServersScenarios } = await import('./stores/mcp-servers')
 const { snapshotsRecorder, snapshotsScenarios } = await import('./stores/snapshots')
+const { sshRecorder, sshScenarios } = await import('./stores/ssh')
 const { setupRecorder, setupScenarios } = await import('./stores/setup')
 const { bugReportRecorder, bugReportScenarios } = await import('./stores/bug-report')
 const {
@@ -283,6 +284,7 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [projectSettingsRecorder, projectSettingsScenarios],
   [mcpServersRecorder, mcpServersScenarios],
   [snapshotsRecorder, snapshotsScenarios],
+  [sshRecorder, sshScenarios],
   [setupRecorder, setupScenarios],
   [bugReportRecorder, bugReportScenarios],
   [githubRecorder, githubScenarios],

@@ -103,7 +103,7 @@ pub struct FirstRun {
     hash: Option<String>,
     /// A submitted token waiting for its check.
     pending_token: Option<String>,
-    config: Option<Config>,
+    pub(crate) config: Option<Config>,
     waker: Option<Waker>,
     inbox: Inbox,
     /// Every request sent, for the tests.

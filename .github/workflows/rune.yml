@@ -146,6 +146,7 @@ on:
       - 'src/renderer/lib/persistence-trim.ts'
       - 'src/renderer/stores/command-history-store.ts'
       - 'src/renderer/stores/snapshot-store.ts'
+      - 'src/renderer/stores/ssh-store.ts'
       - 'src/renderer/lib/bug-report-api.ts'
       - 'src/renderer/components/onboarding/land-onboarding.ts'
       - 'src/renderer/components/onboarding/onboarding-gate.ts'

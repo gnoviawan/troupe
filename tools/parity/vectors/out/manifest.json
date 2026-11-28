@@ -276,6 +276,18 @@
         "trims_output_first_then_the_oldest_snapshots"
       ]
     },
+    "ssh": {
+      "sources": {
+        "src/renderer/stores/ssh-store.ts": "28dbb0923cbaf8f458f596c0d4cf472925291511"
+      },
+      "vectors": [
+        "tabs_focus_the_neighbour_when_one_closes",
+        "select_a_host_opens_its_latest_session",
+        "a_session_patch_replaces_its_fields",
+        "transfers_merge_and_clear",
+        "the_remote_editor_keeps_its_file"
+      ]
+    },
     "setup": {
       "sources": {
         "src/renderer/components/setup/ServerSetupWizard.tsx": "7f14e767f4142adf39fd6dd7b682f52965b26c15",

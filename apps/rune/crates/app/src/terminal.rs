@@ -249,6 +249,23 @@ impl State {
         }
     }
 
+    /// An SSH session's shell: its cells, attached with its claim from the start
+    /// (`attachSSHTerminal`), under the tab name `SSH: <host>`.
+    pub(crate) fn attach_ssh_terminal(&mut self, id: &str, claim: &str, name: String) {
+        self.terminal_attach(id, claim, model::ssh::INITIAL_COLS, model::ssh::INITIAL_ROWS);
+        self.terms.names.insert(id.to_owned(), name);
+    }
+
+    /// Drops an SSH shell's view and kills its terminal on the host (`releaseTerminal`).
+    pub(crate) fn release_ssh_terminal(&mut self, id: &str) {
+        self.terms.views.remove(id);
+        self.terms.names.remove(id);
+        if let Some(host) = &mut self.terms.host {
+            host.forget(id);
+        }
+        self.terms.request(WebTerminalRequestType::Kill, json!({ "terminalId": id }), true);
+    }
+
     /// Opens the cells of a session this client now holds and attaches from the start, so the
     /// host replays what the PTY printed.
     fn terminal_attach(&mut self, id: &str, claim: &str, cols: u16, rows: u16) {
