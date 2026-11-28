@@ -83,7 +83,10 @@ describe('decideAgentChatNotifications', () => {
       deferredFinishes,
       sessions: { s1: session({ ...base, backgroundRunning: true }) }
     })
-    const wokeUp = snapshot({ deferredFinishes, sessions: { s1: session({ ...base, busy: true }) } })
+    const wokeUp = snapshot({
+      deferredFinishes,
+      sessions: { s1: session({ ...base, busy: true }) }
+    })
     const idle = snapshot({ deferredFinishes, sessions: { s1: session(base) } })
 
     expect(decideAgentChatNotifications(waiting, waiting)).toEqual([])

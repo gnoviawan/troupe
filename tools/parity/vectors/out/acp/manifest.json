@@ -19,7 +19,7 @@
         "src/renderer/stores/acp-store/slices/agent.ts": "67a947a2f04b2a66b4367551b3a0a784431176c0",
         "src/renderer/lib/browser-consent-api.ts": "653bc724d545e28af1b1a4b8e822138534f61acf",
         "src/renderer/stores/acp-store/host-session-reports.ts": "8ae4f30faff5eacf60c377f3e4913395e9d5ba3e",
-        "src/renderer/lib/agent-chat-notify.ts": "e702d4fcb64619f0d8458f793786e49a46c83cbd",
+        "src/renderer/lib/agent-chat-notify.ts": "9645ea1bb78d22fdd27f5f22b70c474b47132c1a",
         "src/renderer/components/chat/background-commands.ts": "a3b2fed0cbddc14463d2cc8c628672ac6a284147",
         "src/renderer/components/chat/chat-input-bar-config.ts": "59774f5aa55f2b02b967f069902679af61beda1d",
         "src/renderer/components/chat/agent-model-selector/selector-model.ts": "8db12afbbee65c1a8c6f93e88ada02aeb3848e42",
