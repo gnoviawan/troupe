@@ -70,7 +70,7 @@ function renderRow({
   expanded?: boolean
 } = {}) {
   const save = vi.fn(async () => {})
-  render(
+  const row = (): React.JSX.Element => (
     <ProfileRow
       profile={profile}
       profiles={[profile]}
@@ -83,7 +83,8 @@ function renderRow({
       onDelete={vi.fn()}
     />
   )
-  return { save }
+  const view = render(row())
+  return { save, rerender: () => view.rerender(row()) }
 }
 
 describe('ProfileRow Mode field', () => {
@@ -168,6 +169,18 @@ describe('ProfileRow Mode field', () => {
     expect(within(panel).getByText('Mode')).toBeInTheDocument()
     expect(within(panel).getByText('This agent has no modes.')).toBeInTheDocument()
     expect(prepareChat).not.toHaveBeenCalled()
+  })
+
+  it('prepares again when the prepared session goes away while expanded', () => {
+    acpState.current = { preparedSessions: { [KEY_CLAUDE]: 'session-1' } }
+    const view = renderRow({ expanded: true })
+    expect(screen.getByText('This agent has no modes.')).toBeInTheDocument()
+    expect(prepareChat).not.toHaveBeenCalled()
+
+    acpState.current = {}
+    view.rerender()
+
+    expect(prepareChat).toHaveBeenCalledWith(CLAUDE, '/work', undefined, 'p1', { silent: true })
   })
 
   it('shows the prepare error label and a Try again button that retries prepare', () => {

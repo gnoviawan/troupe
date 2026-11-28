@@ -147,9 +147,9 @@ export function useProfilePicker({
   useEffect(() => {
     if (!shouldPrepare || !key) return
     const s = useAcpStore.getState()
-    if (s.preparedSessions[key] || s.preparingChatKeys[key] || s.prepareChatErrors[key]) return
+    if (prepared || s.preparingChatKeys[key] || s.prepareChatErrors[key]) return
     prepare()
-  }, [shouldPrepare, key, prepare])
+  }, [shouldPrepare, key, prepare, prepared])
 
   useEffect(() => {
     if (!prepareError) return
