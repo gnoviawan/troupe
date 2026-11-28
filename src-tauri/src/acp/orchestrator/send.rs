@@ -475,9 +475,11 @@ impl OrchestratorEngine {
             entry.identity.agent_id = child_agent.0.clone();
             entry.model = model;
             entry.result = None;
+            entry.stop_origin = None;
             entry.capture.clear_text();
             (snapshot, entry.record())
         };
+        self.wake.reopen_run(&meta.root, run);
         progress.lock().previous = Some(snapshot);
 
         // From here on, failures settle through the card path, even while the

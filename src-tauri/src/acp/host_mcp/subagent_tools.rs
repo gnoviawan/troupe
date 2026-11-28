@@ -124,6 +124,13 @@ both in Preferences. defaultModel is the model a start without `model` asks for 
 agent's own default). description is the user's note on what that profile is good at (null: \
 no note); start the allowed profile whose description fits the task.";
 
+/// Hint returned in `subagent_start`'s result and description so the parent
+/// agent ends its turn instead of polling or blocking needlessly.
+pub const BACKGROUND_WAKE_HINT: &str = "It runs in the background. When it finishes, Troupe \
+sends its result to this chat as a new message, even after your turn ends. Do not poll it or \
+wait on it unless you need the result before you can go on; end your turn when no other work is \
+left.";
+
 pub const START_DESCRIPTION: &str = "Start another installed agent (Codex, Gemini CLI, ...) as \
 a subagent on a task, in the background. `agent` is the agentId of a profile from \
 subagent_list_agents; the profile sets the agent, its model, thinking level and other session \
@@ -133,26 +140,31 @@ in the subagent's prompt. \
 state, uncommitted changes included, so its edits never touch yours) or `shared` (this chat's \
 directory). The user sees it as a sub-agent row with its live transcript and a Stop button, \
 and approves its tool permissions in this chat unless the user set its profile to allow \
-them. Returns JSON {subagentId, state, title, \
-workspace} once it is running; send follow-ups with subagent_send and collect the result with \
-subagent_wait. Errors: disabled, unknown_agent, agent_not_allowed, capacity, depth, \
+them. Returns JSON {subagentId, state, title, workspace, note} once it is running. \
+It runs in the background. When it finishes, Troupe sends its result to this chat as a new \
+message, even after your turn ends. Do not poll it or wait on it unless you need the result \
+before you can go on; end your turn when no other work is left. Send follow-ups with \
+subagent_send. Errors: disabled, unknown_agent, agent_not_allowed, capacity, depth, \
 invalid_input, workspace_failed, spawn_failed.";
 
 pub const SEND_DESCRIPTION: &str = "Send a follow-up message to a subagent this chat started. \
 While the run is working, the message is queued as the session's next prompt and delivered \
 when the current turn ends; pass `interrupt: true` to cancel the current turn first. After \
 the run has completed or been cancelled, this relaunches the agent, reloads its kept session \
-and sends the message, returning the run to running so subagent_wait works on it again. \
-`message` is 1 to 8000 characters. Returns JSON {subagentId, state, queued}. Errors: \
-not_found, invalid_input, disabled, unknown_agent, agent_not_allowed, capacity, busy, \
-not_resumable, session_unloadable, spawn_failed.";
+and sends the message, returning the run to running; its next result again arrives in this \
+chat as a new message. `message` is 1 to 8000 characters. Returns JSON {subagentId, state, \
+queued}. Errors: not_found, invalid_input, disabled, unknown_agent, agent_not_allowed, \
+capacity, busy, not_resumable, session_unloadable, spawn_failed.";
 
 pub const WAIT_DESCRIPTION: &str = "Wait for a subagent to finish, up to `timeoutMs` (default \
-and maximum 240000). Returns JSON {subagentId, state, result?, error?, usage?} once it is \
-completed, cancelled or failed. If it is still working when the time is up, returns \
-{subagentId, state, timedOut: true}; that is not an error, call subagent_wait again. State \
-requires_action means it waits for the user to approve a tool in this chat: tell the user, \
-then wait again. After it settles, use subagent_send to resume it with a follow-up.";
+and maximum 240000). Waiting is optional: when a subagent finishes, Troupe sends its result to \
+this chat as a new message, even after your turn ends, so only call this when you need the \
+result before you can go on (or to fetch a full result that was truncated). Returns JSON \
+{subagentId, state, result?, error?, usage?} once it is completed, cancelled or failed. If it \
+is still working when the time is up, returns {subagentId, state, timedOut: true}; that is not \
+an error, call subagent_wait again. State requires_action means it waits for the user to \
+approve a tool in this chat: tell the user, then wait again. After it settles, use \
+subagent_send to resume it with a follow-up.";
 
 pub const STATUS_DESCRIPTION: &str = "Report this chat's subagents without waiting: every run, \
 or the ones named in `subagentIds`. Returns JSON {runs: [{subagentId, state, title, endedAt?, \

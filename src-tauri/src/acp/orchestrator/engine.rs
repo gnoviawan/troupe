@@ -16,13 +16,15 @@ use crate::acp::orchestrator::lifecycle::{now_millis, ChildLease};
 use crate::acp::orchestrator::profiles::{self, SubagentApprovals, SubagentProfile};
 use crate::acp::orchestrator::run::{
     bounded, CallerRef, ChildRun, RunBody, RunCapture, RunEnd, RunId, RunLedger, RunLookupError,
-    RunSummary, StartError, StartRequest, Starting, StopError, StopOutcome, WaitOutcome,
+    RunSummary, StartError, StartRequest, Starting, StopError, StopOrigin, StopOutcome,
+    WaitOutcome,
 };
 use crate::acp::orchestrator::settings::{OrchestratorSettings, SettingsInput, SettingsStore};
 use crate::acp::orchestrator::sinks::{RerouteFilter, RunWatcher};
+use crate::acp::orchestrator::wake::WakeRegistry;
 use crate::acp::subagents::{SubagentAgent, SubagentWorkspace, SubagentWorkspaceMode};
 use crate::automation::agents::{self, AgentRegistry};
-use crate::web::EventSink;
+use crate::web::{EventSink, WsRelaySink};
 
 /// How long `start` may take end to end; every step below it has its own
 /// bound, so reaching this means a wedged host.
@@ -32,10 +34,12 @@ pub(super) const MAX_TASK_CHARS: usize = 8_000;
 
 pub struct OrchestratorEngine {
     pub(super) manager: Arc<AcpManager>,
+    pub(super) relay: Option<Arc<WsRelaySink>>,
     pub(super) registry: AgentRegistry,
     pub(super) installed: Option<Arc<AcpInstallService>>,
     pub(super) settings: SettingsStore,
     pub(super) ledger: Mutex<RunLedger>,
+    pub(super) wake: WakeRegistry,
     pub(super) handle: Handle,
 }
 
@@ -51,11 +55,18 @@ impl OrchestratorEngine {
             installed,
             settings: SettingsStore::open(&data_dir),
             ledger: Mutex::new(RunLedger::new()),
+            wake: WakeRegistry::new(),
+            relay: None,
             manager,
             handle,
         };
         engine.migrate_bare_switches();
         engine
+    }
+
+    pub(crate) fn with_relay(mut self, relay: Arc<WsRelaySink>) -> Self {
+        self.relay = Some(relay);
+        self
     }
 
     /// The run the caller's session belongs to (the spawning run of a
@@ -224,6 +235,11 @@ impl OrchestratorEngine {
         };
         if let Err(error) = &outcome {
             let end = if cancel.is_cancelled() {
+                if abandoned.is_cancelled() {
+                    if let Some(entry) = self.ledger.lock().runs.get_mut(&run) {
+                        entry.stop_origin.get_or_insert(StopOrigin::Parent);
+                    }
+                }
                 RunEnd::Cancelled
             } else {
                 RunEnd::Failed(bounded(&error.to_string(), 512))
@@ -409,6 +425,7 @@ impl OrchestratorEngine {
             body: RunBody::Spawning {
                 child_agent: child_agent.clone(),
             },
+            stop_origin: None,
             result: None,
             waiters: Vec::new(),
             capture,
@@ -559,10 +576,10 @@ impl OrchestratorEngine {
             }
         };
         let Some(waiter) = waiter else {
-            return self.settled_summary(&run);
+            return self.settled_summary(&root, &run);
         };
         match tokio::time::timeout(budget, waiter).await {
-            Ok(Ok(())) | Ok(Err(_)) => self.settled_summary(&run),
+            Ok(Ok(())) | Ok(Err(_)) => self.settled_summary(&root, &run),
             Err(_) => {
                 let state = self
                     .ledger
@@ -576,7 +593,7 @@ impl OrchestratorEngine {
         }
     }
 
-    fn settled_summary(&self, run: &RunId) -> Result<WaitOutcome, RunLookupError> {
+    fn settled_summary(&self, root: &str, run: &RunId) -> Result<WaitOutcome, RunLookupError> {
         let summary = self
             .ledger
             .lock()
@@ -584,6 +601,9 @@ impl OrchestratorEngine {
             .get(run)
             .map(|entry| entry.summary())
             .ok_or(RunLookupError)?;
+        if summary.state.is_terminal() {
+            self.wake.acknowledge(root, &summary.run);
+        }
         Ok(WaitOutcome::Settled(Box::new(summary)))
     }
 
@@ -595,28 +615,36 @@ impl OrchestratorEngine {
         runs: Option<Vec<RunId>>,
     ) -> Result<Vec<RunSummary>, RunLookupError> {
         let root = self.caller_root(&caller);
-        let ledger = self.ledger.lock();
-        match runs {
-            Some(runs) => {
-                let mut summaries = Vec::new();
-                for run in runs {
-                    let Some(entry) = ledger.runs.get(&run) else {
-                        return Err(RunLookupError);
-                    };
-                    if entry.parent_session_id != caller.session.0 {
-                        return Err(RunLookupError);
+        let summaries = {
+            let ledger = self.ledger.lock();
+            match runs {
+                Some(runs) => {
+                    let mut summaries = Vec::new();
+                    for run in runs {
+                        let Some(entry) = ledger.runs.get(&run) else {
+                            return Err(RunLookupError);
+                        };
+                        if entry.parent_session_id != caller.session.0 {
+                            return Err(RunLookupError);
+                        }
+                        summaries.push(entry.summary());
                     }
-                    summaries.push(entry.summary());
+                    summaries
                 }
-                Ok(summaries)
+                None => ledger
+                    .runs_of_root(&root)
+                    .into_iter()
+                    .filter(|entry| entry.parent_session_id == caller.session.0)
+                    .map(|entry| entry.summary())
+                    .collect(),
             }
-            None => Ok(ledger
-                .runs_of_root(&root)
-                .into_iter()
-                .filter(|entry| entry.parent_session_id == caller.session.0)
-                .map(|entry| entry.summary())
-                .collect()),
+        };
+        for summary in &summaries {
+            if summary.state.is_terminal() {
+                self.wake.acknowledge(&root, &summary.run);
+            }
         }
+        Ok(summaries)
     }
 
     /// Stop a run: convergent, so a stop of an ended run answers
@@ -636,7 +664,7 @@ impl OrchestratorEngine {
         {
             return Err(StopError::NotFound);
         }
-        self.stop_run(&run, &root)
+        self.stop_run(&run, &root, StopOrigin::Parent)
             .await
             .unwrap_or(Err(StopError::NotFound))
     }

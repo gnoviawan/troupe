@@ -1756,6 +1756,7 @@ pub fn run() {
             let (codex_limit, codex_limit_inbox) = acp::codex_limit::CodexLimitHandle::channel();
             let (antigravity_limit, antigravity_limit_inbox) =
                 acp::antigravity_limit::AntigravityLimitHandle::channel();
+            let orchestrator_wake = acp::orchestrator::wake_sink();
             let (ws_relay, acp_manager) = match &session_persistence {
                 Some(persistence) => {
                     let relay = Arc::new(WsRelaySink::with_persistence(
@@ -1769,6 +1770,7 @@ pub fn run() {
                                 claude_limit.sink(),
                                 codex_limit.sink(),
                                 antigravity_limit.sink(),
+                                orchestrator_wake.clone(),
                             ],
                             Arc::clone(persistence),
                             Arc::clone(&claude_agent_service),
@@ -1787,6 +1789,7 @@ pub fn run() {
                                 claude_limit.sink(),
                                 codex_limit.sink(),
                                 antigravity_limit.sink(),
+                                orchestrator_wake.clone(),
                             ],
                             Arc::clone(&claude_agent_service),
                             Arc::clone(&codex_agent_service),
@@ -1879,6 +1882,8 @@ pub fn run() {
                 .collect();
             acp::orchestrator::install(
                 Arc::clone(&acp_manager),
+                Arc::clone(&ws_relay),
+                orchestrator_wake,
                 app_data_dir.clone(),
                 acp_install_service.clone(),
                 sweep_roots,

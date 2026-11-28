@@ -608,6 +608,7 @@ async fn ownership_failed_run_and_input_limits_are_enforced() {
         },
         base_commit: None,
         body,
+        stop_origin: None,
         result: None,
         waiters: Vec::new(),
         capture: Arc::new(RunCapture::default()),
