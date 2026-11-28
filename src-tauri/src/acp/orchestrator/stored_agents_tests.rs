@@ -28,10 +28,7 @@ fn missing_and_empty_are_distinct() {
 
 #[tokio::test]
 async fn composer_union_updates_without_restart() {
-    use crate::web::{
-        store::{Precondition, StorePolicy},
-        ws::ClientIdentity,
-    };
+    use crate::web::store::StorePolicy;
     use std::sync::Arc;
     let config = |id: &str| AgentConfig {
         config_id: Some(format!("acp-registry:{id}")),
@@ -62,17 +59,11 @@ async fn composer_union_updates_without_restart() {
             "acp-registry:oh-my-pi"
         ]
     );
-    let client = ClientIdentity {
-        device_id: "desktop".into(),
-        client_instance_id: "test".into(),
-    };
     let write = |data| {
         store
-            .write(
+            .replace_as_host(
                 "shared/lww/acp/agents",
                 json!({"_version":1,"data":data}),
-                Precondition::default(),
-                &client,
                 1,
             )
             .unwrap()
