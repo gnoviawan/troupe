@@ -222,7 +222,57 @@ fn end_turn_removes_routing_candidate() {
     let server = HostPlanServer::start(vec![], None);
     server.begin_turn("agent-1", "sess-current");
     server.end_turn("agent-1", "sess-current");
-    assert!(server.active_turns.lock().get("agent-1").is_none());
+    assert!(server.active_turns.routable("agent-1").is_empty());
+}
+
+/// Claude Code wakes up when a background shell it started finishes and runs a
+/// turn of its own, with no prompt open. Its host tool calls (Computer Use,
+/// browser, plan) must route instead of failing with `no active turn`.
+#[test]
+fn unprompted_work_routes_calls_until_it_ends() {
+    let sink = Arc::new(CapturingSink::default());
+    let server = HostPlanServer::start(vec![sink.clone()], None);
+    let (port, token, provisional) = server.register_session("agent-1");
+    server.bind_session(&token, "sess-real");
+    // The prompt turn that started the background timer is over.
+    server.begin_turn("agent-1", "sess-real");
+    server.end_turn("agent-1", "sess-real");
+    server.begin_unprompted_work("agent-1", "sess-real");
+
+    let frame = serde_json::json!({
+        "token": token,
+        "session_id": provisional,
+        "kind": "plan",
+        "todos": [{"content": "verify after the timer"}],
+    });
+    let runtime = Runtime::new().unwrap();
+    let reply = runtime.block_on(connect_and_send(port, &frame));
+    assert_eq!(reply["ok"], true, "{reply}");
+    assert_eq!(sink.events.lock().unwrap()[0].1["sessionId"], "sess-real");
+
+    server.end_unprompted_work("agent-1", "sess-real");
+    let reply = runtime.block_on(connect_and_send(port, &frame));
+    assert_eq!(reply["ok"], false);
+    assert_eq!(reply["code"], "NO_ACTIVE_TURN");
+}
+
+#[test]
+fn ending_unprompted_work_keeps_a_prompt_turn_routable() {
+    let server = HostPlanServer::start(vec![], None);
+    server.begin_unprompted_work("agent-1", "sess-1");
+    server.begin_turn("agent-1", "sess-1");
+    server.end_unprompted_work("agent-1", "sess-1");
+    assert!(server.active_turns.routable("agent-1").contains("sess-1"));
+    server.end_turn("agent-1", "sess-1");
+    assert!(server.active_turns.routable("agent-1").is_empty());
+}
+
+#[test]
+fn closing_a_session_drops_its_unprompted_route() {
+    let server = HostPlanServer::start(vec![], None);
+    server.begin_unprompted_work("agent-1", "sess-1");
+    server.unregister_session("sess-1");
+    assert!(server.active_turns.routable("agent-1").is_empty());
 }
 
 #[test]

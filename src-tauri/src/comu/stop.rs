@@ -134,6 +134,33 @@ impl ComuStopRegistry {
         }
     }
 
+    /// The turn or the agent's own work that drove Computer Use in
+    /// `session_id` ended: hide the Stop bar until the next Comu action.
+    pub fn mark_inactive(&self, session_id: &str) {
+        let mut active = self.active_sessions.lock();
+        if !active.remove(session_id) {
+            return;
+        }
+        let seq = {
+            let mut reg = LIVE_COMU_REGISTRY.lock();
+            reg.seq = reg.seq.saturating_add(1);
+            if let Some(entry) = reg.sessions.get_mut(session_id) {
+                entry.0 = false;
+            }
+            reg.seq
+        };
+        crate::acp::events::fan_out(
+            &self.sinks,
+            Some(session_id),
+            EVENT_COMU_SESSION_ACTIVE,
+            &json!({ "sessionId": session_id, "active": false, "seq": seq }),
+        );
+        log::info!(
+            "[comu] session {} no longer drives Computer Use",
+            crate::logging::redact_session_id(session_id)
+        );
+    }
+
     /// Latch `session_id` stopped and cancel any in-flight call. Returns `true`
     /// when newly stopped. Emits `EVENT_COMU_STOP_CHANGED` while holding the
     /// slot lock so latch transitions arrive in strict causal order.

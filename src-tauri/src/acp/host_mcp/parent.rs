@@ -36,6 +36,7 @@ mod canvas;
 mod comu;
 mod mcp_install;
 mod read_chat;
+mod routes;
 mod subagents;
 mod worker_chats;
 pub use ask::IdleSignal;
@@ -76,11 +77,12 @@ pub struct HostPlanServer {
     sinks: Vec<Arc<dyn EventSink>>,
     /// token -> SessionAuth. One entry per registered session.
     sessions: Mutex<HashMap<String, SessionAuth>>,
-    /// Runtime agent id -> sessions with an accepted prompt currently in flight.
-    /// Some agents reuse an older session's MCP child for later sessions; this
-    /// authoritative turn registry lets `process_request` repair that stale
-    /// token binding when exactly one session for the agent is active.
-    active_turns: Mutex<HashMap<String, HashSet<String>>>,
+    /// Per runtime agent: sessions with a prompt turn in flight or with the
+    /// agent working on its own. Some agents reuse an older session's MCP
+    /// child for later sessions; this authoritative registry lets
+    /// `process_request` repair that stale token binding when exactly one
+    /// session for the agent is active.
+    active_turns: routes::TurnRoutes,
     /// Sessions that have already set a title. Per-session (not per-turn): the
     /// first `set_session_title` call persists + broadcasts; subsequent calls
     /// for the same session return a success no-op so the agent stops
@@ -150,7 +152,7 @@ impl HostPlanServer {
             port: std::sync::OnceLock::new(),
             sinks,
             sessions: Mutex::new(HashMap::new()),
-            active_turns: Mutex::new(HashMap::new()),
+            active_turns: routes::TurnRoutes::default(),
             pending_asks: Mutex::new(HashMap::new()),
             pending_installs: Mutex::new(HashMap::new()),
             finished_installs: Mutex::new(VecDeque::new()),
@@ -329,11 +331,7 @@ impl HostPlanServer {
 
     /// Mark an accepted prompt turn as active before the agent can call tools.
     pub fn begin_turn(&self, agent_id: &str, real_session_id: &str) {
-        self.active_turns
-            .lock()
-            .entry(agent_id.to_string())
-            .or_default()
-            .insert(real_session_id.to_string());
+        self.active_turns.begin_prompt(agent_id, real_session_id);
         log::debug!(
             "[host-mcp] registered active plan route for session {} (agent {})",
             crate::logging::redact_session_id(real_session_id),
@@ -343,18 +341,44 @@ impl HostPlanServer {
 
     /// Remove a completed, rejected-to-start, cancelled, or failed prompt turn.
     pub fn end_turn(&self, agent_id: &str, real_session_id: &str) {
-        let mut active_turns = self.active_turns.lock();
-        if let Some(sessions) = active_turns.get_mut(agent_id) {
-            sessions.remove(real_session_id);
-            if sessions.is_empty() {
-                active_turns.remove(agent_id);
-            }
+        self.active_turns.end_prompt(agent_id, real_session_id);
+        // Work the agent started on its own in this session keeps the cursor
+        // and the Computer Use indicator until it goes quiet.
+        if !self.active_turns.unprompted_active(agent_id, real_session_id) {
+            self.presence.hide(real_session_id);
+            crate::comu::turn_ended(real_session_id);
         }
-        drop(active_turns);
-        self.presence.hide(real_session_id);
-        crate::comu::turn_ended(real_session_id);
         log::debug!(
             "[host-mcp] removed active plan route for session {} (agent {})",
+            crate::logging::redact_session_id(real_session_id),
+            agent_id
+        );
+    }
+
+    /// The agent works in `real_session_id` with no prompt turn open
+    /// (`acp::session::unprompted`): Claude Code woke up after a background
+    /// task finished. Its host tool calls route like a prompt turn's.
+    pub fn begin_unprompted_work(&self, agent_id: &str, real_session_id: &str) {
+        if !self.active_turns.begin_unprompted(agent_id, real_session_id) {
+            return;
+        }
+        log::info!(
+            "[host-mcp] registered unprompted work route for session {} (agent {})",
+            crate::logging::redact_session_id(real_session_id),
+            agent_id
+        );
+    }
+
+    /// The agent's own work in `real_session_id` went quiet, was stopped, or a
+    /// prompt turn took over.
+    pub fn end_unprompted_work(&self, agent_id: &str, real_session_id: &str) {
+        self.active_turns.end_unprompted(agent_id, real_session_id);
+        if !self.active_turns.prompt_active(agent_id, real_session_id) {
+            self.presence.hide(real_session_id);
+            crate::comu::turn_ended(real_session_id);
+        }
+        log::info!(
+            "[host-mcp] removed unprompted work route for session {} (agent {})",
             crate::logging::redact_session_id(real_session_id),
             agent_id
         );
@@ -400,12 +424,7 @@ impl HostPlanServer {
                 || auth.real_session_id.as_deref() != Some(real_session_id)
         });
         drop(sessions);
-        let mut active_turns = self.active_turns.lock();
-        active_turns.retain(|_, sessions| {
-            sessions.remove(real_session_id);
-            !sessions.is_empty()
-        });
-        drop(active_turns);
+        self.active_turns.forget_session(real_session_id);
         self.title_set_for_session.lock().remove(real_session_id);
         self.branch_attempted_for_session
             .lock()
@@ -419,6 +438,12 @@ impl HostPlanServer {
         if keep_token.is_none() {
             crate::comu::session_ended(real_session_id);
         }
+    }
+
+    /// Test seam: whether host tool calls of `agent_id` route to `real_session_id`.
+    #[cfg(test)]
+    pub(crate) fn routes_for_test(&self, agent_id: &str, real_session_id: &str) -> bool {
+        self.active_turns.routable(agent_id).contains(real_session_id)
     }
 
     /// Test seam: the tokens currently bound to `real_session_id`.
@@ -589,10 +614,10 @@ impl HostPlanServer {
         // the route only when this runtime agent has exactly one active turn;
         // multiple active sessions are ambiguous and must never cross-route.
         let real_session_id = {
-            let active_turns = self.active_turns.lock();
-            match active_turns.get(&auth.agent_id) {
-                Some(sessions) if sessions.contains(&bound_session_id) => bound_session_id.clone(),
-                Some(sessions) if sessions.len() == 1 => {
+            let sessions = self.active_turns.routable(&auth.agent_id);
+            match sessions.len() {
+                _ if sessions.contains(&bound_session_id) => bound_session_id.clone(),
+                1 => {
                     let active_session_id = sessions.iter().next().expect("len checked").clone();
                     log::info!(
                         "[host-mcp] rerouted stale binding for agent {} from session {} to active session {}",
@@ -602,7 +627,7 @@ impl HostPlanServer {
                     );
                     active_session_id
                 }
-                Some(sessions) if sessions.len() > 1 => {
+                2.. => {
                     log::warn!(
                         "[host-mcp] rejected ambiguous stale binding for agent {} (bound session {}, {} active turns)",
                         auth.agent_id,

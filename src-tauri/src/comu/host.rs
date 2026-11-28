@@ -626,6 +626,7 @@ impl ComuHost for DesktopComuHost {
     }
 
     fn turn_ended(&self, session_id: &str) {
+        self.stop.mark_inactive(session_id);
         let gen_at_end = self.cursor_coord.current(session_id);
         self.spawn_cursor_disable(session_id, gen_at_end);
     }
