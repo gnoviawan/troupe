@@ -33,6 +33,8 @@ mod html_preview;
 // NTFS directory junctions (worktree symlink fallback, Claude account linker).
 #[cfg(windows)]
 mod junction;
+// Removes a leftover pre-rename (0.4.x) install on Windows startup (#2156).
+mod legacy_uninstall;
 mod logging;
 pub mod mcp_catalog;
 mod media_bytes;
@@ -1332,6 +1334,10 @@ pub fn run() {
             // Startup diagnostic banner (issue #244): version, OS/arch, build
             // channel, session id, and resolved log path on a single line.
             logging::log_startup_banner(&handle);
+            // A leftover 0.4.x uninstaller can delete the shared agent
+            // history through the account junctions (#2156).
+            #[cfg(windows)]
+            legacy_uninstall::spawn_remove_legacy_install();
             brand_env::flush_deprecations();
             for key in &engine_scrub.changed {
                 log::warn!("[perimeter] removed engine debug setting from the environment: {key}");
