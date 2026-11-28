@@ -699,9 +699,11 @@ fn child_caller(run: &RunId) -> CallerRef {
     }
 }
 
-/// One frame down the host MCP TCP listener, one JSON reply back (mirrors
-/// `host_mcp::parent::tests::connect_and_send`).
-async fn send_host_frame(port: u16, frame: serde_json::Value) -> serde_json::Value {
+/// One frame down the host MCP TCP listener, its raw reply line back
+/// (mirrors `host_mcp::parent::tests::connect_and_send`). The reply stays a
+/// string: serde serializes compactly with the struct's field order, so the
+/// literal wire text is the assertion.
+async fn send_host_frame(port: u16, frame: serde_json::Value) -> String {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
     let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
         .await
@@ -712,7 +714,7 @@ async fn send_host_frame(port: u16, frame: serde_json::Value) -> serde_json::Val
     let mut reader = tokio::io::BufReader::new(stream);
     let mut line = String::new();
     reader.read_line(&mut line).await.expect("reply line");
-    serde_json::from_str(&line).expect("reply json")
+    line
 }
 
 fn ask_frame(token: &str, provisional: &str, question: &str) -> serde_json::Value {
@@ -913,7 +915,10 @@ async fn a_question_answered_before_the_wake_drops_its_notice() {
     );
 
     let reply = call.await.expect("ask call joined");
-    assert_eq!(reply["result"]["answers"], serde_json::json!(["Yes"]));
+    assert!(
+        reply.contains("\"answers\":[\"Yes\"]"),
+        "the user's answer resolves the parked call: {reply}"
+    );
 
     let _ = release.send(());
     user_turn.await.expect("join").expect("turn ok");
@@ -962,9 +967,15 @@ async fn child_ask_user_wakes_parent_and_subagent_answer_resolves_the_call() {
     assert_eq!(reply.result.as_ref().unwrap()["outcome"], "answered");
 
     let ask_reply = call.await.expect("ask call joined");
-    assert_eq!(ask_reply["ok"], true);
-    assert_eq!(ask_reply["result"]["answers"], serde_json::json!(["Yes"]));
-    assert_eq!(ask_reply["result"]["cancelled"], false);
+    assert!(ask_reply.contains("\"ok\":true"), "wire ok: {ask_reply}");
+    assert!(
+        ask_reply.contains("\"answers\":[\"Yes\"]"),
+        "the orchestrator's answer resolves the parked call: {ask_reply}"
+    );
+    assert!(
+        ask_reply.contains("\"cancelled\":false"),
+        "answered, not cancelled: {ask_reply}"
+    );
 
     // First answer wins: the orchestrator's second answer is not_found.
     let second = server.answer_subagent_question(
