@@ -556,6 +556,7 @@ impl OrchestratorEngine {
         run: RunId,
         budget: Duration,
     ) -> Result<WaitOutcome, RunLookupError> {
+        let root = self.caller_root(&caller);
         let waiter = {
             let mut ledger = self.ledger.lock();
             let Some(entry) = ledger.runs.get_mut(&run) else {
