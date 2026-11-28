@@ -1,6 +1,7 @@
 name: PR Validation
 
 on:
+  workflow_dispatch:
   pull_request:
     # No `edited`: a title or description edit runs pr-metadata.yml only. An
     # edit run here would replace this run's job results with skipped ones and
@@ -47,7 +48,7 @@ jobs:
         shell: bash
         env:
           # A push compares against the previous tip of the branch.
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'dev' }}
         run: |
           set -euo pipefail
 
