@@ -267,8 +267,12 @@ async fn present(window: &WebviewWindow) -> Option<i64> {
         }
     };
     match handle {
+        #[cfg(windows)]
         RawWindowHandle::Win32(handle) => Some(handle.hwnd.get() as i64),
+        // `c_ulong` is 64-bit on Linux.
+        #[cfg(target_os = "linux")]
         RawWindowHandle::Xlib(handle) => i64::try_from(handle.window).ok(),
+        #[cfg(target_os = "linux")]
         RawWindowHandle::Xcb(handle) => Some(i64::from(handle.window.get())),
         _ => None,
     }
