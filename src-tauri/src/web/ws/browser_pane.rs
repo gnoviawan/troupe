@@ -111,10 +111,10 @@ pub(super) async fn handle(id: String, type_: &str, payload: &Value, env: &Handl
     let reply = match type_ {
         "browser_tab_open" => open(&host, parse(payload), env).await,
         "browser_tab_attach" => attach(&host, parse(payload), env),
-        "browser_tab_close" => close(&host, parse(payload)).await,
-        "browser_tab_navigate" => navigate(&host, parse(payload)).await,
-        "browser_tab_resize" => resize(&host, parse(payload)).await,
-        "browser_tab_input" => input(&host, parse(payload)).await,
+        "browser_tab_close" => close(&host, parse(payload), env).await,
+        "browser_tab_navigate" => navigate(&host, parse(payload), env).await,
+        "browser_tab_resize" => resize(&host, parse(payload), env).await,
+        "browser_tab_input" => input(&host, parse(payload), env).await,
         _ => Err((
             WsErrorCode::Unsupported,
             "unknown browser pane request".to_string(),
@@ -148,7 +148,14 @@ fn parse<T: serde::de::DeserializeOwned>(payload: &Value) -> Result<T, (WsErrorC
 fn known_tab(
     host: &BrowserHost,
     tab_id: &str,
+    env: &HandlerEnv,
 ) -> Result<Arc<crate::browser_automation::engine::chromium::Tabs>, (WsErrorCode, String)> {
+    if !host.may_watch(tab_id, &env.out_tx) {
+        return Err((
+            WsErrorCode::Forbidden,
+            "tab belongs to another connection".to_string(),
+        ));
+    }
     let tabs = host.tabs().ok_or((
         WsErrorCode::NotFound,
         "the browser host is shutting down".to_string(),
@@ -202,7 +209,7 @@ fn attach(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    known_tab(host, &payload.tab_id)?;
+    known_tab(host, &payload.tab_id, env)?;
     host.grant(&payload.tab_id, &env.out_tx);
     Ok(json!({}))
 }
@@ -211,9 +218,10 @@ fn attach(
 async fn close(
     host: &Arc<BrowserHost>,
     payload: Result<TabPayload, (WsErrorCode, String)>,
+    env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    known_tab(host, &payload.tab_id)?;
+    known_tab(host, &payload.tab_id, env)?;
     crate::browser_automation::destroy_tab(&payload.tab_id).await;
     Ok(json!({}))
 }
@@ -222,9 +230,10 @@ async fn close(
 async fn navigate(
     host: &Arc<BrowserHost>,
     payload: Result<NavigatePayload, (WsErrorCode, String)>,
+    env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    let tabs = known_tab(host, &payload.tab_id)?;
+    let tabs = known_tab(host, &payload.tab_id, env)?;
     tabs.navigate(&payload.tab_id, &payload.url)
         .await
         .map_err(|e| (WsErrorCode::Unsupported, e))?;
@@ -235,9 +244,10 @@ async fn navigate(
 async fn resize(
     host: &Arc<BrowserHost>,
     payload: Result<ResizePayload, (WsErrorCode, String)>,
+    env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    let tabs = known_tab(host, &payload.tab_id)?;
+    let tabs = known_tab(host, &payload.tab_id, env)?;
     let (width, height) = (
         payload.width.min(MAX_VIEWPORT),
         payload.height.min(MAX_VIEWPORT),
@@ -257,9 +267,10 @@ async fn resize(
 async fn input(
     host: &Arc<BrowserHost>,
     payload: Result<InputPayload, (WsErrorCode, String)>,
+    env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    let tabs = known_tab(host, &payload.tab_id)?;
+    let tabs = known_tab(host, &payload.tab_id, env)?;
     let (method, params) = payload
         .event
         .to_cdp()
