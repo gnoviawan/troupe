@@ -73,6 +73,10 @@ impl Client {
             &tx,
             &conn.subscriptions,
         );
+        env.identity.set(ClientIdentity {
+            device_id: "test-device".into(),
+            client_instance_id: uuid::Uuid::new_v4().to_string(),
+        }).unwrap();
         Self {
             conn,
             env,
@@ -80,6 +84,10 @@ impl Client {
             exec: KeyedExecutor::new(CancellationToken::new()),
             watches: std::collections::VecDeque::new(),
         }
+    }
+
+    fn claim(&self, attempt: &str) {
+        self.env.relay.ssh().unwrap().owners.lock().insert(attempt.into(), super::ssh::ssh_owner(&self.env).unwrap());
     }
 
     async fn next(&mut self) -> Outbound {
@@ -213,6 +221,7 @@ async fn a_malformed_payload_never_repeats_a_value() {
 async fn trusting_a_host_key_names_the_key_of_an_open_question() {
     let dir = tempfile::tempdir().unwrap();
     let mut client = Client::new(&relay_with_ssh(dir.path()));
+    client.claim("s1");
     let unnamed = client
         .send(
             "ssh_session_respond_host_key",
@@ -275,6 +284,7 @@ async fn the_ssh_watch_carries_ssh_events_to_a_host_local_client() {
     let state = next_watch(&mut client).await;
     assert_eq!(state["state"], json!({ "hostKeys": [] }));
 
+    client.claim("s1");
     let emit = Arc::clone(&relay.ssh().unwrap().emit);
     emit(
         crate::ssh::session::EVENT_PROGRESS,
@@ -551,4 +561,30 @@ fn ownership_uses_the_handlers_payload_shape_even_with_extra_fields() {
     assert_eq!(super::ssh::request_attempt("ssh_session_respond_host_key", &answer), Some("victim"));
     let upload = serde_json::json!({"sessionId": "decoy", "request": {"connectionId": "actual"}});
     assert_eq!(super::ssh::request_attempt("sftp_upload", &upload), Some("actual"));
+}
+
+#[tokio::test]
+async fn two_local_clients_receive_only_their_own_host_key_prompts() {
+    let dir = tempfile::tempdir().unwrap();
+    let relay = relay_with_ssh(dir.path());
+    let mut a = Client::new(&relay);
+    let mut b = Client::new(&relay);
+    a.claim("a"); b.claim("b");
+    for client in [&mut a, &mut b] {
+        assert!(client.send("watch", json!({"watch": "ssh"})).await.ok);
+        assert_eq!(next_watch(client).await["state"], json!({"hostKeys": []}));
+    }
+    let emit = Arc::clone(&relay.ssh().unwrap().emit);
+    for id in ["a", "b"] {
+        emit(crate::ssh::session::EVENT_HOST_KEY, json!({
+            "sessionId": id, "status": "unknown", "host": id, "port": 22,
+            "keyType": "ssh-ed25519", "fingerprint": format!("SHA256:{id}"), "previousFingerprints": []
+        }));
+    }
+    assert_eq!(next_watch(&mut a).await["delta"]["sessionId"], "a");
+    assert_eq!(next_watch(&mut b).await["delta"]["sessionId"], "b");
+    let foreign = b.send("ssh_session_respond_host_key", json!({"sessionId": "a", "trust": false, "request": {}})).await;
+    assert_eq!(code(&foreign), "unauthorized");
+    assert!(a.watches.is_empty());
+    assert!(b.watches.is_empty());
 }
