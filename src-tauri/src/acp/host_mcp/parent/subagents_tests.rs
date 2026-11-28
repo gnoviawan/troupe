@@ -232,3 +232,68 @@ fn start_and_wait_descriptions_document_background_wake_and_keep_wait_cap() {
     assert!(WAIT_DESCRIPTION.contains("Waiting is optional"));
     assert_eq!(WAIT_MAX_MS, 240_000);
 }
+
+#[tokio::test]
+async fn message_parent_wire_refusals_and_input_bounds() {
+    let (engine, _data) = crate::acp::orchestrator::engine_with_installed(&[], &[]).await;
+    let caller = CallerRef {
+        agent: AgentId("agent-x".to_string()),
+        session: SessionId("chat-x".to_string()),
+    };
+
+    // A plain chat session is not an orchestrated sub-agent.
+    let reply = message_parent(
+        &engine,
+        caller.clone(),
+        MessageParentInput {
+            message: "progress".to_string(),
+        },
+    );
+    assert!(!reply.ok);
+    assert_eq!(reply.code.as_deref(), Some("not_a_subagent"));
+    assert_eq!(reply.result.as_ref().unwrap()["code"], "not_a_subagent");
+
+    // The 1..8000 char bound is enforced before the engine sees the call.
+    let empty = message_parent(&engine, caller.clone(), MessageParentInput { message: String::new() });
+    assert_eq!(empty.code.as_deref(), Some("invalid_input"));
+    let long = message_parent(
+        &engine,
+        caller,
+        MessageParentInput {
+            message: "x".repeat(8_001),
+        },
+    );
+    assert_eq!(long.code.as_deref(), Some("invalid_input"));
+    let max = message_parent(
+        &engine,
+        CallerRef {
+            agent: AgentId("agent-x".to_string()),
+            session: SessionId("chat-x".to_string()),
+        },
+        MessageParentInput {
+            message: "x".repeat(8_000),
+        },
+    );
+    assert_eq!(
+        max.code.as_deref(),
+        Some("not_a_subagent"),
+        "8000 chars passes validation and reaches the engine"
+    );
+}
+
+#[test]
+fn answer_input_uses_camel_case_and_message_input_parses() {
+    let answer: SubagentAnswerInput = parse(Some(json!({
+        "subagentId": "sub-1",
+        "questionId": "q-1",
+        "answers": ["Yes", "because"],
+    })))
+    .expect("answer parses");
+    assert_eq!(answer.subagent_id, "sub-1");
+    assert_eq!(answer.question_id, "q-1");
+    assert_eq!(answer.answers, vec!["Yes".to_string(), "because".to_string()]);
+
+    let message: MessageParentInput =
+        parse(Some(json!({ "message": "hi" }))).expect("message parses");
+    assert_eq!(message.message, "hi");
+}

@@ -483,6 +483,24 @@ pub enum StopOutcome {
     AlreadyEnded,
 }
 
+/// Why `message_parent` was refused.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageParentError {
+    /// The calling session is not an orchestrated sub-agent.
+    NotASubagent,
+    /// A nested sub-agent must report to its own parent run, not the root chat.
+    Nested,
+}
+
+impl std::fmt::Display for MessageParentError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotASubagent => f.write_str("this session is not an orchestrated sub-agent"),
+            Self::Nested => f.write_str("only a depth-1 sub-agent can message its orchestrator"),
+        }
+    }
+}
+
 /// A stop the engine could not deliver.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StopError {

@@ -2306,6 +2306,11 @@ impl AcpManager {
         Arc::clone(&self.host_plan_server)
     }
 
+    /// The shared host tool server, for wiring the orchestrator at install.
+    pub(crate) fn host_plan_server(&self) -> Arc<crate::acp::host_mcp::parent::HostPlanServer> {
+        Arc::clone(&self.host_plan_server)
+    }
+
     /// Route a structured-question answer (issue #411) back to a waiting agent
     /// request.
     ///

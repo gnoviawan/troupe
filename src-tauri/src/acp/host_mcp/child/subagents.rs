@@ -12,9 +12,10 @@ use tokio_util::sync::CancellationToken;
 
 use super::{exchange_frame, text_result, TermulPlanServer};
 use crate::acp::host_mcp::subagent_tools::{
-    SubagentRefInput, SubagentStartInput, SubagentStatusInput, SubagentTool, SubagentWaitInput,
-    LIST_AGENTS_DESCRIPTION, START_DESCRIPTION, STATUS_DESCRIPTION, STOP_DESCRIPTION,
-    WAIT_DESCRIPTION,
+    MessageParentInput, SubagentAnswerInput, SubagentRefInput, SubagentStartInput,
+    SubagentStatusInput, SubagentTool, SubagentWaitInput, ANSWER_DESCRIPTION,
+    LIST_AGENTS_DESCRIPTION, MESSAGE_PARENT_DESCRIPTION, START_DESCRIPTION, STATUS_DESCRIPTION,
+    STOP_DESCRIPTION, WAIT_DESCRIPTION,
 };
 use crate::acp::host_mcp::{FrameKind, FrameRequest};
 
@@ -128,5 +129,23 @@ impl TermulPlanServer {
     )]
     async fn subagent_stop(&self, Parameters(input): Parameters<SubagentRefInput>) -> CallToolResult {
         self.subagent(SubagentTool::Stop, arguments(input)).await
+    }
+
+    #[tool(
+        name = "message_parent",
+        description = MESSAGE_PARENT_DESCRIPTION,
+        annotations(destructive_hint = false, open_world_hint = false)
+    )]
+    async fn message_parent(&self, Parameters(input): Parameters<MessageParentInput>) -> CallToolResult {
+        self.subagent(SubagentTool::MessageParent, arguments(input)).await
+    }
+
+    #[tool(
+        name = "subagent_answer",
+        description = ANSWER_DESCRIPTION,
+        annotations(destructive_hint = false, open_world_hint = false)
+    )]
+    async fn subagent_answer(&self, Parameters(input): Parameters<SubagentAnswerInput>) -> CallToolResult {
+        self.subagent(SubagentTool::Answer, arguments(input)).await
     }
 }

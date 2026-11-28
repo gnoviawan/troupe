@@ -15,6 +15,8 @@ pub enum SubagentTool {
     Wait,
     Status,
     Stop,
+    MessageParent,
+    Answer,
 }
 
 impl SubagentTool {
@@ -27,6 +29,8 @@ impl SubagentTool {
             Self::Wait => "subagent_wait",
             Self::Status => "subagent_status",
             Self::Stop => "subagent_stop",
+            Self::MessageParent => "message_parent",
+            Self::Answer => "subagent_answer",
         }
     }
 }
@@ -92,6 +96,27 @@ pub struct SubagentRefInput {
     pub subagent_id: String,
 }
 
+/// Input of `message_parent`.
+#[derive(Debug, Clone, Deserialize, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MessageParentInput {
+    /// The message for the orchestrator, 1 to 8000 characters.
+    pub message: String,
+}
+
+/// Input of `subagent_answer`.
+#[derive(Debug, Clone, Deserialize, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SubagentAnswerInput {
+    /// The id `subagent_start` returned.
+    pub subagent_id: String,
+    /// The question id the wake reported.
+    pub question_id: String,
+    /// The selected option labels, plus at most one free-text answer when the
+    /// question allows one.
+    pub answers: Vec<String>,
+}
+
 /// `subagent_wait`'s budget bounds and default.
 pub const WAIT_MIN_MS: u64 = 1_000;
 pub const WAIT_MAX_MS: u64 = 240_000;
@@ -146,4 +171,15 @@ is cut, with resultTruncated true; subagent_wait on that run returns the whole r
 pub const STOP_DESCRIPTION: &str = "Stop a running subagent. Returns JSON {outcome: \"sent\"} \
 or {outcome: \"already_ended\"} when it had already finished. Its partial work stays in its \
 workspace.";
+
+pub const MESSAGE_PARENT_DESCRIPTION: &str = "Send a message to the agent that started you \
+(your orchestrator): a progress report, a question, a decision you need, or work to hand back. \
+It does not wait for a reply. If you need the answer before you can go on, end your turn after \
+sending; the orchestrator's reply resumes you.";
+
+pub const ANSWER_DESCRIPTION: &str = "Answer an open ask_user question of one of your subagents. \
+`subagentId` is the run that asked it, `questionId` the id its wake reported, and `answers` the \
+selected option labels (plus at most one free-text answer when the question allows one). The \
+first answer wins. Returns JSON {outcome: \"answered\"}. Error not_found means the run belongs \
+to another chat or the question is unknown or already closed.";
 

@@ -17,7 +17,7 @@ use super::*;
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::manager::{AcpManager, FakeTurn};
 use crate::acp::orchestrator::run::{
-    CallerRef, ChildRun, RunBody, RunCapture, RunEnd, RunId, RunState,
+    CallerRef, ChildRun, MessageParentError, RunBody, RunCapture, RunEnd, RunId, RunState,
 };
 use crate::acp::subagents::{SubagentAgent, SubagentWorkspace, SubagentWorkspaceMode};
 use crate::web::permissions::{PermissionRendezvous, QuestionRendezvous};
@@ -629,10 +629,12 @@ fn format_wake_prompt_truncates_utf8_safely_and_includes_workspace_metadata() {
     assert_eq!(cut.len(), 15_999);
     assert!(cut.chars().all(|ch| ch == '€'));
 
-    let notice = WakeNotice {
-        run_id: RunId("sub-abcdef012345".to_string()),
-        title: "Patch Builder".to_string(),
-        agent_name: "Codex".to_string(),
+    let notice = WakeNotice::Settled {
+        run: WakeRun {
+            run_id: RunId("sub-abcdef012345".to_string()),
+            title: "Patch Builder".to_string(),
+            agent_name: "Codex".to_string(),
+        },
         state: RunState::Completed,
         result: Some(long_result),
         error: None,
@@ -659,10 +661,12 @@ fn format_wake_prompt_truncates_utf8_safely_and_includes_workspace_metadata() {
 fn retry_backs_off_to_a_cap_and_resets_on_an_accepted_prompt() {
     let wake = WakeRegistry::new();
     assert_eq!(wake.arm_retry(CHAT), None, "no mailbox, no retry");
-    let notice = WakeNotice {
-        run_id: RunId("run-retry".to_string()),
-        title: "Retry".to_string(),
-        agent_name: "Codex".to_string(),
+    let notice = WakeNotice::Settled {
+        run: WakeRun {
+            run_id: RunId("run-retry".to_string()),
+            title: "Retry".to_string(),
+            agent_name: "Codex".to_string(),
+        },
         state: RunState::Completed,
         result: Some("done".to_string()),
         error: None,
@@ -686,4 +690,362 @@ fn retry_backs_off_to_a_cap_and_resets_on_an_accepted_prompt() {
 
     wake.on_prompt_accepted(CHAT, Some("user-turn"));
     assert_eq!(wake.arm_retry(CHAT).map(|d| d.as_secs()), Some(5));
+}
+
+fn child_caller(run: &RunId) -> CallerRef {
+    CallerRef {
+        agent: AgentId(format!("agent-child-{}", run.as_str())),
+        session: SessionId(format!("child-sess-{}", run.as_str())),
+    }
+}
+
+/// One frame down the host MCP TCP listener, one JSON reply back (mirrors
+/// `host_mcp::parent::tests::connect_and_send`).
+async fn send_host_frame(port: u16, frame: serde_json::Value) -> serde_json::Value {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
+    let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
+        .await
+        .expect("host listener");
+    let mut buf = serde_json::to_vec(&frame).expect("frame json");
+    buf.push(b'\n');
+    stream.write_all(&buf).await.expect("write frame");
+    let mut reader = tokio::io::BufReader::new(stream);
+    let mut line = String::new();
+    reader.read_line(&mut line).await.expect("reply line");
+    serde_json::from_str(&line).expect("reply json")
+}
+
+fn ask_frame(token: &str, provisional: &str, question: &str) -> serde_json::Value {
+    serde_json::json!({
+        "token": token,
+        "session_id": provisional,
+        "kind": "ask_user",
+        "ask": {
+            "question": question,
+            "options": [{"label": "Yes"}, {"label": "No"}],
+            "multi_select": false,
+        },
+    })
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn message_parent_wakes_the_idle_parent_with_the_text() {
+    let h = WakeHarness::with_turns(vec![]);
+    let run = h.seed_run(
+        "Researcher",
+        "Codex",
+        None,
+        WakeHarness::shared_workspace(),
+    );
+
+    h.engine
+        .message_parent(
+            child_caller(&run),
+            "halfway done, 3 files patched".to_string(),
+        )
+        .expect("message accepted");
+
+    let wakes = h.wait_for_wakes(1).await;
+    let body = &wakes[0].1;
+    assert!(
+        body.contains(&format!(
+            "Researcher (subagentId: {}, agent: Codex) says:\nhalfway done, 3 files patched",
+            run.as_str()
+        )),
+        "message wake shape: {body}"
+    );
+    assert!(
+        body.contains(
+            "Reply with subagent_send if you have it, otherwise start a new sub-agent task."
+        ),
+        "reply hint: {body}"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn message_parent_is_refused_for_a_plain_session_and_a_nested_run() {
+    let h = WakeHarness::with_turns(vec![]);
+    let outsider = CallerRef {
+        agent: AgentId("agent-random".to_string()),
+        session: SessionId("chat-elsewhere".to_string()),
+    };
+    assert_eq!(
+        h.engine.message_parent(outsider, "hi".to_string()),
+        Err(MessageParentError::NotASubagent)
+    );
+
+    let run = h.seed_run("Nested", "Codex", None, WakeHarness::shared_workspace());
+    h.engine
+        .ledger
+        .lock()
+        .runs
+        .get_mut(&run)
+        .unwrap()
+        .depth = 2;
+    assert_eq!(
+        h.engine.message_parent(child_caller(&run), "hi".to_string()),
+        Err(MessageParentError::Nested)
+    );
+    assert!(
+        h.recorded_wakes().await.is_empty(),
+        "a refused message produces no wake"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_message_and_a_settle_while_busy_go_out_as_one_wake() {
+    let (held, release, entered) = hold_turn();
+    let h = WakeHarness::with_turns(vec![held]);
+
+    let user_turn = h.start_user_prompt("user-turn-msg", "work").await;
+    entered.await.expect("parent turn active");
+
+    let run = h.seed_run(
+        "Worker",
+        "Codex",
+        Some("settled result"),
+        WakeHarness::shared_workspace(),
+    );
+    h.engine
+        .message_parent(child_caller(&run), "almost there".to_string())
+        .expect("message accepted");
+    h.engine.finish(&run, RunEnd::Completed).await;
+    tokio::time::sleep(Duration::from_millis(80)).await;
+
+    assert!(h.recorded_wakes().await.is_empty());
+    assert_eq!(h.engine.wake.pending_count(CHAT), 2);
+
+    let _ = release.send(());
+    user_turn.await.expect("join").expect("turn ok");
+
+    let wakes = h.wait_for_wakes(1).await;
+    h.wait_for_wake_completions(1).await;
+    tokio::time::sleep(Duration::from_millis(50)).await;
+
+    assert_eq!(
+        h.recorded_wakes().await.len(),
+        1,
+        "message and settle batch into ONE wake turn"
+    );
+    let body = &wakes[0].1;
+    let pos_message = body.find("almost there").expect("message present");
+    let pos_settle = body.find("settled result").expect("settle present");
+    assert!(pos_message < pos_settle, "arrival order is preserved");
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_child_question_wakes_the_parent_with_the_question_id() {
+    let h = WakeHarness::with_turns(vec![]);
+    let run = h.seed_run("Asker", "Gemini", None, WakeHarness::shared_workspace());
+
+    let root = h.engine.enqueue_question_wake(
+        child_caller(&run),
+        "q-test-1".to_string(),
+        "Ship it?".to_string(),
+        vec!["Yes".to_string(), "No".to_string()],
+    );
+    assert_eq!(root.as_deref(), Some(CHAT));
+
+    let wakes = h.wait_for_wakes(1).await;
+    let body = &wakes[0].1;
+    assert!(
+        body.contains(&format!(
+            "Asker (subagentId: {}, agent: Gemini) asks (questionId: q-test-1):\nShip it?",
+            run.as_str()
+        )),
+        "question wake shape: {body}"
+    );
+    assert!(body.contains("\n- Yes"), "option label: {body}");
+    assert!(body.contains("\n- No"), "option label: {body}");
+    assert!(
+        body.contains("You may answer it with subagent_answer, or leave it for the user."),
+        "answer hint: {body}"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_question_answered_before_the_wake_drops_its_notice() {
+    let (held, release, entered) = hold_turn();
+    let h = WakeHarness::with_turns(vec![held]);
+    let server = crate::acp::host_mcp::parent::HostPlanServer::start(vec![], None);
+    server.set_orchestrator(Arc::clone(&h.engine));
+
+    let run = h.seed_run("Asker", "Gemini", None, WakeHarness::shared_workspace());
+    let child_agent = format!("agent-child-{}", run.as_str());
+    let child_session = format!("child-sess-{}", run.as_str());
+    let (port, token, provisional) = server.register_session(&child_agent);
+    server.bind_session(&token, &child_session);
+    server.begin_turn(&child_agent, &child_session);
+
+    let user_turn = h.start_user_prompt("user-turn-q", "work").await;
+    entered.await.expect("parent turn active");
+
+    let frame = ask_frame(&token, &provisional, "Ship it?");
+    let call = tokio::spawn(async move { send_host_frame(port, frame).await });
+
+    let mut question_id = None;
+    for _ in 0..300 {
+        if let Some(id) = server.open_ask_ids().into_iter().next() {
+            question_id = Some(id);
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let question_id = question_id.expect("ask parked");
+    for _ in 0..300 {
+        if h.engine.wake.pending_count(CHAT) == 1 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert_eq!(
+        h.engine.wake.pending_count(CHAT),
+        1,
+        "the question notice waits while the parent is busy"
+    );
+
+    // The user answers before the wake went out: its notice is dropped.
+    assert!(server.answer_ask(&question_id, Some(vec!["Yes".to_string()])));
+    assert_eq!(
+        h.engine.wake.pending_count(CHAT),
+        0,
+        "the answered question's pending notice is dropped"
+    );
+
+    let reply = call.await.expect("ask call joined");
+    assert_eq!(reply["result"]["answers"], serde_json::json!(["Yes"]));
+
+    let _ = release.send(());
+    user_turn.await.expect("join").expect("turn ok");
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    assert!(
+        h.recorded_wakes().await.is_empty(),
+        "no wake reports a question the user already answered"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn child_ask_user_wakes_parent_and_subagent_answer_resolves_the_call() {
+    let h = WakeHarness::with_turns(vec![]);
+    let server = crate::acp::host_mcp::parent::HostPlanServer::start(vec![], None);
+    server.set_orchestrator(Arc::clone(&h.engine));
+
+    let run = h.seed_run("Asker", "Gemini", None, WakeHarness::shared_workspace());
+    let child_agent = format!("agent-child-{}", run.as_str());
+    let child_session = format!("child-sess-{}", run.as_str());
+    let (port, token, provisional) = server.register_session(&child_agent);
+    server.bind_session(&token, &child_session);
+    server.begin_turn(&child_agent, &child_session);
+
+    let frame = ask_frame(&token, &provisional, "Ship it?");
+    let call = tokio::spawn(async move { send_host_frame(port, frame).await });
+
+    let wakes = h.wait_for_wakes(1).await;
+    let body = &wakes[0].1.clone();
+    assert!(body.contains("Ship it?"), "question text: {body}");
+    let marker = "asks (questionId: ";
+    let start = body.find(marker).expect("question id in the wake") + marker.len();
+    let end = body[start..].find(')').expect("question id end") + start;
+    let question_id = body[start..end].to_string();
+    assert!(question_id.starts_with("q-"), "{question_id}");
+
+    let reply = server.answer_subagent_question(
+        &h.engine,
+        h.caller.clone(),
+        crate::acp::host_mcp::subagent_tools::SubagentAnswerInput {
+            subagent_id: run.as_str().to_string(),
+            question_id: question_id.clone(),
+            answers: vec!["Yes".to_string()],
+        },
+    );
+    assert!(reply.ok, "subagent_answer accepted: {reply:?}");
+    assert_eq!(reply.result.as_ref().unwrap()["outcome"], "answered");
+
+    let ask_reply = call.await.expect("ask call joined");
+    assert_eq!(ask_reply["ok"], true);
+    assert_eq!(ask_reply["result"]["answers"], serde_json::json!(["Yes"]));
+    assert_eq!(ask_reply["result"]["cancelled"], false);
+
+    // First answer wins: the orchestrator's second answer is not_found.
+    let second = server.answer_subagent_question(
+        &h.engine,
+        h.caller.clone(),
+        crate::acp::host_mcp::subagent_tools::SubagentAnswerInput {
+            subagent_id: run.as_str().to_string(),
+            question_id,
+            answers: vec!["No".to_string()],
+        },
+    );
+    assert!(!second.ok);
+    assert_eq!(second.code.as_deref(), Some("not_found"));
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn subagent_answer_for_another_chats_run_is_refused() {
+    let h = WakeHarness::with_turns(vec![]);
+    let server = crate::acp::host_mcp::parent::HostPlanServer::start(vec![], None);
+    server.set_orchestrator(Arc::clone(&h.engine));
+    let run = h.seed_run("Asker", "Gemini", None, WakeHarness::shared_workspace());
+
+    let stranger = CallerRef {
+        agent: AgentId(PARENT_AGENT.to_string()),
+        session: SessionId("another-chat".to_string()),
+    };
+    let reply = server.answer_subagent_question(
+        &h.engine,
+        stranger,
+        crate::acp::host_mcp::subagent_tools::SubagentAnswerInput {
+            subagent_id: run.as_str().to_string(),
+            question_id: "q-whatever".to_string(),
+            answers: vec!["Yes".to_string()],
+        },
+    );
+    assert!(!reply.ok);
+    assert_eq!(reply.code.as_deref(), Some("not_found"));
+
+    // The right chat but an unknown question is not_found too.
+    let reply = server.answer_subagent_question(
+        &h.engine,
+        h.caller.clone(),
+        crate::acp::host_mcp::subagent_tools::SubagentAnswerInput {
+            subagent_id: run.as_str().to_string(),
+            question_id: "q-unknown".to_string(),
+            answers: vec!["Yes".to_string()],
+        },
+    );
+    assert!(!reply.ok);
+    assert_eq!(reply.code.as_deref(), Some("not_found"));
+}
+
+#[test]
+fn acknowledgement_drops_only_settled_notices_and_messages_never_dedupe() {
+    let wake = WakeRegistry::new();
+    let run_id = RunId("run-x".to_string());
+    let wake_run = | wake_run_id: &RunId | WakeRun {
+        run_id: wake_run_id.clone(),
+        title: "T".to_string(),
+        agent_name: "A".to_string(),
+    };
+    assert!(wake.enqueue(
+        CHAT,
+        WakeNotice::Message {
+            run: wake_run(&run_id),
+            message: "one".to_string(),
+        }
+    ));
+    assert!(wake.enqueue(
+        CHAT,
+        WakeNotice::Message {
+            run: wake_run(&run_id),
+            message: "two".to_string(),
+        }
+    ));
+    assert_eq!(wake.pending_count(CHAT), 2, "messages never dedupe per run");
+
+    wake.acknowledge(CHAT, &run_id);
+    assert_eq!(
+        wake.pending_count(CHAT),
+        2,
+        "reading the run's result does not acknowledge its messages"
+    );
 }

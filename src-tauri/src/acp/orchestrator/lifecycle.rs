@@ -14,7 +14,7 @@ use crate::acp::orchestrator::engine::{OrchestratorEngine, StartProgress};
 use crate::acp::orchestrator::run::{
     bounded, ChildRun, RunBody, RunEnd, RunId, StopError, StopOrigin, StopOutcome,
 };
-use crate::acp::orchestrator::wake::WakeNotice;
+use crate::acp::orchestrator::wake::{WakeNotice, WakeRun};
 use crate::acp::subagents::{Subagent, SubagentWorkspaceMode};
 
 /// After a stop, how long the cancel has to settle before the child is
@@ -111,10 +111,12 @@ impl OrchestratorEngine {
             let wake_draft = (should_wake && entry.parent_run.is_none()).then(|| {
                 (
                     root.clone(),
-                    WakeNotice {
-                        run_id: entry.run.clone(),
-                        title: entry.title.clone(),
-                        agent_name: entry.identity.name.clone(),
+                    WakeNotice::Settled {
+                        run: WakeRun {
+                            run_id: entry.run.clone(),
+                            title: entry.title.clone(),
+                            agent_name: entry.identity.name.clone(),
+                        },
                         state: summary.state,
                         result: summary.result,
                         error: summary.error,
@@ -163,7 +165,9 @@ impl OrchestratorEngine {
                 .get(run)
                 .is_some_and(|entry| entry.stop_origin == Some(StopOrigin::ChatClosed));
             if !closed_meanwhile {
-                notice.workspace = updated_workspace;
+                if let WakeNotice::Settled { workspace, .. } = &mut notice {
+                    *workspace = updated_workspace;
+                }
                 self.enqueue_and_deliver(root, notice);
             }
         }

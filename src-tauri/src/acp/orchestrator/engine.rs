@@ -94,6 +94,23 @@ impl OrchestratorEngine {
             .unwrap_or_else(|| caller.session.0.clone())
     }
 
+    /// The child session of `run` when it belongs to the caller's root chat.
+    /// `None` is indistinguishable between another chat's run, an unknown run
+    /// and a settled run (whose questions are already closed).
+    pub(crate) fn child_session_for_caller(
+        &self,
+        caller: &CallerRef,
+        run: &RunId,
+    ) -> Option<SessionId> {
+        let root = self.caller_root(caller);
+        let ledger = self.ledger.lock();
+        let entry = ledger.runs.get(run)?;
+        if entry.root != root {
+            return None;
+        }
+        entry.session().cloned()
+    }
+
     /// The caller session's workspace root, from the caller agent's
     /// authoritative session roots.
     async fn caller_cwd(&self, caller: &CallerRef) -> Result<String, StartError> {
