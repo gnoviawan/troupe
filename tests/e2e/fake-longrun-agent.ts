@@ -104,8 +104,30 @@
  * `subagent_update` state `idle` (`stopReason: end_turn`, with usage).
  * `session/cancel` with a subagent's session id stops only that subagent: it
  * reports `idle` (`stopReason: cancelled`) and clears `capabilities.cancel`.
+ *
+ * Prompt markers (background work and sub-agent starts, additive — several
+ * can share one prompt; the turn ends at once and the work outlives it):
+ * - `[BG_SHELL:<seconds>]` (Claude `run_in_background`): a `tool_call`
+ *   (kind `execute`) whose `_meta.terminal_info` names a terminal, then a
+ *   `tool_call_update` with a final status and NO `terminal_exit` — the
+ *   host reads that as a command left running. `<seconds>` after the turn
+ *   ends, a `tool_call_update` carrying `_meta.terminal_exit` ends it.
+ * - `[BG_OPEN:<seconds>]` (Codex/Droid): a `tool_call` left `in_progress`
+ *   when the turn ends keeps running; a `tool_call_update` with a final
+ *   status arrives `<seconds>` later and ends it.
+ * - `[UNPROMPTED:<seconds>]`: `<seconds>` after `end_turn`, a plain
+ *   `agent_message_chunk` on the session — agent work outside a prompt
+ *   turn, which fires the host's `agent_working`.
+ * - `[SPAWN:<agentId>:<task>]` calls the host's own `troupe` stdio MCP
+ *   server (kept from `session/new`'s `params.mcpServers`): spawns it,
+ *   runs the `initialize` handshake and `tools/call` `subagent_start` with
+ *   `{agent, task, workspace: "shared"}`, then writes the tool result JSON
+ *   into an `agent_message_chunk`. `<task>` may itself carry markers
+ *   (e.g. `[SPAWN:fake-longrun:[DURATION:6]]`), which the spawned child
+ *   fake agent runs.
  */
 
+import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { appendFileSync, unlinkSync } from 'node:fs'
 
@@ -140,6 +162,7 @@ const wireLog = (line: string): void => {
 }
 
 const write = (line: string): void => {
+  wireLog(`OUT: ${line}`)
   process.stdout.write(`${line}\n`)
 }
 const notify = (method: string, params: JsonValue): void => {
@@ -754,6 +777,268 @@ function runSubagentTurn(
   setTimeout(work, 1000)
 }
 
+/** A stdio MCP server from `session/new`/`session/load` `params.mcpServers`. */
+interface StdioMcpConfig {
+  name: string
+  command: string
+  args: string[]
+  env: Array<{ name: string; value: string }>
+}
+
+/**
+ * The host's injected `troupe` stdio MCP server per session — the config the
+ * host prepends into `mcp_servers` so agents reach `plan`, `subagent_start`
+ * and friends. `[SPAWN:]` spawns it verbatim (command, args, env).
+ */
+const troupeMcpBySession = new Map<string, StdioMcpConfig>()
+
+/** The `troupe` stdio entry of a `mcpServers` param list, else null. */
+function troupeMcpConfig(params: Record<string, JsonValue>): StdioMcpConfig | null {
+  const list = params.mcpServers
+  if (!Array.isArray(list)) return null
+  for (const entry of list) {
+    if (entry === null || typeof entry !== 'object') continue
+    const server = entry as Record<string, JsonValue>
+    if (server.name !== 'troupe' || typeof server.command !== 'string') continue
+    return {
+      name: 'troupe',
+      command: server.command,
+      args: Array.isArray(server.args) ? server.args.map(String) : [],
+      env: Array.isArray(server.env)
+        ? server.env
+            .filter(
+              (v): v is { name: JsonValue; value: JsonValue } => v !== null && typeof v === 'object'
+            )
+            .map((v) => ({ name: String(v.name), value: String(v.value) }))
+        : []
+    }
+  }
+  return null
+}
+
+/**
+ * One MCP `tools/call` against a spawned stdio server: newline-delimited
+ * JSON-RPC — `initialize`, `notifications/initialized`, then `tools/call`.
+ * Resolves with the call's `result` (or its error object). `subagent_start`
+ * holds the reply until the run is up (host bound ~120s), so the budget is
+ * generous; every failure path resolves a value, never hangs the turn.
+ */
+function callTroupeMcp(
+  server: StdioMcpConfig,
+  name: string,
+  args: Record<string, JsonValue>
+): Promise<JsonValue> {
+  return new Promise((resolve) => {
+    const env: Record<string, string> = { ...(process.env as Record<string, string>) }
+    for (const variable of server.env) env[variable.name] = variable.value
+    const child = spawn(server.command, server.args, { env, stdio: ['pipe', 'pipe', 'pipe'] })
+    let buf = ''
+    let done = false
+    const finish = (value: JsonValue): void => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      child.kill('SIGKILL')
+      resolve(value)
+    }
+    const timer = setTimeout(() => finish({ error: { message: `${name} timed out` } }), 150_000)
+    const send = (message: JsonValue): void => {
+      const line = JSON.stringify(message)
+      wireLog(`OUT-MCP: ${line}`)
+      child.stdin.write(`${line}\n`)
+    }
+    child.stdout.setEncoding('utf8')
+    child.stdout.on('data', (data: string) => {
+      buf += data
+      for (;;) {
+        const nl = buf.indexOf('\n')
+        if (nl < 0) break
+        const line = buf.slice(0, nl).trim()
+        buf = buf.slice(nl + 1)
+        if (!line) continue
+        wireLog(`IN-MCP: ${line}`)
+        let message: JsonRpcMessage
+        try {
+          message = JSON.parse(line) as JsonRpcMessage
+        } catch {
+          continue
+        }
+        if (message.id === 1) {
+          send({ jsonrpc: '2.0', method: 'notifications/initialized' })
+          send({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name, arguments: args } })
+        } else if (message.id === 2) {
+          finish(message.error ?? message.result ?? null)
+        }
+      }
+    })
+    child.stderr.on('data', (data: unknown) => {
+      wireLog(`MCP-ERR: ${String(data).trim()}`)
+    })
+    child.on('error', (error) => finish({ error: { message: `spawn failed: ${error.message}` } }))
+    child.on('exit', () => finish({ error: { message: 'the troupe MCP server exited' } }))
+    send({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2025-06-18',
+        capabilities: {},
+        clientInfo: { name: 'fake-longrun-agent', version: '0.0.0' }
+      }
+    })
+  })
+}
+
+const BG_SHELL_MARKER = /\[BG_SHELL:(\d+(?:\.\d+)?)\]/
+const BG_OPEN_MARKER = /\[BG_OPEN:(\d+(?:\.\d+)?)\]/
+const UNPROMPTED_MARKER = /\[UNPROMPTED:(\d+(?:\.\d+)?)\]/
+// The task may carry its own `[MARKER]` text, so it ends at the `]` that is
+// followed by a space or the end of the prompt (`[X]]` keeps the inner `]`).
+// The agent id stops at the first `:` — ids with a `:` cannot be spawned.
+const SPAWN_MARKER = /\[SPAWN:([^\s:\]]+):([\s\S]+?)\](?=\s|$)/
+
+/** Whether the prompt carries any of the background-work/spawn markers. */
+function hasMarkerTurn(prompt: JsonValue | undefined): boolean {
+  const text = promptText(prompt)
+  return (
+    BG_SHELL_MARKER.test(text) ||
+    BG_OPEN_MARKER.test(text) ||
+    UNPROMPTED_MARKER.test(text) ||
+    SPAWN_MARKER.test(text)
+  )
+}
+
+/**
+ * A marker turn: the requested background work is announced, the turn ends
+ * at once, and the exits/updates arrive later on their own timers. With
+ * `[SPAWN:]` the turn stays open until the `subagent_start` reply is in —
+ * the host holds it while the child spawns anyway.
+ */
+function runMarkerTurn(id: number | string, sessionId: string, text: string): void {
+  inFlightBySession.set(sessionId, {
+    id,
+    sessionId,
+    startedAt: Date.now(),
+    chunks: 0,
+    scripted: true
+  })
+  const update = (body: Record<string, JsonValue>): void =>
+    notify('session/update', { sessionId, update: body })
+  const message = (value: string): void =>
+    update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: value } })
+
+  const tag = randomUUID().slice(0, 6)
+  const shellSeconds = BG_SHELL_MARKER.exec(text)?.[1]
+  const shellCallId = shellSeconds !== undefined ? `bg-shell-${tag}` : null
+  if (shellCallId) {
+    update({
+      sessionUpdate: 'tool_call',
+      toolCallId: shellCallId,
+      title: 'Run the e2e background command',
+      kind: 'execute',
+      status: 'in_progress',
+      rawInput: {
+        command: 'sleep infinity',
+        description: 'Run the e2e background command'
+      },
+      _meta: { terminal_info: { terminalId: `term-${tag}` } }
+    })
+    update({
+      sessionUpdate: 'tool_call_update',
+      toolCallId: shellCallId,
+      status: 'completed',
+      content: [
+        {
+          type: 'content',
+          content: { type: 'text', text: 'Command is running in the background.' }
+        }
+      ]
+    })
+  }
+
+  const openSeconds = BG_OPEN_MARKER.exec(text)?.[1]
+  const openCallId = openSeconds !== undefined ? `bg-open-${tag}` : null
+  if (openCallId) {
+    update({
+      sessionUpdate: 'tool_call',
+      toolCallId: openCallId,
+      title: 'Run the e2e open call',
+      kind: 'execute',
+      status: 'in_progress',
+      rawInput: {
+        command: 'tail -f /var/log/e2e.log',
+        description: 'Run the e2e open call'
+      }
+    })
+  }
+
+  const unpromptedSeconds = UNPROMPTED_MARKER.exec(text)?.[1]
+  const spawn = SPAWN_MARKER.exec(text)
+
+  const endTurn = (): void => {
+    if (inFlightBySession.get(sessionId)?.id !== id) return
+    inFlightBySession.delete(sessionId)
+    respond(id, { stopReason: 'end_turn' })
+    if (shellCallId && shellSeconds !== undefined) {
+      const callId = shellCallId
+      setTimeout(
+        () =>
+          update({
+            sessionUpdate: 'tool_call_update',
+            toolCallId: callId,
+            status: 'completed',
+            _meta: { terminal_exit: { exitCode: 0, signal: null } }
+          }),
+        Number(shellSeconds) * 1000
+      )
+    }
+    if (openCallId && openSeconds !== undefined) {
+      const callId = openCallId
+      setTimeout(
+        () =>
+          update({
+            sessionUpdate: 'tool_call_update',
+            toolCallId: callId,
+            status: 'completed',
+            content: [
+              { type: 'content', content: { type: 'text', text: 'The open call finished.' } }
+            ]
+          }),
+        Number(openSeconds) * 1000
+      )
+    }
+    if (unpromptedSeconds !== undefined) {
+      setTimeout(
+        () => message('Unprompted update: still working on the earlier task. '),
+        Number(unpromptedSeconds) * 1000
+      )
+    }
+  }
+
+  if (spawn) {
+    const [, agentId, task] = spawn
+    const server = troupeMcpBySession.get(sessionId)
+    if (!server) {
+      message('SPAWN_ERROR={"code":"no_mcp_server","message":"no troupe stdio MCP server"}')
+      endTurn()
+      return
+    }
+    callTroupeMcp(server, 'subagent_start', { agent: agentId, task, workspace: 'shared' })
+      .then((result) => {
+        if (inFlightBySession.get(sessionId)?.id !== id) return
+        message(`SPAWN_RESULT=${JSON.stringify(result)}`)
+        endTurn()
+      })
+      .catch((error: unknown) => {
+        if (inFlightBySession.get(sessionId)?.id !== id) return
+        message(`SPAWN_ERROR=${JSON.stringify({ message: String(error) })}`)
+        endTurn()
+      })
+    return
+  }
+  endTurn()
+}
+
 interface PendingElicitation {
   /** The held `session/prompt` request id for the awaiting turn. */
   promptId: number | string
@@ -928,6 +1213,8 @@ function handle(msg: JsonRpcMessage): void {
     case 'newSession':
     case 'session/new': {
       const sid = `sess-${randomUUID().slice(0, 8)}`
+      const troupeMcp = troupeMcpConfig(p)
+      if (troupeMcp) troupeMcpBySession.set(sid, troupeMcp)
       if (String(p.cwd ?? '').includes(COMPOSER_CWD_MARKER)) {
         composerValuesBySession.set(sid, {})
         respond(id, {
@@ -966,6 +1253,8 @@ function handle(msg: JsonRpcMessage): void {
       // Reopen: keep the session id the host asked for; the server already
       // holds the transcript, so nothing else to replay here.
       const sid = String(p.sessionId ?? `sess-${randomUUID().slice(0, 8)}`)
+      const troupeMcp = troupeMcpConfig(p)
+      if (troupeMcp) troupeMcpBySession.set(sid, troupeMcp)
       respond(id, { sessionId: sid, modes: [], models: [] })
       break
     }
@@ -988,6 +1277,10 @@ function handle(msg: JsonRpcMessage): void {
       const subagentSec = subagentSeconds(p.prompt)
       if (subagentSec !== null && id !== undefined) {
         runSubagentTurn(id, sessionId, subagentSec, backgroundTailSeconds(p.prompt))
+        return
+      }
+      if (hasMarkerTurn(p.prompt) && id !== undefined) {
+        runMarkerTurn(id, sessionId, promptText(p.prompt))
         return
       }
       const elicit = elicitationRequested(p.prompt)
@@ -1017,7 +1310,6 @@ function handle(msg: JsonRpcMessage): void {
             requestedSchema: ELICIT_SCHEMA
           }
         })
-        wireLog(`OUT: ${line}`)
         write(line)
       }
       if (promptText(p.prompt).includes('[USAGE]')) reportUsage(sessionId)
