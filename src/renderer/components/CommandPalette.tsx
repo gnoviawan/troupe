@@ -36,6 +36,7 @@ import { getColorClasses } from '@/lib/colors'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { terminalProfileCommandLine } from '@/lib/terminal-profiles'
 import { cn } from '@/lib/utils'
+import { useSettingsModalStore } from '@/stores/settings-modal-store'
 import type { Project, ProjectColor } from '@/types/project'
 import type { TerminalProfile } from '@/types/settings'
 
@@ -293,6 +294,15 @@ export function CommandPalette({
               description: 'Open global application preferences',
               keywords: ['preferences', 'prefs', 'settings', 'app', 'global'],
               execute: onOpenAppPreferences
+            },
+            {
+              id: 'open-comu-preferences',
+              category: 'navigation' as const,
+              icon: <Monitor aria-hidden="true" size={16} />,
+              label: 'Computer Use Settings',
+              description: 'Configure Troupe Comu allowed apps, cursor, and system permissions',
+              keywords: ['comu', 'computer use', 'desktop', 'permissions', 'accessibility'],
+              execute: () => useSettingsModalStore.getState().openApp('comu')
             }
           ]
         : []),

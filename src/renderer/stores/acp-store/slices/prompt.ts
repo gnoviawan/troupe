@@ -27,11 +27,13 @@ import { AcpTransportError, isOutcomeUncertainError } from '@/lib/acp-transport'
 import { bumpTurnEndNotice } from '@/lib/agent-chat-notify'
 import { parseBrowserConsentTicket } from '@/lib/browser-consent-api'
 import { COMMAND_RESEND_DELAYS_MS, settleCommand } from '@/lib/command-engine'
+import { parseComuConsentTicket } from '@/lib/comu-policy-api'
 import { logFrontendError } from '@/lib/log-api'
 import { settleRunningPlan } from '@/lib/plan-session'
 import { randomUUID } from '@/lib/uuid'
 import { isAntigravityAccountRestarting } from '@/stores/antigravity-account-restart'
 import { isCodexAccountRestarting } from '@/stores/codex-account-restart'
+import { useComuControlStore } from '@/stores/comu-control-store'
 import { readOnlyGuardOfSession } from '@/stores/github-chat-links-store'
 import {
   appendQueuedPrompt,
@@ -1303,6 +1305,11 @@ export const createPromptSlice: StateCreator<AcpState, [], [], PromptSliceState>
     const browserTicket = parseBrowserConsentTicket(e)
     if (browserTicket) {
       get()._onBrowserConsentTicket(browserTicket)
+      return
+    }
+    const comuTicket = parseComuConsentTicket(e)
+    if (comuTicket) {
+      useComuControlStore.getState().addPendingConsent(comuTicket)
       return
     }
     const hadCommit = commitMessageCollectors.has(e.sessionId)

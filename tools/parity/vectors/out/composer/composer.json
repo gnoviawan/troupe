@@ -6,7 +6,7 @@
   "src/renderer/lib/composer/doc-to-prompt.ts": "f1c21d0bc4e0ac297b3c219b3e3a730f85ec5824",
   "src/renderer/lib/composer/retry-wire.ts": "a7d58ea890618b7dec1a190085c15820af89d506",
   "src/renderer/lib/composer/selection-context.ts": "8c43d52356b1a282ee3351e172868082d2abc821",
-  "src/renderer/lib/composer/termul-tools.ts": "b85342c5e94a7b678b9d69e2c61a2b0943dc9a8e",
+  "src/renderer/lib/composer/termul-tools.ts": "1de144a6a4210922aef435426c3263afcab95442",
   "src/renderer/lib/composer/tool-tokens.ts": "3119ea47b97e5b4e04825622d4de84d694bdfdf3",
   "src/renderer/lib/composer/wire-text.ts": "0984d7b72fc98d3dd18d4b4295e4805baa25a0a1",
   "src/renderer/lib/conversation-envelope.ts": "c48e28de37038dd70e06ab44f3660fafd4c4e472",

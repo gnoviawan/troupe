@@ -62,6 +62,10 @@ Full CSS values (not `"L C H"`), set per theme through `ThemeChrome.tokens`. Eve
 
 Terminal ANSI colors and selection do not follow `--primary`. Troupe pins them in `termul-terminal.ts` (`palette.terminal`), so a brand change never alters terminal output.
 
+## Computer Use indicator
+
+`comu-overlay.html` (the screen-edge indicator) draws over any wallpaper or app and loads no app theme, so `src/renderer/comu-overlay/overlay.css` fixes its own tokens to Troupe dark values: `--comu-overlay-glow` is dark `--primary` (live work), and `--comu-overlay-surface`, `--comu-overlay-text`, `--comu-overlay-border` are dark `--card`, `--card-foreground`, `--border`. Change them together with the dark theme.
+
 ## State
 
 | State | On `background` / `card` | On `popover` (menus, pickers, panels) |

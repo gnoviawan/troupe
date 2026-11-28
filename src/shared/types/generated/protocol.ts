@@ -87,6 +87,7 @@ export type AgentsWatchEvent =
   | 'agent_sign_in_request'
   | 'agent_sign_in_resolved'
   | 'browser_policy_changed'
+  | 'comu_policy_changed'
   | 'automation_changed'
   | 'automation_resync'
 
@@ -99,6 +100,7 @@ export const AgentsWatchEventValues = [
   'agent_sign_in_request',
   'agent_sign_in_resolved',
   'browser_policy_changed',
+  'comu_policy_changed',
   'automation_changed',
   'automation_resync'
 ] as const

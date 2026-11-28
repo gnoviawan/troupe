@@ -3502,11 +3502,14 @@ async fn the_sweeper_reports_the_end_of_work_once_the_session_goes_quiet() {
     let sink = Arc::new(CapturingSink::default());
     let sinks: Vec<Arc<dyn EventSink>> = vec![sink.clone()];
     let agent = AgentId::new();
+    let server = crate::acp::host_mcp::parent::HostPlanServer::start(vec![], None);
     let sweeper = tokio::spawn(sweep_unprompted_work(
         state.clone(),
         sinks.clone(),
+        server.clone(),
         agent.clone(),
     ));
+    server.begin_unprompted_work(&agent.0, "sess-1");
 
     handle_session_notification(
         &state,
@@ -3535,6 +3538,8 @@ async fn the_sweeper_reports_the_end_of_work_once_the_session_goes_quiet() {
     tokio::time::sleep(Duration::from_secs(2)).await;
     assert_eq!(working_events(&sink), vec![true, false]);
     assert_eq!(state.lock().activity(0).unprompted_sessions, 0);
+    // Quiet work no longer routes host tool calls (Computer Use, browser).
+    assert!(!server.routes_for_test(&agent.0, "sess-1"));
     sweeper.abort();
 }
 

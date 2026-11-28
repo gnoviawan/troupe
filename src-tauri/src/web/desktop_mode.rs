@@ -28,6 +28,20 @@ const LEGACY_CHAT_HISTORY_DIR: &str = "acp-chat-history";
 pub struct LaunchFlags {
     pub desktop: bool,
     pub parent_pid: Option<u32>,
+    /// `--browser-host`: serve agent browser tabs from a Chromium on this
+    /// host (`web::hosted_browser`). Off by default.
+    pub browser_host: Option<BrowserHostOptions>,
+}
+
+/// The `--browser-host-*` switches. They exist only with `--browser-host`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct BrowserHostOptions {
+    /// `--browser-host-no-sandbox`: let Chromium run without its sandbox,
+    /// which it needs as root.
+    pub no_sandbox: bool,
+    /// `--browser-host-allow-internal`: let tabs reach loopback and private
+    /// networks.
+    pub allow_internal: bool,
 }
 
 impl LaunchFlags {
@@ -40,9 +54,16 @@ impl LaunchFlags {
         let mut flags = Self::default();
         let mut rest = Vec::with_capacity(args.len());
         let mut iter = args.into_iter();
+        let (mut browser_host, mut browser) = (false, BrowserHostOptions::default());
         while let Some(arg) = iter.next() {
             if arg == "--desktop" {
                 flags.desktop = true;
+            } else if arg == "--browser-host" {
+                browser_host = true;
+            } else if arg == "--browser-host-no-sandbox" {
+                browser.no_sandbox = true;
+            } else if arg == "--browser-host-allow-internal" {
+                browser.allow_internal = true;
             } else if arg == "--parent-pid" {
                 let value = iter.next().ok_or("missing value for --parent-pid")?;
                 flags.parent_pid = Some(parse_pid(&value)?);
@@ -51,6 +72,11 @@ impl LaunchFlags {
             } else {
                 rest.push(arg);
             }
+        }
+        if browser_host {
+            flags.browser_host = Some(browser);
+        } else if browser != BrowserHostOptions::default() {
+            return Err("--browser-host-no-sandbox and --browser-host-allow-internal need --browser-host".into());
         }
         Ok((flags, rest))
     }

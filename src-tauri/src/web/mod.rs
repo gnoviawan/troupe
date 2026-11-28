@@ -30,6 +30,7 @@ pub mod catalog_api;
 pub mod chat_activity;
 pub mod chat_reads;
 pub mod command_ledger;
+pub mod comu_api;
 pub mod config;
 pub mod connection_runtime;
 pub mod desktop_mode;
@@ -44,6 +45,8 @@ pub mod git_history_api;
 pub mod git_hunk_api;
 pub mod github_api;
 pub mod host_allow;
+#[cfg(unix)]
+pub mod hosted_browser;
 pub mod host_local;
 #[cfg(test)]
 mod host_local_tests;

@@ -195,7 +195,7 @@
     },
     "settings-routes": {
       "sources": {
-        "src/renderer/lib/acp-transport/ws-transport.ts": "6bcbf55796ea7f0aff8c5ca7046c9d44fcbd29ca",
+        "src/renderer/lib/acp-transport/ws-transport.ts": "baafc6d5917d8b3baf3e02f607da23291952cdbb",
         "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
       },
       "vectors": [
@@ -206,7 +206,7 @@
       "sources": {
         "src/renderer/stores/recent-commands-store.ts": "8cb3a560de957bd4eab9ed77aa764fdbefc3c49f",
         "src/renderer/stores/pinned-commands-store.ts": "ee65cf14413418dd352e14a4f39a6fc8baf4f763",
-        "src/renderer/components/CommandPalette.tsx": "b4d3c0e00c3be7cfd0405552be480cb9ef2bddff",
+        "src/renderer/components/CommandPalette.tsx": "80ce4da417b268d63d2d06738102ce64477ce189",
         "src/renderer/components/CommandPaletteChats.tsx": "eeaa880ed8adb4b900e539e3ac002c68ef1deb85",
         "src/renderer/components/CommandPaletteQuickChats.tsx": "ec72d6b31d2162d9a558068bc85b361c874cd80e",
         "src/renderer/components/shell/chat-cards.ts": "8b689bf01b05b6b7bd6e8014f78d4cd402137532"

@@ -125,5 +125,42 @@ fn main() {
         println!("cargo:rustc-cfg={RELEASE_WITHOUT_CUSTOM_PROTOCOL_CFG}");
     }
 
+    println!("cargo:rerun-if-changed=../comu/troupe-comu.pin");
+    emit_macos_swift_runtime_link_args();
+
     tauri_build::build()
+}
+
+fn emit_macos_swift_runtime_link_args() {
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default() != "macos" {
+        return;
+    }
+    println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
+    if let Ok(out) = std::process::Command::new("xcrun")
+        .args(["--sdk", "macosx", "--show-sdk-path"])
+        .output()
+    {
+        if out.status.success() {
+            let sdk_swift = Path::new(String::from_utf8_lossy(&out.stdout).trim())
+                .join("usr/lib/swift");
+            if sdk_swift.is_dir() {
+                println!("cargo:rustc-link-search=native={}", sdk_swift.display());
+            }
+        }
+    }
+    if let Ok(out) = std::process::Command::new("xcode-select").arg("-p").output() {
+        if out.status.success() {
+            let stdout_str = String::from_utf8_lossy(&out.stdout);
+            let dev_dir = Path::new(stdout_str.trim());
+            for sub in [
+                "Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx",
+                "Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.5/macosx",
+            ] {
+                let candidate = dev_dir.join(sub);
+                if candidate.is_dir() {
+                    println!("cargo:rustc-link-search=native={}", candidate.display());
+                }
+            }
+        }
+    }
 }

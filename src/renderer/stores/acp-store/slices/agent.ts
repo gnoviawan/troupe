@@ -21,6 +21,7 @@ import { answerBrowserConsent } from '@/lib/browser-consent-api'
 import { factoryKeyApi } from '@/lib/factory-key-api'
 import { logFrontendError } from '@/lib/log-api'
 import { useBrowserControlStore } from '@/stores/browser-control-store'
+import { useComuControlStore } from '@/stores/comu-control-store'
 import { useProjectStore } from '@/stores/project-store'
 import { agentChatTabId, findPaneContainingTab, useWorkspaceStore } from '@/stores/workspace-store'
 import { isDetachedReuseKey, parseReuseKey } from '../../acp-reuse-keys'
@@ -1377,6 +1378,7 @@ export const createAgentSlice: StateCreator<AcpState, [], [], AgentSliceState> =
 
   _onBrowserTicketClosed: (e) => {
     if (typeof e.requestId !== 'string') return
+    useComuControlStore.getState().removePendingConsent(e.requestId)
     set((s) => {
       if (!s.pendingBrowserConsents[e.requestId]) return s
       const next = { ...s.pendingBrowserConsents }

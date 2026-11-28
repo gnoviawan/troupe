@@ -1,7 +1,7 @@
 //! `termul-server openapi [--format yaml|json]`: prints the spec to stdout.
-//! Hidden from `--help`; release CI runs it to attach `openapi.yaml` to each
-//! GitHub release. Builds the document from the compiled-in route table, so it
-//! needs no state dir, no config and no running server.
+//! Listed in `troupe-server --help`. Release CI runs it to attach `openapi.yaml`
+//! to each GitHub release. Builds the document from the compiled-in route table,
+//! so it needs no state dir, no config and no running server.
 
 use std::io::{ErrorKind, Write};
 use std::process::ExitCode;

@@ -13,7 +13,7 @@ use super::HostPlanServer;
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::host_mcp::subagent_tools::{
     SubagentRefInput, SubagentSendInput, SubagentStartInput, SubagentStatusInput, SubagentTool,
-    SubagentWaitInput, SubagentWorkspaceInput, WAIT_MAX_MS, WAIT_MIN_MS,
+    SubagentWaitInput, SubagentWorkspaceInput, BACKGROUND_WAKE_HINT, WAIT_MAX_MS, WAIT_MIN_MS,
 };
 use crate::acp::host_mcp::FrameReply;
 use crate::acp::orchestrator::{
@@ -247,6 +247,7 @@ async fn start(
             "state": state_name(summary.state),
             "title": summary.title,
             "workspace": summary.workspace,
+            "note": BACKGROUND_WAKE_HINT,
         })),
         Ok(Err(error)) => start_refusal(&error),
         Err(error) => {
