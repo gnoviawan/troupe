@@ -578,6 +578,20 @@ impl HostPlanServer {
         // Prefer the token's bound session when it is active. Otherwise, repair
         // the route only when this runtime agent has exactly one active turn;
         // multiple active sessions are ambiguous and must never cross-route.
+        // This host registry tracks successfully bound sessions and is evicted
+        // on close/dispose/driver teardown. Persisted chat history alone is not
+        // evidence that a session is still loaded on this host.
+        let bound_is_open = {
+            let sessions = self.sessions.lock();
+            let mut owners = sessions
+                .values()
+                .filter(|entry| {
+                    !entry.reopen_pending
+                        && entry.real_session_id.as_deref() == Some(&bound_session_id)
+                })
+                .peekable();
+            owners.peek().is_some() && owners.all(|entry| entry.agent_id == auth.agent_id)
+        };
         let real_session_id = {
             let active_turns = self.active_turns.lock();
             match active_turns.get(&auth.agent_id) {
@@ -603,6 +617,14 @@ impl HostPlanServer {
                         CanvasErrorCode::AmbiguousSession.as_str(),
                         "ambiguous active session",
                     );
+                }
+                _ if bound_is_open => {
+                    log::info!(
+                        "[host-mcp] routed agent-initiated call for agent {} to open bound session {}",
+                        auth.agent_id,
+                        crate::logging::redact_session_id(&bound_session_id)
+                    );
+                    bound_session_id.clone()
                 }
                 _ => {
                     log::warn!(
