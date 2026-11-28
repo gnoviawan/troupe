@@ -232,6 +232,30 @@ impl DesktopComuHost {
         self.indicator.install(port);
     }
 
+    /// `session_id` starts acting on the computer: show the chat banner and
+    /// the screen-edge indicator.
+    async fn begin_driving(
+        &self,
+        session_id: &str,
+        agent_id: &str,
+        stop_token: &mut ComuStopToken,
+    ) {
+        self.stop.mark_active(session_id);
+        // Read now: the user may have changed it during the consent wait.
+        let enabled = self
+            .policy
+            .read_app_policy()
+            .await
+            .screen_indicator_enabled;
+        self.indicator
+            .session_driving(session_id, &self.agent_badge(agent_id), enabled);
+        // Stop releases the session; one that landed during the read above
+        // released it before this registration.
+        if stop_token.is_stopped() {
+            self.indicator.session_released(session_id);
+        }
+    }
+
     fn agent_badge(&self, agent_id: &str) -> String {
         self.agent_names
             .lock()
@@ -281,6 +305,7 @@ impl DesktopComuHost {
     async fn dispatch_checked(
         &self,
         session_id: &str,
+        agent_id: &str,
         tool_name: &str,
         args: Value,
         stop_token: &mut ComuStopToken,
@@ -288,11 +313,9 @@ impl DesktopComuHost {
         if stop_token.is_stopped() {
             return None;
         }
-        if (tool_name == "comu_run_steps" || tool_name == "run_steps")
-            && args.get("steps").is_some_and(Value::is_array)
-        {
+        if is_batch_call(tool_name, &args) {
             return self
-                .dispatch_multi_steps_checked(session_id, args, stop_token)
+                .dispatch_multi_steps_checked(session_id, agent_id, args, stop_token)
                 .await;
         }
         tokio::select! {
@@ -308,6 +331,7 @@ impl DesktopComuHost {
     async fn dispatch_multi_steps_checked(
         &self,
         session_id: &str,
+        agent_id: &str,
         args: Value,
         stop_token: &mut ComuStopToken,
     ) -> Option<ComuCallOutput> {
@@ -328,6 +352,8 @@ impl DesktopComuHost {
 
         let mut results = Vec::with_capacity(steps.len());
         let mut extra_blocks: Vec<ComuContentBlock> = Vec::new();
+        // The batch drives the computer from its first acting step on.
+        let mut driving = false;
         let mut all_ok = true;
         for (idx, step) in steps.into_iter().enumerate() {
             if stop_token.is_stopped() {
@@ -373,6 +399,10 @@ impl DesktopComuHost {
                 }
             }
 
+            if !driving && !is_passive_probe(step_tool) {
+                self.begin_driving(session_id, agent_id, stop_token).await;
+                driving = true;
+            }
             if stop_token.is_stopped() {
                 return None;
             }
@@ -550,12 +580,10 @@ impl DesktopComuHost {
             return stopped_output();
         }
 
-        if is_acting_call(tool_name, &args) {
-            self.stop.mark_active(session_id);
-            // Read again: the user may have changed it during the consent wait.
-            let indicator_enabled = self.policy.read_app_policy().await.screen_indicator_enabled;
-            self.indicator
-                .session_driving(session_id, &self.agent_badge(agent_id), indicator_enabled);
+        // A batch starts driving at its first acting step.
+        if !is_batch_call(tool_name, &args) && !is_passive_probe(tool_name) {
+            self.begin_driving(session_id, agent_id, &mut stop_token)
+                .await;
         }
 
         if uses_agent_cursor(tool_name) {
@@ -582,7 +610,7 @@ impl DesktopComuHost {
         }
 
         let exec_outcome = self
-            .dispatch_checked(session_id, tool_name, args, &mut stop_token)
+            .dispatch_checked(session_id, agent_id, tool_name, args, &mut stop_token)
             .await;
 
         match exec_outcome {
@@ -711,22 +739,9 @@ fn needs_window_snapshot(tool_name: &str) -> bool {
     )
 }
 
-/// Whether the call acts on the computer: not a read-only probe, and for a
-/// `comu_run_steps` batch, at least one step that is not one.
-fn is_acting_call(tool_name: &str, args: &Value) -> bool {
-    if tool_name != "comu_run_steps" && tool_name != "run_steps" {
-        return !is_passive_probe(tool_name);
-    }
-    args.get("steps")
-        .and_then(Value::as_array)
-        .is_some_and(|steps| {
-            steps.iter().any(|step| {
-                step.get("tool")
-                    .and_then(Value::as_str)
-                    .and_then(resolve_public_step_tool)
-                    .is_some_and(|step_tool| !is_passive_probe(step_tool))
-            })
-        })
+fn is_batch_call(tool_name: &str, args: &Value) -> bool {
+    (tool_name == "comu_run_steps" || tool_name == "run_steps")
+        && args.get("steps").is_some_and(Value::is_array)
 }
 
 fn is_passive_probe(tool_name: &str) -> bool {

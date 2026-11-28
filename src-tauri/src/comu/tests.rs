@@ -846,7 +846,7 @@ async fn self_guard_hit_test_skips_the_screen_indicator_window() {
     assert_eq!(refusal_code(&overlay_by_id), Some("self_target_blocked"));
 }
 
-/// A `comu_run_steps` batch only counts as driving when a step acts.
+/// A `comu_run_steps` batch starts driving at its first acting step.
 #[tokio::test]
 async fn screen_indicator_ignores_read_only_batches() {
     let dir = TempDir::new().unwrap();
@@ -859,6 +859,14 @@ async fn screen_indicator_ignores_read_only_batches() {
     host.execute("s1", "a1", "comu_run_steps", read_only).await;
     host.execute("s1", "a1", "comu_run_steps", json!({ "steps": [] }))
         .await;
+    // A read-only step that fails stops the batch before its acting step.
+    let fails_first = json!({
+        "steps": [
+            { "tool": "comu_list_windows", "args": { "simulate_error": true } },
+            { "tool": "comu_click", "args": calculator_click() }
+        ]
+    });
+    host.execute("s1", "a1", "comu_run_steps", fails_first).await;
     assert!(indicator.calls.lock().is_empty());
 
     let acting = json!({
