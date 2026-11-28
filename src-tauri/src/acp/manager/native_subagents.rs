@@ -648,17 +648,15 @@ pub(super) fn orchestrated_updates_with(
     {
         return Vec::new();
     }
-    state
-        .subagent_records()
-        .upsert(
-            &root,
-            &dispatch,
-            || subagents::DispatchEntry {
-                record: after.clone(),
-                view: subagents::ToolView::default(),
-            },
-            |entry| entry.record = after.clone(),
-        );
+    state.subagent_records().upsert(
+        &root,
+        &dispatch,
+        || subagents::DispatchEntry {
+            record: after.clone(),
+            view: subagents::ToolView::default(),
+        },
+        |entry| entry.record = after.clone(),
+    );
     let Some(before) = before else {
         let mut meta = Map::new();
         meta.insert(SUBAGENT_META_KEY.to_string(), after.meta_value());
@@ -683,7 +681,8 @@ pub(super) fn orchestrated_updates_with(
         }
         return vec![json!({ "sessionId": root, "update": announce })];
     };
-    let status = card_status(&after.state).filter(|status| card_status(&before.state) != Some(*status));
+    let status =
+        card_status(&after.state).filter(|status| card_status(&before.state) != Some(*status));
     let Some(content) = content else {
         return if before != after {
             vec![record_update(&after, status, None)]
@@ -719,7 +718,8 @@ pub(super) fn settle_orphaned_runs(
     };
     for (record, content) in engine.on_agent_gone(agent_id) {
         let now = crate::acp::session_persistence::now_millis();
-        let updates = orchestrated_updates(&mut state.lock(), record, content.as_deref(), now);
+        let updates =
+            orchestrated_updates_with(&mut state.lock(), record, content.as_deref(), now, false);
         if let Err(error) =
             runtime.block_on(deliver_routed(state, persistence, sinks, agent_id, updates))
         {
