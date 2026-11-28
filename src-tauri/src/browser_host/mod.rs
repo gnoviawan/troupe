@@ -76,6 +76,7 @@ struct Running {
 pub struct BrowserHost {
     me: Weak<BrowserHost>,
     binary: PathBuf,
+    state_dir: PathBuf,
     profiles: PathBuf,
     no_sandbox: bool,
     perimeter: Arc<Perimeter>,
@@ -96,6 +97,7 @@ pub struct BrowserHost {
 impl BrowserHost {
     pub fn new(
         binary: PathBuf,
+        state_dir: PathBuf,
         profiles: PathBuf,
         no_sandbox: bool,
         perimeter: Arc<Perimeter>,
@@ -104,6 +106,7 @@ impl BrowserHost {
         Arc::new_cyclic(|me| Self {
             me: me.clone(),
             binary,
+            state_dir,
             profiles,
             no_sandbox,
             perimeter,
@@ -244,6 +247,7 @@ impl BrowserSource for BrowserHost {
             }
             let spec = LaunchSpec {
                 binary: self.binary.clone(),
+                state_dir: self.state_dir.clone(),
                 profile_dir: self.profiles.join(key.dir_name()),
                 no_sandbox: self.no_sandbox,
                 proxy_port: self.perimeter.port(),

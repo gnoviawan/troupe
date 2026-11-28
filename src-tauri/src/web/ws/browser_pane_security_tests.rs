@@ -13,7 +13,14 @@ async fn tab_controls_refuse_other_connections_before_engine_access() {
     let owner_env = super::super::tests::test_env(&acp, &relay, &registry, &owner, &subscriptions);
     let other_env = super::super::tests::test_env(&acp, &relay, &registry, &other, &subscriptions);
     let perimeter = Perimeter::start(InternalAddresses::Deny).await.unwrap();
-    let host = BrowserHost::new("unused".into(), "unused".into(), false, perimeter, relay);
+    let host = BrowserHost::new(
+        "unused".into(),
+        "unused".into(),
+        "unused".into(),
+        false,
+        perimeter,
+        relay,
+    );
     host.claim_user_tab("tab", "project");
     host.grant("tab", &owner);
     for operation in ["attach", "navigate", "input", "close", "resize"] {

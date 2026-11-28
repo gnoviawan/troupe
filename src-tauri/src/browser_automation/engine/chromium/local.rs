@@ -21,6 +21,7 @@ enum ProfileKey {
 
 pub struct LocalSource {
     binary: PathBuf,
+    state_dir: PathBuf,
     root: PathBuf,
     no_sandbox: bool,
     perimeter: Arc<Perimeter>,
@@ -30,12 +31,14 @@ pub struct LocalSource {
 impl LocalSource {
     pub fn new(
         binary: PathBuf,
+        state_dir: PathBuf,
         root: PathBuf,
         no_sandbox: bool,
         perimeter: Arc<Perimeter>,
     ) -> Self {
         Self {
             binary,
+            state_dir,
             root,
             no_sandbox,
             perimeter,
@@ -65,6 +68,7 @@ impl BrowserSource for LocalSource {
             };
             let spec = LaunchSpec {
                 binary: self.binary.clone(),
+                state_dir: self.state_dir.clone(),
                 profile_dir: self.root.join(dir),
                 no_sandbox: self.no_sandbox,
                 proxy_port: self.perimeter.port(),
