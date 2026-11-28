@@ -45,11 +45,10 @@ pub(crate) struct AnsweredAsk {
     pub(crate) card_session_id: String,
 }
 
-/// Drop the question's pending wake notice, if its asking sub-agent raised
-/// one. The resolved id is remembered, so a wake notice restored after a
-/// failed delivery cannot report the closed question either.
 impl HostPlanServer {
-    /// Drop the question's pending wake notice through the wired orchestrator.
+    /// Drop the question's pending wake notice, if its asking sub-agent raised
+    /// one. The resolved id is remembered, so a wake notice restored after a
+    /// failed delivery cannot report the closed question either.
     fn drop_wake(&self, ask: &PendingAsk, question_id: &str) {
         if let Some(root) = &ask.wake_root {
             if let Some(engine) = self.orchestrator() {

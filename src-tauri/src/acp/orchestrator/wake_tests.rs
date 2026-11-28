@@ -941,7 +941,7 @@ async fn child_ask_user_wakes_parent_and_subagent_answer_resolves_the_call() {
     let call = tokio::spawn(async move { send_host_frame(port, frame).await });
 
     let wakes = h.wait_for_wakes(1).await;
-    let body = &wakes[0].1.clone();
+    let body = wakes[0].1.clone();
     assert!(body.contains("Ship it?"), "question text: {body}");
     let marker = "asks (questionId: ";
     let start = body.find(marker).expect("question id in the wake") + marker.len();
