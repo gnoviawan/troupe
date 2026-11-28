@@ -222,3 +222,13 @@ fn status_previews_a_long_result_and_flags_the_cut() {
     };
     assert_eq!(status_json(&short), summary_json(&short));
 }
+
+#[test]
+fn start_and_wait_descriptions_document_background_wake_and_keep_wait_cap() {
+    use crate::acp::host_mcp::subagent_tools::{
+        BACKGROUND_WAKE_HINT, START_DESCRIPTION, WAIT_DESCRIPTION, WAIT_MAX_MS,
+    };
+    assert!(START_DESCRIPTION.contains(BACKGROUND_WAKE_HINT));
+    assert!(WAIT_DESCRIPTION.contains("Waiting is optional"));
+    assert_eq!(WAIT_MAX_MS, 240_000);
+}

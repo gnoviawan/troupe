@@ -303,9 +303,14 @@ async fn start_claimed_prompt(
             "content": record_content,
         });
         let relay = Arc::clone(relay);
+        let sinks = acp.sinks().to_vec();
         let sid = session_id.0.clone();
+        let accepted_turn_id = turn_id.clone();
         Box::new(move || {
             relay.record_user_prompt(&sid, payload);
+            for sink in &sinks {
+                sink.note_prompt_accepted(&sid, accepted_turn_id.as_deref());
+            }
         }) as PromptAcceptHook
     });
 
@@ -343,8 +348,14 @@ pub async fn complete_prompt_turn(
     running: RunningPrompt,
 ) -> Result<StopReason, String> {
     let RunningPrompt { started, claim } = running;
+    let release_session = claim.turn_id.is_none().then(|| claim.session_id.clone());
     let result = acp.wait_prompt(started).await;
     claim.complete();
+    if let Some(sid) = release_session {
+        for sink in acp.sinks() {
+            sink.note_turn_claim_released(&sid);
+        }
+    }
     result
 }
 

@@ -30,6 +30,7 @@ fn child_run(body: RunBody) -> ChildRun {
         },
         base_commit: Some("snap-oid".to_string()),
         body,
+        stop_origin: None,
         result: None,
         waiters: Vec::new(),
         capture: Arc::new(RunCapture::default()),

@@ -435,6 +435,7 @@ fn seeded_run(engine: &OrchestratorEngine, session: &str, depth: u8) -> RunId {
             session: SessionId(session.to_string()),
             awaiting_permission: false,
         },
+        stop_origin: None,
         result: None,
         waiters: Vec::new(),
         capture: Arc::new(RunCapture::default()),

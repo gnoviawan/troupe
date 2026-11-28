@@ -51,6 +51,19 @@ pub(crate) enum RunEnd {
     Failed(String),
 }
 
+/// Who asked to stop a run before it settled, so the wake policy knows whether
+/// a `Cancelled` settle was requested by the parent, the user, or a closing
+/// chat rather than cancelled externally.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StopOrigin {
+    /// The parent agent called `subagent_stop` (or abandoned `subagent_start`).
+    Parent,
+    /// The user clicked Stop in the UI.
+    User,
+    /// The root chat closed.
+    ChatClosed,
+}
+
 impl RunEnd {
     fn reason(&self) -> SubagentEndReason {
         match self {
@@ -142,6 +155,7 @@ pub(crate) struct ChildRun {
     /// taken against it. Absent for shared runs and empty repositories.
     pub(crate) base_commit: Option<String>,
     pub(crate) body: RunBody,
+    pub(crate) stop_origin: Option<StopOrigin>,
     pub(crate) result: Option<String>,
     pub(crate) waiters: Vec<oneshot::Sender<()>>,
     pub(crate) capture: Arc<RunCapture>,
@@ -357,6 +371,12 @@ pub enum RunState {
     Completed,
     Cancelled,
     Failed,
+}
+
+impl RunState {
+    pub(crate) fn is_terminal(self) -> bool {
+        matches!(self, Self::Completed | Self::Cancelled | Self::Failed)
+    }
 }
 
 /// The engine-facing summary of one run.
