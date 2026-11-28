@@ -36,6 +36,7 @@ pub struct OrchestratorEngine {
     pub(super) manager: Arc<AcpManager>,
     pub(super) relay: Option<Arc<WsRelaySink>>,
     pub(super) registry: AgentRegistry,
+    pub(super) store: Option<Arc<crate::web::store::WebStore>>,
     pub(super) installed: Option<Arc<AcpInstallService>>,
     pub(super) settings: SettingsStore,
     pub(super) ledger: Mutex<RunLedger>,
@@ -52,6 +53,7 @@ impl OrchestratorEngine {
     ) -> Self {
         let engine = Self {
             registry: AgentRegistry::open(data_dir.join(agents::FILE_NAME)),
+            store: None,
             installed,
             settings: SettingsStore::open(&data_dir),
             ledger: Mutex::new(RunLedger::new()),

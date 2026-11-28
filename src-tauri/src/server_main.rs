@@ -619,6 +619,7 @@ fn main() -> ExitCode {
             orchestrator_wake,
             cfg.service_account_state_dir(),
             acp_install.clone(),
+            Some(store.clone()),
             sweep_roots,
             tokio::runtime::Handle::current(),
         );
