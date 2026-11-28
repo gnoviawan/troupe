@@ -241,11 +241,8 @@ async fn next_watch(client: &mut Client) -> Value {
     }
 }
 
-#[tokio::test]
-async fn the_ssh_watch_carries_ssh_events_to_a_host_local_client_only() {
-    let dir = tempfile::tempdir().unwrap();
-    let relay = relay_with_ssh(dir.path());
-
+#[test]
+fn the_ssh_watch_is_forbidden_to_a_writer_that_is_not_host_local() {
     let mut writer = test_access();
     let mut authed = true;
     let refused = handle_sync_with_access(
@@ -257,7 +254,12 @@ async fn the_ssh_watch_carries_ssh_events_to_a_host_local_client_only() {
     );
     assert_eq!(code(&refused), "forbidden");
     assert!(message(&refused).contains("credentials"), "{}", message(&refused));
+}
 
+#[tokio::test]
+async fn the_ssh_watch_carries_ssh_events_to_a_host_local_client() {
+    let dir = tempfile::tempdir().unwrap();
+    let relay = relay_with_ssh(dir.path());
     let mut client = Client::new(&relay);
     let watched = client
         .send("watch", json!({ "watch": "ssh", "scope": "" }))
