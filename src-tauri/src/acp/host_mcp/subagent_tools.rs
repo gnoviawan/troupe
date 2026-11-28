@@ -174,8 +174,9 @@ workspace.";
 
 pub const MESSAGE_PARENT_DESCRIPTION: &str = "Send a message to the agent that started you \
 (your orchestrator): a progress report, a question, a decision you need, or work to hand back. \
-It does not wait for a reply. If you need the answer before you can go on, end your turn after \
-sending; the orchestrator's reply resumes you.";
+It does not wait for a reply. Ending your turn ends your run: keep working on what you can, \
+and if you must stop for the answer, say so in your final message so the orchestrator can \
+continue you or start a follow-up task.";
 
 pub const ANSWER_DESCRIPTION: &str = "Answer an open ask_user question of one of your subagents. \
 `subagentId` is the run that asked it, `questionId` the id its wake reported, and `answers` the \

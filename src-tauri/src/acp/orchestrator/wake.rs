@@ -19,7 +19,9 @@ use parking_lot::Mutex;
 use crate::acp::config::SessionId;
 use crate::acp::events;
 use crate::acp::orchestrator::engine::OrchestratorEngine;
-use crate::acp::orchestrator::run::{CallerRef, MessageParentError, RunId, RunState};
+use crate::acp::orchestrator::run::{
+    CallerRef, ChildRun, MessageParentError, RunId, RunState, StopOrigin,
+};
 use crate::acp::subagents::SubagentWorkspace;
 use crate::web::prompt_turn::{
     accept_prompt_turn, complete_prompt_turn, PromptAdmission, PromptTurnError, PromptTurnRequest,
@@ -230,9 +232,9 @@ impl WakeRegistry {
     /// report a question the user or parent already closed.
     pub(crate) fn drop_question(&self, root: &str, question_id: &str) {
         let mut mailboxes = self.mailboxes.lock();
-        let mailbox = mailboxes
-            .entry(root.to_string())
-            .or_insert_with(RootMailbox::new);
+        let Some(mailbox) = mailboxes.get_mut(root) else {
+            return;
+        };
         mailbox.resolved_questions.insert(question_id.to_string());
         mailbox.pending.retain(|notice| {
             notice
@@ -537,6 +539,12 @@ impl EventSink for WakeSink {
     }
 }
 
+/// A settled run, or one stopped because its chat closed, must not recreate
+/// the closed chat's mailbox.
+fn accepts_notices(entry: &ChildRun) -> bool {
+    entry.is_live() && entry.stop_origin != Some(StopOrigin::ChatClosed)
+}
+
 impl OrchestratorEngine {
     /// Enqueue a `message_parent` notice of the calling depth-1 sub-agent and
     /// trigger delivery to its root chat.
@@ -547,7 +555,10 @@ impl OrchestratorEngine {
     ) -> Result<(), MessageParentError> {
         let (root, run) = {
             let ledger = self.ledger.lock();
-            let Some(entry) = ledger.run_with_session(&caller) else {
+            let Some(entry) = ledger
+                .run_with_session(&caller)
+                .filter(|entry| accepts_notices(entry))
+            else {
                 return Err(MessageParentError::NotASubagent);
             };
             if entry.depth != 1 {
@@ -583,7 +594,9 @@ impl OrchestratorEngine {
     ) -> Option<String> {
         let (root, run) = {
             let ledger = self.ledger.lock();
-            let entry = ledger.run_with_session(&caller)?;
+            let entry = ledger
+                .run_with_session(&caller)
+                .filter(|entry| accepts_notices(entry))?;
             if entry.depth != 1 {
                 return None;
             }

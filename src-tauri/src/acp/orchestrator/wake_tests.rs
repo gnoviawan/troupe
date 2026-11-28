@@ -954,6 +954,24 @@ async fn child_ask_user_wakes_parent_and_subagent_answer_resolves_the_call() {
     let question_id = body[start..end].to_string();
     assert!(question_id.starts_with("q-"), "{question_id}");
 
+    let stranger = server.answer_subagent_question(
+        &h.engine,
+        CallerRef {
+            agent: AgentId(PARENT_AGENT.to_string()),
+            session: SessionId("another-chat".to_string()),
+        },
+        crate::acp::host_mcp::subagent_tools::SubagentAnswerInput {
+            subagent_id: run.as_str().to_string(),
+            question_id: question_id.clone(),
+            answers: vec!["No".to_string()],
+        },
+    );
+    assert_eq!(
+        stranger.code.as_deref(),
+        Some("not_found"),
+        "another chat cannot answer an open question it knows the id of"
+    );
+
     let reply = server.answer_subagent_question(
         &h.engine,
         h.caller.clone(),

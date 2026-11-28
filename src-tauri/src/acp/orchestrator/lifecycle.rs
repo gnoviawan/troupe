@@ -266,7 +266,6 @@ impl OrchestratorEngine {
 
     /// Stop every live run of a closed chat and dispose its wake mailbox.
     pub(crate) async fn chat_closed(self: &Arc<Self>, root: &str) {
-        self.wake.dispose_root(root);
         let (runs, starts) = {
             let mut ledger = self.ledger.lock();
             let starts = ledger.cancel_starts(|start| start.root == root);
@@ -279,6 +278,7 @@ impl OrchestratorEngine {
             }
             (ledger.live_runs_of_root(root), starts)
         };
+        self.wake.dispose_root(root);
         if starts > 0 {
             log::info!(
                 "[orchestrator] chat {} closed: cancelled {starts} start(s)",

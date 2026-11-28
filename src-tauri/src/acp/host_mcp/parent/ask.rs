@@ -114,8 +114,15 @@ impl HostPlanServer {
                 question.clone(),
                 option_labels.clone(),
             ) {
-                if let Some(ask) = self.pending_asks.lock().get_mut(&question_id) {
-                    ask.wake_root = Some(root);
+                let closed_meanwhile = match self.pending_asks.lock().get_mut(&question_id) {
+                    Some(ask) => {
+                        ask.wake_root = Some(root.clone());
+                        false
+                    }
+                    None => true,
+                };
+                if closed_meanwhile {
+                    engine.drop_question_notice(&root, &question_id);
                 }
             }
         }
