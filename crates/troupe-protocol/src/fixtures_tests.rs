@@ -101,6 +101,9 @@ fn every_ws_request_round_trips() {
             }
             WsRequestType::MarkChatRead => drop(round_trip::<ChatReadMark>(&label, body)),
             WsRequestType::CanvasReply => drop(round_trip::<WsCanvasReplyPayload>(&label, body)),
+            WsRequestType::SshSessionRespondHostKey => {
+                drop(round_trip::<SshHostKeyAnswer>(&label, body));
+            }
             _ => {}
         }
     }
@@ -232,6 +235,16 @@ fn check_watch_body(name: &str, label: &str, body: &Value) {
         }
         agents if agents.starts_with("agents.delta.") => {
             drop(round_trip::<AgentsWatchDelta>(label, body));
+        }
+        "ssh.state" => drop(round_trip::<SshWatchState>(label, body)),
+        ssh if ssh.starts_with("ssh.delta.") => {
+            let delta: SshWatchDelta = round_trip(label, body);
+            assert_eq!(
+                body["event"].as_str(),
+                ssh.strip_prefix("ssh.delta."),
+                "{label} names its event"
+            );
+            drop(delta);
         }
         _ => {}
     }

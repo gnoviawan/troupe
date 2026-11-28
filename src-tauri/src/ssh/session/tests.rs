@@ -88,6 +88,7 @@ fn a_shell_ending_before_registration_is_kept_for_open() {
         Arc::new(Pending {
             cancelled: AtomicBool::new(false),
             decision_tx: Mutex::new(None),
+            prompt: Mutex::new(None),
         }),
     );
     manager.finish("s1", ShellEnd::Exited(Some(0)));
@@ -288,4 +289,56 @@ async fn real_server_shell_round_trip() {
         .map(|(_, payload)| payload.clone())
         .expect("ended event");
     assert_eq!(ended["reason"], "closed");
+}
+
+#[tokio::test]
+async fn a_host_key_question_is_listed_until_answered_and_trusts_only_the_key_shown() {
+    let (manager, events) = recording_manager();
+    let (decision_tx, decision_rx) = mpsc::unbounded_channel();
+    let pending = Arc::new(Pending {
+        cancelled: AtomicBool::new(false),
+        decision_tx: Mutex::new(Some(decision_tx)),
+        prompt: Mutex::new(None),
+    });
+    lock(&manager.pending).insert("s1".into(), pending.clone());
+    assert!(
+        !manager.trust_host_key_shown("s1", "SHA256:new"),
+        "no question is open yet"
+    );
+    let hooks = Arc::new(SessionHooks {
+        session_id: "s1".into(),
+        pending,
+        decisions: tokio::sync::Mutex::new(decision_rx),
+        emit: manager.emit.clone(),
+    });
+    let info = HostKeyInfo {
+        host: "prod.example".into(),
+        port: 2222,
+        key_type: "ssh-ed25519".into(),
+        fingerprint: "SHA256:new".into(),
+        previous_fingerprints: vec!["SHA256:old".into()],
+    };
+    let asking = tokio::spawn(async move { hooks.host_key(info, HostKeyStatus::Changed).await });
+
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while manager.host_key_prompts().is_empty() {
+        assert!(Instant::now() < deadline, "the question is listed");
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let prompts = manager.host_key_prompts();
+    assert_eq!(prompts.len(), 1);
+    assert_eq!(prompts[0]["status"], "changed");
+    assert_eq!(prompts[0]["fingerprint"], "SHA256:new");
+    assert_eq!(prompts[0]["previousFingerprints"], json!(["SHA256:old"]));
+
+    assert!(!manager.trust_host_key_shown("s1", "SHA256:old"));
+    assert!(!manager.trust_host_key_shown("other", "SHA256:new"));
+    assert!(manager.trust_host_key_shown("s1", "SHA256:new"));
+    assert_eq!(asking.await.unwrap(), HostKeyDecision::Trust);
+    assert!(manager.host_key_prompts().is_empty());
+
+    let events = events.lock().unwrap();
+    let names: Vec<&str> = events.iter().map(|(name, _)| name.as_str()).collect();
+    assert_eq!(names, [EVENT_HOST_KEY, EVENT_HOST_KEY_RESOLVED]);
+    assert_eq!(events[1].1, json!({ "sessionId": "s1" }));
 }

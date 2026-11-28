@@ -270,6 +270,36 @@ pub const WS_COMMAND_CLASSES: &[(&str, CommandClass)] = &[
     ("canvas_mount", CommandClass::idempotent()),
     ("canvas_unmount", CommandClass::idempotent()),
     ("canvas_reply", CommandClass::idempotent()),
+    // SSH for the host-local desktop client. A command that fails on a
+    // repeat (delete, mkdir, rename, create, a transfer) replays its first
+    // answer. `ssh_session_open` and `listeners_rotate_token` answer a
+    // terminal claim or token-bearing URLs, so their resends get a receipt.
+    ("ssh_list_profiles", CommandClass::read()),
+    ("ssh_save_profile", CommandClass::idempotent()),
+    ("ssh_delete_profile", CommandClass::command(Replay::Payload)),
+    ("ssh_duplicate_profile", CommandClass::command(Replay::Payload)),
+    ("ssh_import_config", CommandClass::command(Replay::Payload)),
+    ("ssh_inspect_key", CommandClass::read()),
+    ("ssh_list_keys", CommandClass::read()),
+    ("ssh_session_open", CommandClass::command(Replay::ReceiptOnly)),
+    ("ssh_session_respond_host_key", CommandClass::command(Replay::Payload)),
+    ("ssh_session_cancel", CommandClass::idempotent()),
+    ("ssh_session_close", CommandClass::idempotent()),
+    ("ssh_session_list", CommandClass::read()),
+    ("sftp_list_dir", CommandClass::read()),
+    ("sftp_realpath", CommandClass::read()),
+    ("sftp_download", CommandClass::command(Replay::Payload)),
+    ("sftp_upload", CommandClass::command(Replay::Payload)),
+    ("sftp_delete", CommandClass::command(Replay::Payload)),
+    ("sftp_mkdir", CommandClass::command(Replay::Payload)),
+    ("sftp_rename", CommandClass::command(Replay::Payload)),
+    ("sftp_read_file", CommandClass::read()),
+    ("sftp_write_file", CommandClass::idempotent()),
+    ("sftp_create_file", CommandClass::command(Replay::Payload)),
+    ("listeners_status", CommandClass::read()),
+    ("listeners_set_lan", CommandClass::idempotent()),
+    ("listeners_set_tunnel", CommandClass::idempotent()),
+    ("listeners_rotate_token", CommandClass::command(Replay::ReceiptOnly)),
 ];
 
 /// The class of a `/ws` request type; `None` for a type the host does not
@@ -328,6 +358,16 @@ fn identifying_fields(request_type: &str) -> &'static [&'static str] {
             "config.command",
             "config.configId",
         ],
+        "ssh_delete_profile" | "ssh_duplicate_profile" => &["profileId"],
+        "ssh_session_open" => &["request.sessionId", "request.profileId"],
+        "ssh_session_respond_host_key" => &["sessionId", "trust", "fingerprint"],
+        "sftp_download" | "sftp_upload" => {
+            &["request.connectionId", "request.remotePath", "request.localPath"]
+        }
+        "sftp_delete" | "sftp_mkdir" | "sftp_create_file" => {
+            &["request.connectionId", "request.remotePath"]
+        }
+        "sftp_rename" => &["request.connectionId", "request.oldPath", "request.newPath"],
         _ => &[],
     }
 }

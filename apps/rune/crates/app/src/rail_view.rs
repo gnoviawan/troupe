@@ -165,7 +165,8 @@ pub fn body(
                         .on_press(|s: &mut State| s.toast_later("New quick chat")),
                 ),
             ))
-            .child(quick);
+            .child(quick)
+            .children(crate::ssh_view::rail_section(s, t));
     }
     let footer_items = [
         shell::rail_button(t, &i::SLIDERS, "Settings", 28.0, 14.0, false)

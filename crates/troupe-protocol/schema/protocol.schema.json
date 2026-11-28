@@ -11,6 +11,10 @@
           "description": "Per install or browser profile.",
           "type": "string"
         },
+        "hostLocalToken": {
+          "description": "The host-local credential: the contents of `<state>/host-local.token`,\nwhich only a `troupe-server --desktop` host writes. Sent by the Rune\ndesktop app; a host grants `host_local` only to a direct loopback\nconnection that presents it.",
+          "type": "string"
+        },
         "protocolVersion": {
           "format": "uint32",
           "minimum": 0,
@@ -905,6 +909,230 @@
         }
       },
       "required": ["id", "shell", "cwd", "pid", "cols", "rows", "claim"],
+      "type": "object"
+    },
+    "SshHostKeyAnswer": {
+      "description": "`ssh_session_respond_host_key` payload. Trusting over `/ws` names the\nfingerprint the person saw; the host refuses a trust whose fingerprint is\nnot the one of the question open for that session.",
+      "properties": {
+        "fingerprint": {
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "trust": {
+          "type": "boolean"
+        }
+      },
+      "required": ["sessionId", "trust"],
+      "type": "object"
+    },
+    "SshHostKeyPrompt": {
+      "description": "A host-key question waiting for an answer.",
+      "properties": {
+        "fingerprint": {
+          "description": "`SHA256:<base64>` of the key the server presented.",
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "keyType": {
+          "description": "OpenSSH key type name, e.g. `ssh-ed25519`.",
+          "type": "string"
+        },
+        "port": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "previousFingerprints": {
+          "description": "`SHA256:<base64>` of each key known_hosts records for this host and key\ntype. Empty unless `status` is `changed`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/SshHostKeyStatus"
+        }
+      },
+      "required": ["sessionId", "status", "host", "port", "keyType", "fingerprint"],
+      "type": "object"
+    },
+    "SshHostKeyResolved": {
+      "description": "A host-key question was answered, cancelled or timed out.",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId"],
+      "type": "object"
+    },
+    "SshHostKeyStatus": {
+      "description": "Why a host key needs a person. A trusted key is never asked about and\na revoked one is refused without asking.",
+      "enum": ["unknown", "changed"],
+      "type": "string"
+    },
+    "SshSessionEnded": {
+      "description": "A session's shell ended: `exited` (with its code), `lost` (with a\ndetail) or `closed`.",
+      "properties": {
+        "detail": {
+          "type": ["string", "null"]
+        },
+        "exitCode": {
+          "format": "int32",
+          "type": ["integer", "null"]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "terminalId": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["sessionId", "terminalId", "reason", "exitCode", "detail"],
+      "type": "object"
+    },
+    "SshSessionProgress": {
+      "description": "A connect moved to its next stage (`connecting`, `verifyingHostKey`,\n`authenticating`, `startingShell`).",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId", "stage"],
+      "type": "object"
+    },
+    "SshTransferProgress": {
+      "description": "Progress of one SFTP upload or download.",
+      "properties": {
+        "bytesTransferred": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "connectionId": {
+          "description": "The session the transfer runs on.",
+          "type": "string"
+        },
+        "direction": {
+          "description": "`upload` or `download`.",
+          "type": "string"
+        },
+        "error": {
+          "type": ["string", "null"]
+        },
+        "localPath": {
+          "type": "string"
+        },
+        "remotePath": {
+          "type": "string"
+        },
+        "status": {
+          "description": "`in-progress`, `completed`, `failed` or `cancelled`.",
+          "type": "string"
+        },
+        "totalBytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "connectionId",
+        "remotePath",
+        "localPath",
+        "bytesTransferred",
+        "totalBytes",
+        "direction",
+        "status",
+        "error"
+      ],
+      "type": "object"
+    },
+    "SshWatchDelta": {
+      "description": "An `ssh` delta: one SSH fact, tagged by `event`.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SshSessionProgress",
+          "properties": {
+            "event": {
+              "const": "progress",
+              "type": "string"
+            }
+          },
+          "required": ["event"],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/SshHostKeyPrompt",
+          "properties": {
+            "event": {
+              "const": "host_key",
+              "type": "string"
+            }
+          },
+          "required": ["event"],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/SshHostKeyResolved",
+          "properties": {
+            "event": {
+              "const": "host_key_resolved",
+              "type": "string"
+            }
+          },
+          "required": ["event"],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/SshSessionEnded",
+          "properties": {
+            "event": {
+              "const": "ended",
+              "type": "string"
+            }
+          },
+          "required": ["event"],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/SshTransferProgress",
+          "properties": {
+            "event": {
+              "const": "transfer",
+              "type": "string"
+            }
+          },
+          "required": ["event"],
+          "type": "object"
+        }
+      ]
+    },
+    "SshWatchState": {
+      "description": "`ssh` watch state: the host-key questions open now. A client that missed\na `host_key` delta finds the question here when it watches again.",
+      "properties": {
+        "hostKeys": {
+          "items": {
+            "$ref": "#/$defs/SshHostKeyPrompt"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["hostKeys"],
       "type": "object"
     },
     "StoreDeletePayload": {
@@ -2188,7 +2416,33 @@
         "start_antigravity_account_login",
         "canvas_mount",
         "canvas_unmount",
-        "canvas_reply"
+        "canvas_reply",
+        "ssh_list_profiles",
+        "ssh_save_profile",
+        "ssh_delete_profile",
+        "ssh_duplicate_profile",
+        "ssh_import_config",
+        "ssh_inspect_key",
+        "ssh_list_keys",
+        "ssh_session_open",
+        "ssh_session_respond_host_key",
+        "ssh_session_cancel",
+        "ssh_session_close",
+        "ssh_session_list",
+        "sftp_list_dir",
+        "sftp_realpath",
+        "sftp_download",
+        "sftp_upload",
+        "sftp_delete",
+        "sftp_mkdir",
+        "sftp_rename",
+        "sftp_read_file",
+        "sftp_write_file",
+        "sftp_create_file",
+        "listeners_status",
+        "listeners_set_lan",
+        "listeners_set_tunnel",
+        "listeners_rotate_token"
       ],
       "type": "string"
     },
@@ -2276,7 +2530,7 @@
       "description": "A watch frame: exactly one of the full state and a delta."
     },
     "WsWatchName": {
-      "description": "A watch a connection can hold. `projects`, `chat_history`, `agents` and\n`chat_activity` have the empty scope; `fs` and `terminals` are scoped\nto a project id, `store` to a store key, `browser_screencast` to a tab id.",
+      "description": "A watch a connection can hold. `projects`, `chat_history`, `agents`,\n`chat_activity` and `ssh` have the empty scope; `fs` and `terminals`\nare scoped to a project id, `store` to a store key,\n`browser_screencast` to a tab id. Only a `host_local` connection may\nwatch `ssh`.",
       "enum": [
         "projects",
         "chat_history",
@@ -2284,6 +2538,7 @@
         "fs",
         "store",
         "terminals",
+        "ssh",
         "browser_screencast",
         "chat_activity"
       ],

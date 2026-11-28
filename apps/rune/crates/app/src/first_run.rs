@@ -103,7 +103,7 @@ pub struct FirstRun {
     hash: Option<String>,
     /// A submitted token waiting for its check.
     pending_token: Option<String>,
-    config: Option<Config>,
+    pub(crate) config: Option<Config>,
     waker: Option<Waker>,
     inbox: Inbox,
     /// Every request sent, for the tests.
@@ -162,6 +162,7 @@ impl State {
             device_id: self.device_id.clone(),
             client_instance_id: String::new(),
             seed: 0,
+            host_local: None,
         });
         config.token = token;
         if let Ask::Restarted = ask {

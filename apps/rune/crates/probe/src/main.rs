@@ -46,6 +46,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         device_id: "probe".into(),
         client_instance_id: format!("probe-{}", std::process::id()),
         seed: u64::from(std::process::id()),
+        host_local: None,
     };
     match command.as_str() {
         "projects" => println!(

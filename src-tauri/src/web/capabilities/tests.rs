@@ -269,3 +269,23 @@ fn terminal_view_allow_list_excludes_every_mutation() {
         assert!(!terminal_request_is_view(mutation), "{mutation}");
     }
 }
+
+#[test]
+fn only_a_host_local_connection_may_watch_ssh() {
+    let id = identity("dev1");
+    let host_local = Capabilities {
+        host_local: true,
+        ..WRITER
+    };
+    let ssh = json!({ "watch": "ssh", "scope": "" });
+    assert!(!ws_request_permitted("watch", &ssh, VIEW_ONLY, Some(&id)));
+    assert!(!ws_request_permitted("watch", &ssh, WRITER, Some(&id)));
+    assert!(ws_request_permitted("watch", &ssh, host_local, Some(&id)));
+    assert_eq!(
+        ws_request_requirement("watch", &ssh),
+        Requirement::HostLocal
+    );
+    let projects = json!({ "watch": "projects", "scope": "" });
+    assert!(ws_request_permitted("watch", &projects, VIEW_ONLY, Some(&id)));
+    assert!(ws_request_permitted("unwatch", &ssh, VIEW_ONLY, Some(&id)));
+}

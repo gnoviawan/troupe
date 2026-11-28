@@ -29,6 +29,12 @@ pub struct AcpAuthenticatePayload {
     pub device_id: String,
     /// Per tab or window.
     pub client_instance_id: String,
+    /// The host-local credential: the contents of `<state>/host-local.token`,
+    /// which only a `troupe-server --desktop` host writes. Sent by the Rune
+    /// desktop app; a host grants `host_local` only to a direct loopback
+    /// connection that presents it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub host_local_token: Option<String>,
 }
 
 /// `authenticate` reply payload.

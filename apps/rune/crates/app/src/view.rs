@@ -54,6 +54,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::automation_editor_view::dialogs(s, t, &mut layer);
     crate::settings_view::build(s, t, phone, window, &mut layer);
     crate::snapshots_view::dialogs(s, t, phone, &mut layer);
+    crate::ssh_view::dialogs(s, t, &mut layer);
     crate::bug_report::build(s, t, phone, &mut layer);
     ui::canvas::view::unmount_confirms(s, |s: &State| &s.canvases, |s: &mut State| &mut s.canvases, t, &mut layer);
     s.sync_canvas_slots(cx, phone, !layer.is_empty());
@@ -192,6 +193,9 @@ fn main_area(
 ) -> El {
     if s.route == Route::Snapshots {
         return crate::snapshots_view::page(s, t, false);
+    }
+    if s.ssh.model.workspace_open && s.ssh_available() {
+        return crate::ssh_view::workspace(s, t);
     }
     let start = if rail_collapsed {
         vec![rail_toggle(t, false)]

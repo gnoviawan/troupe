@@ -111,6 +111,7 @@ pub(crate) enum Pending {
     /// The empty list the history's Clear wrote for a project.
     ClearHistory(String),
     Snapshots(crate::snapshots::Call),
+    Ssh(crate::ssh::Call),
     Canvas(crate::canvas_host::CanvasWsPending),
 }
 
@@ -210,6 +211,7 @@ impl State {
             );
         }
         self.list_chats();
+        self.ssh_begin();
         self.layout_step(LayoutEvent::StartHydrate);
         self.palette_link_reset();
     }
@@ -391,6 +393,8 @@ impl State {
                 watch: WsWatchName::ChatHistory,
                 ..
             } => self.list_chats(),
+            Output::WatchState { watch: WsWatchName::Ssh, state, .. } => self.ssh_watched(Some(state), None),
+            Output::WatchDelta { watch: WsWatchName::Ssh, delta, .. } => self.ssh_watched(None, Some(delta)),
             Output::WatchRefused { watch, error, .. } => {
                 log::warn!(
                     "[app] watch {watch:?} refused: {}: {}",
@@ -534,6 +538,7 @@ impl State {
             Pending::ReadHistory(project) => self.history_read(project, result),
             Pending::ClearHistory(project) => self.history_cleared(project, result),
             Pending::Snapshots(call) => self.snapshots_replied(call, result),
+            Pending::Ssh(call) => self.ssh_replied(call, result),
             Pending::Canvas(call) => self.canvas_ws_reply(call, result),
             Pending::Mcp(effect) => self.mcp_loaded(*effect, result),
             Pending::McpSave(effect, action) => self.mcp_saved(*effect, action, result),

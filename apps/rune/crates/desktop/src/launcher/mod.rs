@@ -106,13 +106,15 @@ pub fn start(paths: &Paths) -> Result<Started, LaunchError> {
     if let Some(url) = env("TROUPE_SERVER_URL") {
         log::info!("[launcher] attaching to {}; it is not managed", redact_url(&url));
         let base = url.trim_end_matches('/').to_owned();
-        return Ok(Started { config: config(paths, base, env("TROUPE_SERVER_TOKEN")), mode: Mode::Attached, control: None });
+        // Not our server: the host-local credential stays on this machine's own server.
+        let config = config(paths, base, env("TROUPE_SERVER_TOKEN"), false);
+        return Ok(Started { config, mode: Mode::Attached, control: None });
     }
     let keep_alive = env("TROUPE_PREVIEW_KEEP_SERVER").is_some_and(|v| v == "1" || v == "true");
     if let Some((record, token)) = reusable(paths) {
         log::info!("[launcher] reusing server pid {} on 127.0.0.1:{}", record.pid, record.port);
         let runner = Runner::new(paths, record.binary.clone(), record.port, token.clone(), keep_alive, Proc::adopted(record.pid));
-        let config = config(paths, base_url(record.port), Some(token));
+        let config = config(paths, base_url(record.port), Some(token), true);
         return Ok(Started { config, mode: Mode::Reused, control: Some(runner.run()) });
     }
     match data_lock::holder(&paths.data_dir) {
@@ -142,7 +144,7 @@ pub fn start(paths: &Paths) -> Result<Started, LaunchError> {
     let _ = record::write_private(&paths.last_port_file(), port.to_string().as_bytes());
     let mut runner = Runner::new(paths, bin, port, token.clone(), keep_alive, Proc::None);
     runner.adopt(server);
-    let config = config(paths, base_url(port), Some(token));
+    let config = config(paths, base_url(port), Some(token), true);
     Ok(Started { config, mode: Mode::Spawned, control: Some(runner.run()) })
 }
 
@@ -161,12 +163,12 @@ fn reusable(paths: &Paths) -> Option<(ServerRecord, String)> {
 }
 
 /// Whether server `pid` is the lock's holder. Windows hosts write no pid into the lock, so
-/// there a held lock is all the launcher can see.
+/// there the lock must be held and the recorded server still running.
 pub(crate) fn holds_lock(pid: u32, holder: Option<&Holder>) -> bool {
     match holder.map(|h| h.pid) {
         None => false,
         Some(Some(holder)) => holder == pid,
-        Some(None) => cfg!(windows),
+        Some(None) => cfg!(windows) && process::alive(pid),
     }
 }
 
@@ -184,8 +186,14 @@ fn base_url(port: u16) -> String {
     format!("http://127.0.0.1:{port}")
 }
 
-fn config(paths: &Paths, base_url: String, token: Option<String>) -> client::Config {
+/// The client's config. `own` (a server on this data dir) adds the host-local credential,
+/// read at each authenticate.
+fn config(paths: &Paths, base_url: String, token: Option<String>, own: bool) -> client::Config {
     let pid = std::process::id();
+    let host_local = own.then(|| {
+        let paths = paths.clone();
+        client::HostLocalCredential::new(move || process::read_host_local_token(&paths))
+    });
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.subsec_nanos());
     client::Config {
         base_url,
@@ -193,6 +201,7 @@ fn config(paths: &Paths, base_url: String, token: Option<String>) -> client::Con
         device_id: env("TROUPE_DEVICE_ID").unwrap_or_else(|| record::device_id(&paths.device_id_file())),
         client_instance_id: format!("troupe-preview-{pid}-{nanos:x}"),
         seed: (u64::from(pid) << 32) | u64::from(nanos),
+        host_local,
     }
 }
 

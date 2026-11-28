@@ -2,7 +2,7 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use log::LevelFilter;
 
-use super::{default_export_dir, export, level, timestamp, unique_path};
+use super::{default_export_dir, export, export_new, level, timestamp};
 
 #[test]
 fn timestamps_are_utc_iso_with_milliseconds() {
@@ -45,13 +45,19 @@ fn exporting_a_missing_log_says_so() {
 fn an_export_to_the_default_folder_never_replaces_an_earlier_one() {
     let dir = std::env::temp_dir().join(format!("r10a-unique-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
-    let first = unique_path(&dir, "troupe-preview.log");
+    let log = dir.join("source.log");
+    std::fs::write(&log, "line\n").unwrap();
+    let first = export_new(&log, &dir, "troupe-preview.log").unwrap();
     assert_eq!(first, dir.join("troupe-preview.log"));
     std::fs::write(&first, "a").unwrap();
-    let second = unique_path(&dir, "troupe-preview.log");
+    let second = export_new(&log, &dir, "troupe-preview.log").unwrap();
     assert_eq!(second, dir.join("troupe-preview (1).log"));
-    std::fs::write(&second, "b").unwrap();
-    assert_eq!(unique_path(&dir, "troupe-preview.log"), dir.join("troupe-preview (2).log"));
+    assert_eq!(std::fs::read_to_string(&second).unwrap(), "line\n");
+    assert_eq!(export_new(&log, &dir, "troupe-preview.log").unwrap(), dir.join("troupe-preview (2).log"));
     assert_eq!(std::fs::read_to_string(&first).unwrap(), "a", "the earlier export is intact");
+    assert_eq!(
+        export_new(&dir.join("missing.log"), &dir, "x.log").unwrap_err(),
+        "Log file does not exist yet"
+    );
     std::fs::remove_dir_all(&dir).unwrap();
 }

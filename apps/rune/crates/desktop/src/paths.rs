@@ -91,6 +91,11 @@ impl Paths {
         self.launcher_dir.join("server-token")
     }
 
+    /// Written by a `troupe-server --desktop` on this data dir (its state dir).
+    pub fn host_local_token_file(&self) -> PathBuf {
+        self.data_dir.join("host-local.token")
+    }
+
     pub fn last_port_file(&self) -> PathBuf {
         self.launcher_dir.join("last-port")
     }
