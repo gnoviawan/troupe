@@ -66,6 +66,8 @@ pub enum WatchKind {
     /// SSH session progress, host-key questions, session ends and transfer
     /// progress (`troupe-server --desktop`); host-local connections only.
     Ssh,
+    /// One browser tab's screencast frames (scope = tab id).
+    BrowserScreencast,
 }
 
 impl WatchKind {
@@ -81,6 +83,7 @@ impl WatchKind {
             Self::Terminals => "terminals",
             Self::ChatActivity => "chat_activity",
             Self::Ssh => "ssh",
+            Self::BrowserScreencast => "browser_screencast",
         }
     }
 
@@ -96,6 +99,7 @@ impl WatchKind {
             "terminals" => Some(Self::Terminals),
             "chat_activity" => Some(Self::ChatActivity),
             "ssh" => Some(Self::Ssh),
+            "browser_screencast" => Some(Self::BrowserScreencast),
             _ => None,
         }
     }
@@ -109,7 +113,7 @@ impl WatchKind {
             Self::Projects | Self::ChatHistory | Self::Agents | Self::ChatActivity | Self::Ssh => {
                 scope.is_empty()
             }
-            Self::Fs | Self::Store | Self::Terminals => {
+            Self::Fs | Self::Store | Self::Terminals | Self::BrowserScreencast => {
                 !scope.trim().is_empty() && scope.len() <= MAX_SCOPE_BYTES
             }
         }

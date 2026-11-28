@@ -19,7 +19,9 @@ use parking_lot::Mutex;
 use crate::acp::config::SessionId;
 use crate::acp::events;
 use crate::acp::orchestrator::engine::OrchestratorEngine;
-use crate::acp::orchestrator::run::{RunId, RunState};
+use crate::acp::orchestrator::run::{
+    CallerRef, ChildRun, MessageParentError, RunId, RunState, StopOrigin,
+};
 use crate::acp::subagents::SubagentWorkspace;
 use crate::web::prompt_turn::{
     accept_prompt_turn, complete_prompt_turn, PromptAdmission, PromptTurnError, PromptTurnRequest,
@@ -47,16 +49,56 @@ const MAX_RETRIES: u32 = 40;
 pub(crate) const WAKE_PROMPT_HEADER: &str = "[Troupe] Sub-agent update. You started these \
 sub-agents; act on their results, then end your turn when nothing is left.";
 
-/// One settled run waiting to be reported to its root chat.
+/// The run a notice reports, rendered the same way for every notice kind.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct WakeNotice {
+pub(crate) struct WakeRun {
     pub(crate) run_id: RunId,
     pub(crate) title: String,
     pub(crate) agent_name: String,
-    pub(crate) state: RunState,
-    pub(crate) result: Option<String>,
-    pub(crate) error: Option<String>,
-    pub(crate) workspace: Option<SubagentWorkspace>,
+}
+
+/// One sub-agent update waiting to be reported to its root chat.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum WakeNotice {
+    /// A terminal run result. At most one is queued per run, and reading it
+    /// through `subagent_wait`/`subagent_status` acknowledges it.
+    Settled {
+        run: WakeRun,
+        state: RunState,
+        result: Option<String>,
+        error: Option<String>,
+        workspace: Option<SubagentWorkspace>,
+    },
+    /// A message the run sent its orchestrator with `message_parent`.
+    Message { run: WakeRun, message: String },
+    /// An `ask_user` question the run has open.
+    Question {
+        run: WakeRun,
+        question_id: String,
+        question: String,
+        options: Vec<String>,
+    },
+}
+
+impl WakeNotice {
+    fn run_id(&self) -> &RunId {
+        match self {
+            Self::Settled { run, .. } | Self::Message { run, .. } | Self::Question { run, .. } => {
+                &run.run_id
+            }
+        }
+    }
+
+    fn is_settled(&self) -> bool {
+        matches!(self, Self::Settled { .. })
+    }
+
+    fn question_id(&self) -> Option<&str> {
+        match self {
+            Self::Question { question_id, .. } => Some(question_id),
+            Self::Settled { .. } | Self::Message { .. } => None,
+        }
+    }
 }
 
 /// Exclusive delivery state of one root chat's mailbox. Making `Idle`,
@@ -85,8 +127,11 @@ struct RootMailbox {
     /// one notice per settle).
     enqueued: HashSet<RunId>,
     /// Runs whose terminal state the parent already read via `subagent_wait`
-    /// or `subagent_status` (suppresses pending or late-arriving notices).
+    /// or `subagent_status` (suppresses pending or late-arriving settled notices).
     acknowledged: HashSet<RunId>,
+    /// Questions already answered or cancelled; their pending notices are
+    /// dropped and a late restore does not bring them back.
+    resolved_questions: HashSet<String>,
     delivery: DeliveryState,
     /// Consecutive autonomous wake turns with no user prompt in between.
     streak: u32,
@@ -107,6 +152,7 @@ impl RootMailbox {
             pending: VecDeque::new(),
             enqueued: HashSet::new(),
             acknowledged: HashSet::new(),
+            resolved_questions: HashSet::new(),
             delivery: DeliveryState::Idle,
             streak: 0,
             streak_epoch: 0,
@@ -136,16 +182,24 @@ impl WakeRegistry {
         Self::default()
     }
 
-    /// Enqueue a notice for `root` unless this run already produced one or was
-    /// already acknowledged via `subagent_wait`/`subagent_status`. Returns
-    /// `true` when the notice was queued.
+    /// Enqueue a notice for `root`. Only a settled notice dedupes to one per
+    /// run and is suppressed by `subagent_wait`/`subagent_status`; messages
+    /// and questions always arrive in their own order. Returns `true` when
+    /// the notice was queued.
     pub(crate) fn enqueue(&self, root: &str, notice: WakeNotice) -> bool {
         let mut mailboxes = self.mailboxes.lock();
         let mailbox = mailboxes
             .entry(root.to_string())
             .or_insert_with(RootMailbox::new);
-        if mailbox.acknowledged.contains(&notice.run_id)
-            || !mailbox.enqueued.insert(notice.run_id.clone())
+        if notice
+            .question_id()
+            .is_some_and(|id| mailbox.resolved_questions.contains(id))
+        {
+            return false;
+        }
+        if notice.is_settled()
+            && (mailbox.acknowledged.contains(notice.run_id())
+                || !mailbox.enqueued.insert(notice.run_id().clone()))
         {
             return false;
         }
@@ -169,15 +223,34 @@ impl WakeRegistry {
     }
 
     /// Record that the parent already observed `run`'s terminal state, dropping
-    /// any pending notice and suppressing a late enqueue from an in-flight
-    /// `finish`.
+    /// a pending settled notice and suppressing a late enqueue from an
+    /// in-flight `finish`. Messages and questions of the same run survive:
+    /// they are not the result the parent read.
     pub(crate) fn acknowledge(&self, root: &str, run: &RunId) {
         let mut mailboxes = self.mailboxes.lock();
         let mailbox = mailboxes
             .entry(root.to_string())
             .or_insert_with(RootMailbox::new);
         mailbox.acknowledged.insert(run.clone());
-        mailbox.pending.retain(|notice| &notice.run_id != run);
+        mailbox
+            .pending
+            .retain(|notice| !notice.is_settled() || notice.run_id() != run);
+    }
+
+    /// Record that `question_id` resolved, dropping its pending notice. The
+    /// id stays resolved so a notice restored after a failed delivery cannot
+    /// report a question the user or parent already closed.
+    pub(crate) fn drop_question(&self, root: &str, question_id: &str) {
+        let mut mailboxes = self.mailboxes.lock();
+        let Some(mailbox) = mailboxes.get_mut(root) else {
+            return;
+        };
+        mailbox.resolved_questions.insert(question_id.to_string());
+        mailbox.pending.retain(|notice| {
+            notice
+                .question_id()
+                .is_none_or(|id| id != question_id)
+        });
     }
 
     /// Claim the `Idle -> Starting` transition for `root` if notices are
@@ -285,7 +358,11 @@ impl WakeRegistry {
         };
         mailbox.delivery = DeliveryState::Idle;
         for notice in notices.into_iter().rev() {
-            if !mailbox.acknowledged.contains(&notice.run_id) {
+            let drop = (notice.is_settled() && mailbox.acknowledged.contains(notice.run_id()))
+                || notice
+                    .question_id()
+                    .is_some_and(|id| mailbox.resolved_questions.contains(id));
+            if !drop {
                 mailbox.pending.push_front(notice);
             }
         }
@@ -472,12 +549,104 @@ impl EventSink for WakeSink {
     }
 }
 
+/// A settled run, or one stopped because its chat closed, must not recreate
+/// the closed chat's mailbox.
+fn accepts_notices(entry: &ChildRun) -> bool {
+    entry.is_live() && entry.stop_origin != Some(StopOrigin::ChatClosed)
+}
+
 impl OrchestratorEngine {
-    /// Record a settled run's notice and trigger a wake delivery attempt.
-    pub(super) fn enqueue_and_deliver(self: &Arc<Self>, root: String, notice: WakeNotice) {
-        if self.wake.enqueue(&root, notice) {
+    /// Enqueue a `message_parent` notice of the calling depth-1 sub-agent and
+    /// trigger delivery to its root chat.
+    pub(crate) fn message_parent(
+        self: &Arc<Self>,
+        caller: CallerRef,
+        message: String,
+    ) -> Result<(), MessageParentError> {
+        let (root, run) = {
+            let ledger = self.ledger.lock();
+            let Some(entry) = ledger
+                .run_with_session(&caller)
+                .filter(|entry| accepts_notices(entry))
+            else {
+                return Err(MessageParentError::NotASubagent);
+            };
+            if entry.depth != 1 {
+                return Err(MessageParentError::Nested);
+            }
+            (
+                entry.root.clone(),
+                WakeRun {
+                    run_id: entry.run.clone(),
+                    title: entry.title.clone(),
+                    agent_name: entry.identity.name.clone(),
+                },
+            )
+        };
+        log::info!(
+            "[orchestrator] run {} messaged chat {}",
+            crate::logging::redact_session_id(run.run_id.as_str()),
+            crate::logging::redact_session_id(&root)
+        );
+        self.enqueue_and_deliver(root, WakeNotice::Message { run, message });
+        Ok(())
+    }
+
+    /// Enqueue an orchestrated depth-1 sub-agent's open question for its root
+    /// chat. Returns the root chat when queued; `None` for a plain chat
+    /// session or a nested run.
+    pub(crate) fn enqueue_question_wake(
+        self: &Arc<Self>,
+        caller: CallerRef,
+        question_id: String,
+        question: String,
+        options: Vec<String>,
+    ) -> Option<String> {
+        let (root, run) = {
+            let ledger = self.ledger.lock();
+            let entry = ledger
+                .run_with_session(&caller)
+                .filter(|entry| accepts_notices(entry))?;
+            if entry.depth != 1 {
+                return None;
+            }
+            (
+                entry.root.clone(),
+                WakeRun {
+                    run_id: entry.run.clone(),
+                    title: entry.title.clone(),
+                    agent_name: entry.identity.name.clone(),
+                },
+            )
+        };
+        log::info!(
+            "[orchestrator] run {} raised a question in chat {}",
+            crate::logging::redact_session_id(run.run_id.as_str()),
+            crate::logging::redact_session_id(&root)
+        );
+        let notice = WakeNotice::Question {
+            run,
+            question_id,
+            question,
+            options,
+        };
+        let queued = self.enqueue_and_deliver(root.clone(), notice);
+        queued.then_some(root)
+    }
+
+    /// Drop a question notice because the question resolved before its wake.
+    pub(crate) fn drop_question_notice(&self, root: &str, question_id: &str) {
+        self.wake.drop_question(root, question_id);
+    }
+
+    /// Record a run's notice and trigger a wake delivery attempt. Returns
+    /// `true` when the notice was queued (a duplicated or resolved one is not).
+    pub(super) fn enqueue_and_deliver(self: &Arc<Self>, root: String, notice: WakeNotice) -> bool {
+        let queued = self.wake.enqueue(&root, notice);
+        if queued {
             self.spawn_try_deliver(root);
         }
+        queued
     }
 
     /// Flush queued wakes after a root chat turn ends.
@@ -656,41 +825,87 @@ pub(crate) fn truncate_utf8_bytes(text: &str, max_bytes: usize) -> (&str, bool) 
     (&text[..cut], true)
 }
 
-/// Format one or more settled run notices into a single plain-text wake prompt.
+/// Format one or more sub-agent notices into a single plain-text wake prompt.
 pub(crate) fn format_wake_prompt(notices: &[WakeNotice]) -> String {
     let mut out = String::from(WAKE_PROMPT_HEADER);
     for notice in notices {
-        let _ = write!(
-            out,
-            "\n\n{} (subagentId: {}, agent: {}, state: {})",
-            notice.title,
-            notice.run_id.as_str(),
-            notice.agent_name,
-            state_label(notice.state),
-        );
-        if let Some(ws) = &notice.workspace {
-            if let Some(path) = &ws.path {
-                let _ = write!(out, "\nWorkspace path: {path}");
-            }
-            if let Some(branch) = &ws.branch {
-                let _ = write!(out, "\nWorkspace branch: {branch}");
-            }
-            if let Some(diff_stat) = &ws.diff_stat {
-                let _ = write!(out, "\nWorkspace diff: {diff_stat}");
-            }
-        }
-        if let Some(error) = notice.error.as_deref().filter(|err| !err.is_empty()) {
-            let _ = write!(out, "\nError: {error}");
-        }
-        if let Some(result) = notice.result.as_deref().filter(|text| !text.is_empty()) {
-            let (inlined, truncated) = truncate_utf8_bytes(result, MAX_INLINE_RESULT_BYTES);
-            let _ = write!(out, "\nResult:\n{inlined}");
-            if truncated {
+        match notice {
+            WakeNotice::Settled {
+                run,
+                state,
+                result,
+                error,
+                workspace,
+            } => {
                 let _ = write!(
                     out,
-                    "\n[Result truncated at {MAX_INLINE_RESULT_BYTES} bytes; call subagent_wait \
-                     with subagentId \"{}\" for the full result.]",
-                    notice.run_id.as_str()
+                    "\n\n{} (subagentId: {}, agent: {}, state: {})",
+                    run.title,
+                    run.run_id.as_str(),
+                    run.agent_name,
+                    state_label(*state),
+                );
+                if let Some(ws) = workspace {
+                    if let Some(path) = &ws.path {
+                        let _ = write!(out, "\nWorkspace path: {path}");
+                    }
+                    if let Some(branch) = &ws.branch {
+                        let _ = write!(out, "\nWorkspace branch: {branch}");
+                    }
+                    if let Some(diff_stat) = &ws.diff_stat {
+                        let _ = write!(out, "\nWorkspace diff: {diff_stat}");
+                    }
+                }
+                if let Some(error) = error.as_deref().filter(|err| !err.is_empty()) {
+                    let _ = write!(out, "\nError: {error}");
+                }
+                if let Some(result) = result.as_deref().filter(|text| !text.is_empty()) {
+                    let (inlined, truncated) = truncate_utf8_bytes(result, MAX_INLINE_RESULT_BYTES);
+                    let _ = write!(out, "\nResult:\n{inlined}");
+                    if truncated {
+                        let _ = write!(
+                            out,
+                            "\n[Result truncated at {MAX_INLINE_RESULT_BYTES} bytes; call \
+                             subagent_wait with subagentId \"{}\" for the full result.]",
+                            run.run_id.as_str()
+                        );
+                    }
+                }
+            }
+            WakeNotice::Message { run, message } => {
+                let _ = write!(
+                    out,
+                    "\n\n{} (subagentId: {}, agent: {}) says:\n{}\
+                     \nReply with subagent_send.",
+                    run.title,
+                    run.run_id.as_str(),
+                    run.agent_name,
+                    message,
+                );
+            }
+            WakeNotice::Question {
+                run,
+                question_id,
+                question,
+                options,
+            } => {
+                let _ = write!(
+                    out,
+                    "\n\n{} (subagentId: {}, agent: {}) asks (questionId: {}):\n{}",
+                    run.title,
+                    run.run_id.as_str(),
+                    run.agent_name,
+                    question_id,
+                    question,
+                );
+                if !options.is_empty() {
+                    out.push_str("\nOptions:");
+                    for option in options {
+                        let _ = write!(out, "\n- {option}");
+                    }
+                }
+                out.push_str(
+                    "\nYou may answer it with subagent_answer, or leave it for the user.",
                 );
             }
         }

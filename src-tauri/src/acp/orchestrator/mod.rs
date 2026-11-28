@@ -37,8 +37,9 @@ pub use engine::OrchestratorEngine;
 pub use profiles::{Launchable, ResolvedProfile, SubagentApprovals, SubagentProfile};
 #[allow(unused_imports)]
 pub use run::{
-    AgentListing, CallerRef, RunId, RunLookupError, RunState, RunSummary, SendError, SendOutcome,
-    SendRequest, StartError, StartRequest, StopError, StopOutcome, WaitOutcome,
+    AgentListing, CallerRef, MessageParentError, RunId, RunLookupError, RunState, RunSummary,
+    SendError, SendOutcome, SendRequest, StartError, StartRequest, StopError, StopOutcome,
+    WaitOutcome,
 };
 #[allow(unused_imports)]
 pub use settings::{OrchestratorSettings, SettingsInput};
@@ -80,10 +81,12 @@ pub fn install(
     project_roots: Vec<PathBuf>,
     handle: Handle,
 ) -> Arc<OrchestratorEngine> {
+    let host_plan_server = manager.host_plan_server();
     let engine = Arc::new(
         OrchestratorEngine::new(manager, data_dir, installed_agents, handle).with_relay(relay),
     );
     wake_sink.attach(&engine);
+    host_plan_server.set_orchestrator(Arc::clone(&engine));
     worktree::sweep(&engine.handle, project_roots);
     if INSTALLED.set(engine.clone()).is_err() {
         log::warn!("[orchestrator] an engine was already installed");

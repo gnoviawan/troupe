@@ -10,6 +10,7 @@ use super::HostPlanServer;
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::events::{self, AskUserQuestionEvent, QuestionCancelledEvent, QuestionOption};
 use crate::acp::host_mcp::{FrameReply, TermulAskUserInput};
+use crate::acp::orchestrator::CallerRef;
 
 /// How a parked `ask_user` call ended (issue #784).
 #[derive(Debug)]
@@ -27,7 +28,34 @@ pub type IdleSignal = Arc<dyn Fn(&str) + Send + Sync>;
 /// An `ask_user` call waiting for the user's answer.
 pub(super) struct PendingAsk {
     session_id: String,
+    /// The asking agent, named in the close fanout when its orchestrator
+    /// answers the question.
+    agent_id: String,
+    /// The chat the question card shows on.
+    card_session_id: String,
+    /// The root chat mailbox holding this question's wake notice when the
+    /// caller is an orchestrated depth-1 sub-agent.
+    wake_root: Option<String>,
     responder: tokio::sync::oneshot::Sender<AskOutcome>,
+}
+
+/// What an orchestrator-answered question needs to close the user's card.
+pub(crate) struct AnsweredAsk {
+    pub(crate) agent_id: String,
+    pub(crate) card_session_id: String,
+}
+
+impl HostPlanServer {
+    /// Drop the question's pending wake notice, if its asking sub-agent raised
+    /// one. The resolved id is remembered, so a wake notice restored after a
+    /// failed delivery cannot report the closed question either.
+    fn drop_wake(&self, ask: &PendingAsk, question_id: &str) {
+        if let Some(root) = &ask.wake_root {
+            if let Some(engine) = self.orchestrator() {
+                engine.drop_question_notice(root, question_id);
+            }
+        }
+    }
 }
 
 impl HostPlanServer {
@@ -51,15 +79,6 @@ impl HostPlanServer {
             return FrameReply::err("ask_user needs options or free text");
         }
         let question_id = format!("q-{}", Uuid::new_v4());
-        let (responder, waiting) = tokio::sync::oneshot::channel();
-        self.pending_asks.lock().insert(
-            question_id.clone(),
-            PendingAsk {
-                session_id: session_id.to_string(),
-                responder,
-            },
-        );
-
         let cardinality = if input.multi_select {
             "multi"
         } else {
@@ -70,6 +89,43 @@ impl HostPlanServer {
             Some(header) if !header.is_empty() => format!("{header}\n\n{}", input.question),
             _ => input.question,
         };
+        let (responder, waiting) = tokio::sync::oneshot::channel();
+        self.pending_asks.lock().insert(
+            question_id.clone(),
+            PendingAsk {
+                session_id: session_id.to_string(),
+                agent_id: agent_id.to_string(),
+                card_session_id: card_session_id.to_string(),
+                wake_root: None,
+                responder,
+            },
+        );
+        // An orchestrated depth-1 sub-agent's question also wakes its
+        // orchestrator, which may answer it with subagent_answer. Enqueued
+        // before the card goes out, so no answer can race ahead of it.
+        let caller = CallerRef {
+            agent: AgentId(agent_id.to_string()),
+            session: SessionId(session_id.to_string()),
+        };
+        if let Some(engine) = self.orchestrator() {
+            if let Some(root) = engine.enqueue_question_wake(
+                caller,
+                question_id.clone(),
+                question.clone(),
+                option_labels.clone(),
+            ) {
+                let closed_meanwhile = match self.pending_asks.lock().get_mut(&question_id) {
+                    Some(ask) => {
+                        ask.wake_root = Some(root.clone());
+                        false
+                    }
+                    None => true,
+                };
+                if closed_meanwhile {
+                    engine.drop_question_notice(&root, &question_id);
+                }
+            }
+        }
         let event = AskUserQuestionEvent {
             agent_id: AgentId(agent_id.to_string()),
             session_id: SessionId(card_session_id.to_string()),
@@ -151,9 +207,10 @@ impl HostPlanServer {
     /// reads its answer: drop it and take its question off every client of
     /// `session_id`, the session its panel shows on.
     fn withdraw_ask(&self, agent_id: &str, session_id: &str, question_id: &str) {
-        if self.pending_asks.lock().remove(question_id).is_none() {
+        let Some(pending) = self.pending_asks.lock().remove(question_id) else {
             return;
-        }
+        };
+        self.drop_wake(&pending, question_id);
         log::info!(
             "[host-mcp] ask_user caller hung up in session {}; question withdrawn",
             crate::logging::redact_session_id(session_id)
@@ -177,6 +234,7 @@ impl HostPlanServer {
         let Some(pending) = self.pending_asks.lock().remove(question_id) else {
             return false;
         };
+        self.drop_wake(&pending, question_id);
         let outcome = match values {
             Some(values) => AskOutcome::Answered(values),
             None => AskOutcome::Cancelled,
@@ -185,20 +243,51 @@ impl HostPlanServer {
         true
     }
 
+    /// Answer a parked `ask_user` call on behalf of its orchestrator
+    /// (`subagent_answer`): the question must belong to `session_id`, the run's
+    /// child session, so one chat can never answer another's question. First
+    /// answer wins against the user exactly as in [`Self::answer_ask`].
+    /// Returns what the close fanout needs, or `None` when no such question is
+    /// waiting there.
+    pub(crate) fn answer_ask_for_session(
+        &self,
+        session_id: &str,
+        question_id: &str,
+        values: Vec<String>,
+    ) -> Option<AnsweredAsk> {
+        let pending = {
+            let mut asks = self.pending_asks.lock();
+            if asks.get(question_id)?.session_id != session_id {
+                return None;
+            }
+            asks.remove(question_id)?
+        };
+        self.drop_wake(&pending, question_id);
+        let answered = AnsweredAsk {
+            agent_id: pending.agent_id.clone(),
+            card_session_id: pending.card_session_id.clone(),
+        };
+        let _ = pending.responder.send(AskOutcome::Answered(values));
+        Some(answered)
+    }
+
     /// Cancel every `ask_user` call still waiting in a session. Called when the
     /// turn ends, the session closes or the agent goes away, so no tool call is
     /// left hanging.
     pub fn cancel_asks_for_session(&self, real_session_id: &str) {
-        let cancelled: Vec<PendingAsk> = {
+        let cancelled: Vec<(String, PendingAsk)> = {
             let mut pending = self.pending_asks.lock();
             let ids: Vec<String> = pending
                 .iter()
                 .filter(|(_, ask)| ask.session_id == real_session_id)
                 .map(|(id, _)| id.clone())
                 .collect();
-            ids.iter().filter_map(|id| pending.remove(id)).collect()
+            ids.iter()
+                .filter_map(|id| pending.remove(id).map(|ask| (id.clone(), ask)))
+                .collect()
         };
-        for ask in cancelled {
+        for (question_id, ask) in cancelled {
+            self.drop_wake(&ask, &question_id);
             let _ = ask.responder.send(AskOutcome::Cancelled);
         }
         self.cancel_mcp_installs_for_session(real_session_id);

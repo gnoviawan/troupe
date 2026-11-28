@@ -1337,5 +1337,45 @@
         "error": null
       }
     }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "browser_screencast.state",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/watch.rs WatchKind::BrowserScreencast",
+    "frame": {
+      "type": "watch",
+      "watch": "browser_screencast",
+      "scope": "tab-0b5c1f3e-2c1f-4d43-9a54-6f0f4c1d2e3a",
+      "revision": {
+        "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+        "n": 1
+      },
+      "reset": true,
+      "state": {
+        "tabId": "tab-0b5c1f3e-2c1f-4d43-9a54-6f0f4c1d2e3a"
+      }
+    }
+  },
+  {
+    "file": "ws-watch.json",
+    "name": "browser_screencast.delta",
+    "_handwritten": true,
+    "source": "src-tauri/src/browser_host/mod.rs FrameSink for BrowserHost",
+    "frame": {
+      "type": "watch",
+      "watch": "browser_screencast",
+      "scope": "tab-0b5c1f3e-2c1f-4d43-9a54-6f0f4c1d2e3a",
+      "revision": {
+        "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+        "n": 2
+      },
+      "delta": {
+        "format": "jpeg",
+        "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2Q==",
+        "width": 800,
+        "height": 600
+      }
+    }
   }
 ]
