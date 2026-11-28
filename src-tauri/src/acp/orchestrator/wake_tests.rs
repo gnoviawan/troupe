@@ -162,7 +162,7 @@ impl WakeHarness {
                 }
             }
         }
-        self.relay.unsubscribe(client_id);
+        self.relay.unsubscribe(CHAT, client_id);
         wakes
     }
 
@@ -202,7 +202,7 @@ impl WakeHarness {
                         }
                     }
                 }
-                self.relay.unsubscribe(client_id);
+                self.relay.unsubscribe(CHAT, client_id);
                 if count >= expected {
                     return;
                 }
@@ -605,7 +605,7 @@ async fn chat_close_disposes_mailbox_and_suppresses_wakes() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn on_agent_gone_produces_no_wake() {
     let h = WakeHarness::with_turns(vec![]);
-    let run = h.seed_run(
+    h.seed_run(
         "Orphaned",
         "Codex",
         Some("never delivered"),

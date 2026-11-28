@@ -439,16 +439,13 @@ impl EventSink for WakeSink {
         let Some(engine) = self.engine.get().and_then(Weak::upgrade) else {
             return;
         };
-        match event.type_ {
-            events::EVENT_PROMPT_COMPLETE => {
-                let turn_id = event
-                    .payload
-                    .get("turnId")
-                    .and_then(serde_json::Value::as_str)
-                    .filter(|id| !id.is_empty());
-                engine.on_root_prompt_complete(sid, turn_id);
-            }
-            _ => {}
+        if event.type_ == events::EVENT_PROMPT_COMPLETE {
+            let turn_id = event
+                .payload
+                .get("turnId")
+                .and_then(serde_json::Value::as_str)
+                .filter(|id| !id.is_empty());
+            engine.on_root_prompt_complete(sid, turn_id);
         }
     }
 
