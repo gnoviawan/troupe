@@ -24,6 +24,7 @@ pub mod setup;
 pub mod shell_layout;
 pub mod shortcuts;
 pub mod snapshots;
+pub mod ssh;
 pub mod terminal;
 pub mod workspace;
 

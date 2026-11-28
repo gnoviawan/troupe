@@ -349,6 +349,16 @@ pub fn ws_requirement(request_type: &str) -> Requirement {
     }
 }
 
+/// [`ws_requirement`] for one request: watching `ssh` is host-local, because
+/// its frames name SSH hosts, remote paths and host keys.
+#[must_use]
+pub fn ws_request_requirement(request_type: &str, payload: &serde_json::Value) -> Requirement {
+    if request_type == "watch" && payload["watch"] == "ssh" {
+        return Requirement::HostLocal;
+    }
+    ws_requirement(request_type)
+}
+
 /// Whether `caps` may run a `/ws` request of `request_type` whose payload is
 /// `payload`. `identity` supplies the `deviceId` for the device-store rule.
 #[must_use]
@@ -358,7 +368,7 @@ pub fn ws_request_permitted(
     caps: Capabilities,
     identity: Option<&ClientIdentity>,
 ) -> bool {
-    match ws_requirement(request_type) {
+    match ws_request_requirement(request_type, payload) {
         Requirement::View => true,
         Requirement::Write => caps.write,
         Requirement::HostLocal => caps.host_local,

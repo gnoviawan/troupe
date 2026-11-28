@@ -32,6 +32,8 @@ use tokio::sync::mpsc;
 pub const EVENT_PROGRESS: &str = "ssh-session-progress";
 pub const EVENT_HOST_KEY: &str = "ssh-session-host-key";
 pub const EVENT_ENDED: &str = "ssh-session-ended";
+/// A host-key question was answered, cancelled or timed out.
+pub const EVENT_HOST_KEY_RESOLVED: &str = "ssh-session-host-key-resolved";
 
 /// How long a host-key question waits for an answer before failing closed.
 const HOST_KEY_PROMPT_TIMEOUT: Duration = Duration::from_secs(300);
@@ -111,6 +113,8 @@ struct LiveSession {
 struct Pending {
     cancelled: AtomicBool,
     decision_tx: Mutex<Option<mpsc::UnboundedSender<HostKeyDecision>>>,
+    /// The host-key question open now, as the event carried it.
+    prompt: Mutex<Option<serde_json::Value>>,
 }
 
 struct SecretEntry {
@@ -160,23 +164,30 @@ impl ConnectHooks for SessionHooks {
                 crate::logging::redact_session_id(&self.session_id),
                 status
             );
-            (self.emit)(
-                EVENT_HOST_KEY,
-                json!({
-                    "sessionId": self.session_id,
-                    "status": status,
-                    "host": info.host,
-                    "port": info.port,
-                    "keyType": info.key_type,
-                    "fingerprint": info.fingerprint,
-                }),
-            );
+            let prompt = json!({
+                "sessionId": self.session_id,
+                "status": status,
+                "host": info.host,
+                "port": info.port,
+                "keyType": info.key_type,
+                "fingerprint": info.fingerprint,
+                "previousFingerprints": info.previous_fingerprints,
+            });
+            *lock(&self.pending.prompt) = Some(prompt.clone());
+            (self.emit)(EVENT_HOST_KEY, prompt);
             let mut decisions = self.decisions.lock().await;
             // A dropped sender (cancel) or the timeout both reject.
-            match tokio::time::timeout(HOST_KEY_PROMPT_TIMEOUT, decisions.recv()).await {
-                Ok(Some(decision)) if !self.cancelled() => decision,
-                _ => HostKeyDecision::Reject,
-            }
+            let decision =
+                match tokio::time::timeout(HOST_KEY_PROMPT_TIMEOUT, decisions.recv()).await {
+                    Ok(Some(decision)) if !self.cancelled() => decision,
+                    _ => HostKeyDecision::Reject,
+                };
+            lock(&self.pending.prompt).take();
+            (self.emit)(
+                EVENT_HOST_KEY_RESOLVED,
+                json!({ "sessionId": self.session_id }),
+            );
+            decision
         })
     }
 
@@ -288,6 +299,7 @@ impl SshSessionManager {
         let pending = Arc::new(Pending {
             cancelled: AtomicBool::new(false),
             decision_tx: Mutex::new(Some(decision_tx)),
+            prompt: Mutex::new(None),
         });
         {
             // Lock order: live before pending (see SshSessionManager).
@@ -557,6 +569,44 @@ impl SshSessionManager {
             if trust { "trusted" } else { "rejected" }
         );
         sent
+    }
+
+    /// Trust the host key of the question open for `session_id`, only when
+    /// it is the key whose `fingerprint` the person was shown. A trust with
+    /// no question open, or for another key, is refused (false) and never
+    /// queued for a later question.
+    pub fn trust_host_key_shown(&self, session_id: &str, fingerprint: &str) -> bool {
+        let Some(pending) = lock(&self.pending).get(session_id).cloned() else {
+            return false;
+        };
+        let prompt = lock(&pending.prompt);
+        let shown = prompt
+            .as_ref()
+            .is_some_and(|prompt| prompt["fingerprint"].as_str() == Some(fingerprint));
+        if !shown {
+            log::warn!(
+                "[SSH] Session {} host key trust refused: it names no open question's key",
+                crate::logging::redact_session_id(session_id)
+            );
+            return false;
+        }
+        let sent = lock(&pending.decision_tx)
+            .as_ref()
+            .is_some_and(|tx| tx.send(HostKeyDecision::Trust).is_ok());
+        log::info!(
+            "[SSH] Session {} host key trusted",
+            crate::logging::redact_session_id(session_id)
+        );
+        sent
+    }
+
+    /// The host-key questions open now, as their events carried them.
+    pub fn host_key_prompts(&self) -> Vec<serde_json::Value> {
+        let pending: Vec<Arc<Pending>> = lock(&self.pending).values().cloned().collect();
+        pending
+            .iter()
+            .filter_map(|pending| lock(&pending.prompt).clone())
+            .collect()
     }
 
     /// Abort a connect in progress. Returns false when nothing was pending.

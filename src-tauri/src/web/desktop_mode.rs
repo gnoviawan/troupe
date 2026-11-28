@@ -12,11 +12,13 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use tracing::{error, info};
+use serde_json::Value;
+use tracing::{debug, error, info};
 
 use crate::acp::{import_chat_history, ChatHistoryStore, SessionPersistence};
 use crate::web::sink::WsRelaySink;
 use crate::web::store::{desktop_legacy_file, WebStore};
+use crate::web::watch::WatchKind;
 
 /// The legacy renderer-authored chat history, under the Tauri app data dir.
 const LEGACY_CHAT_HISTORY_DIR: &str = "acp-chat-history";
@@ -139,25 +141,75 @@ pub fn spawn_legacy_history_import(persistence: Arc<SessionPersistence>, state_d
 }
 
 /// Serve the host-local client's SSH requests, with profiles in the state dir
-/// (the Tauri app's `ssh-profiles.json`).
+/// (the Tauri app's `ssh-profiles.json`). Session progress, host-key
+/// questions, session ends and transfer progress go to the `ssh` watch as
+/// [`troupe_protocol::ws::SshWatchDelta`]s, which only a host-local
+/// connection may hold.
 ///
-/// Session progress, host-key questions, session ends and transfer progress
-/// are not pushed to the client yet: a push channel needs a watch name in
-/// `troupe-protocol`. Until then they are logged by name only (payloads can
-/// name hosts and paths), and an unanswered host-key question fails closed
-/// after its timeout.
+/// The SSH code emits from inside its connect and transfer loops, so a
+/// dedicated thread publishes: an emit never waits on the watch hub, and the
+/// hub's state read (the open host-key questions) never waits on a caller
+/// that holds an SSH lock.
 pub fn attach_ssh(relay: &WsRelaySink, state_dir: &Path) {
-    let emit: crate::ssh::Emit = Arc::new(|event, _payload| {
-        tracing::debug!(target: "termul::desktop_mode", event, "SSH event not delivered");
+    let hub = Arc::clone(relay.watches());
+    let owners: Arc<parking_lot::Mutex<std::collections::HashMap<String, String>>> = Arc::default();
+    let publishing_owners = Arc::clone(&owners);
+    let (deltas, inbox) = std::sync::mpsc::channel::<Value>();
+    let publisher = std::thread::Builder::new()
+        .name("ssh-watch".into())
+        .spawn(move || {
+            while let Ok(delta) = inbox.recv() {
+                let attempt = delta
+                    .get("sessionId")
+                    .or_else(|| delta.get("connectionId"))
+                    .and_then(Value::as_str);
+                let owner = attempt.and_then(|id| publishing_owners.lock().get(id).cloned());
+                if let Some(owner) = owner {
+                    hub.publish(WatchKind::Ssh, &owner, || delta);
+                }
+            }
+        });
+    if let Err(error) = publisher {
+        error!(
+            target: "termul::desktop_mode",
+            "the ssh watch publisher did not start; SSH events are not delivered: {error}"
+        );
+    }
+    let emit: crate::ssh::Emit = Arc::new(move |event, payload| match ssh_delta(event, payload) {
+        Some(delta) => {
+            if deltas.send(delta).is_err() {
+                debug!(target: "termul::desktop_mode", event, "SSH event not delivered");
+            }
+        }
+        None => debug!(target: "termul::desktop_mode", event, "SSH event has no watch delta"),
     });
-    relay.set_ssh(Arc::new(crate::ssh::SSHManager::for_server(
-        state_dir, emit,
-    )));
+    let mut ssh = crate::ssh::SSHManager::for_server(state_dir, emit);
+    ssh.owners = owners;
+    relay.set_ssh(Arc::new(ssh));
     info!(
         target: "termul::desktop_mode",
         "SSH manager attached; profiles in '{}'",
         state_dir.display()
     );
+}
+
+/// The `ssh` watch delta of one SSH event: its payload tagged with `event`.
+/// `None` for an event the watch does not carry (port forward status).
+pub(crate) fn ssh_delta(event: &str, payload: Value) -> Option<Value> {
+    use crate::ssh::{session, sftp};
+    let tag = match event {
+        session::EVENT_PROGRESS => "progress",
+        session::EVENT_HOST_KEY => "host_key",
+        session::EVENT_HOST_KEY_RESOLVED => "host_key_resolved",
+        session::EVENT_ENDED => "ended",
+        sftp::EVENT_TRANSFER_PROGRESS => "transfer",
+        _ => return None,
+    };
+    let Value::Object(mut fields) = payload else {
+        return None;
+    };
+    fields.insert("event".into(), Value::String(tag.into()));
+    Some(Value::Object(fields))
 }
 
 /// Check that the OS keychain persists secrets. When it does not, stored SSH
@@ -174,4 +226,20 @@ pub fn keychain_self_test() {
             "credential keychain self-test FAILED: {error}; stored SSH credentials will not persist"
         ),
     }
+}
+
+/// Snapshot restricted to attempts opened by this authenticated principal.
+pub fn ssh_state_for(ssh: &crate::ssh::SSHManager, owner: &str) -> Value {
+    let prompts = ssh.sessions.host_key_prompts();
+    let owners = ssh.owners.lock();
+    let prompts: Vec<_> = prompts
+        .into_iter()
+        .filter(|p| {
+            p.get("sessionId")
+                .and_then(Value::as_str)
+                .and_then(|id| owners.get(id))
+                .is_some_and(|o| o == owner)
+        })
+        .collect();
+    serde_json::json!({ "hostKeys": prompts })
 }

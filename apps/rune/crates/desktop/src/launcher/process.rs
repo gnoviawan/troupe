@@ -1,11 +1,12 @@
 //! The server process: finding the binary, starting it on loopback with its token in the
 //! environment, probing `/health`, stopping it, and making sure it dies with the app.
 //!
-//! A started server runs in its own process group, so a Ctrl+C in the app's terminal reaches
-//! only the app. On Linux and macOS a detached `sh` watchdog polls the app's pid every second
-//! and stops the server (SIGTERM, then SIGKILL after 10 s) once the app is gone without
-//! stopping it (SIGKILL, a crash). On Windows the server joins a Job Object that kills it when
-//! the app's last handle to the job closes, which the OS does when the app dies.
+//! The server runs in `--desktop` mode: the Tauri process's startup duties, the SSH manager
+//! and the host-local credential the app presents (`host_local_token`). A started server runs
+//! in its own process group, so a Ctrl+C in the app's terminal reaches only the app. Unless it
+//! is kept alive, it gets `--parent-pid` and stops itself, by the same graceful path as
+//! SIGTERM, once the app is gone without stopping it (SIGKILL, a crash). On Windows it also
+//! joins a Job Object that kills it when the app's last handle to the job closes.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
@@ -76,14 +77,17 @@ pub fn healthy(port: u16) -> bool {
     reply.starts_with("HTTP/1.1 200") && reply.contains("\"status\":\"ok\"")
 }
 
-/// The server's flags for the desktop data dir: the Tauri app's stores (`lock_desktop_data`).
-pub fn server_args(paths: &Paths, port: u16) -> Vec<String> {
+/// The server's flags for the desktop data dir: the Tauri app's stores (`lock_desktop_data`),
+/// the desktop launch mode, and `--parent-pid` (`parent`) when the server must die with the
+/// app.
+pub fn server_args(paths: &Paths, port: u16, parent: Option<u32>) -> Vec<String> {
     let data = &paths.data_dir;
     let at = |p: PathBuf| p.to_string_lossy().into_owned();
-    // TODO(R10b): add `--desktop` once troupe-server has the desktop launch mode (legacy
-    // imports, MigrationManager, the SSH manager, the keychain self-test), and `--parent-pid`
-    // so the server can watch the app itself.
-    vec![
+    let mut args: Vec<String> = vec!["--desktop".into()];
+    if let Some(pid) = parent {
+        args.extend(["--parent-pid".into(), pid.to_string()]);
+    }
+    args.extend([
         "--host".into(),
         "127.0.0.1".into(),
         "--port".into(),
@@ -96,7 +100,37 @@ pub fn server_args(paths: &Paths, port: u16) -> Vec<String> {
         at(data.join("projects.json")),
         "--store-file".into(),
         at(data.join("store.json")),
-    ]
+    ]);
+    args
+}
+
+/// The host-local credential the server writes at `<data dir>/host-local.token`, read fresh:
+/// a restarted server writes a new one.
+pub fn read_host_local_token(paths: &Paths) -> Option<String> {
+    match fs::read_to_string(paths.host_local_token_file()) {
+        Ok(text) => Some(text.trim().to_owned()).filter(|t| !t.is_empty()),
+        Err(e) => {
+            log::warn!("[launcher] cannot read the host-local credential: {e}");
+            None
+        }
+    }
+}
+
+/// Whether process `pid` is running. Unix asks `kill -0`; Windows opens the process and
+/// reads its exit code.
+pub(crate) fn alive(pid: u32) -> bool {
+    #[cfg(windows)]
+    {
+        windows::alive(pid)
+    }
+    #[cfg(not(windows))]
+    {
+        Command::new("kill")
+            .args(["-0", &pid.to_string()])
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|s| s.success())
+    }
 }
 
 /// A server this app started.
@@ -157,14 +191,14 @@ fn describe(status: std::process::ExitStatus) -> String {
     }
 }
 
-/// Starts the server with `token` in its environment, its output in `server.log`, and the
-/// watchdog or job that stops it with the app unless `keep_alive`.
+/// Starts the server with `token` in its environment, its output in `server.log`, and, unless
+/// `keep_alive`, `--parent-pid` (and the job on Windows) so it stops with the app.
 pub fn spawn(bin: &Path, paths: &Paths, port: u16, token: &str, keep_alive: bool) -> Result<Server, String> {
     let log = server_log(&paths.server_log()).map_err(|e| format!("cannot open the server log: {e}"))?;
     let err = log.try_clone().map_err(|e| e.to_string())?;
     let mut command = Command::new(bin);
     command
-        .args(server_args(paths, port))
+        .args(server_args(paths, port, (!keep_alive).then(std::process::id)))
         .env("TROUPE_WEB_AUTH_TOKEN", token)
         .env_remove("TERMUL_WEB_AUTH_TOKEN")
         .stdin(Stdio::null())
@@ -189,15 +223,11 @@ pub fn spawn(bin: &Path, paths: &Paths, port: u16, token: &str, keep_alive: bool
         #[cfg(windows)]
         _job: None,
     };
+    #[cfg(windows)]
     if !keep_alive {
-        #[cfg(unix)]
-        let _ = watchdog(std::process::id(), pid);
-        #[cfg(windows)]
-        {
-            server._job = windows::Job::kill_on_close(&server.child)
-                .inspect_err(|e| log::warn!("[launcher] no job object for the server: {e}"))
-                .ok();
-        }
+        server._job = windows::Job::kill_on_close(&server.child)
+            .inspect_err(|e| log::warn!("[launcher] no job object for the server: {e}"))
+            .ok();
     }
     Ok(server)
 }
@@ -238,45 +268,6 @@ pub(crate) fn server_log(path: &Path) -> std::io::Result<File> {
 }
 
 const MAX_SERVER_LOG: u64 = 5 * 1024 * 1024;
-
-/// The detached watchdog: an `sh` loop reparented to init in its own process group, ignoring
-/// SIGHUP and SIGINT, so neither a killed app nor a closed terminal ends it before the server.
-/// Returns its pid.
-#[cfg(unix)]
-pub(crate) fn watchdog(app: u32, server: u32) -> Option<u32> {
-    use std::os::unix::process::CommandExt;
-    const SCRIPT: &str = r#"(
-  trap '' HUP INT
-  while kill -0 "$1" 2>/dev/null && kill -0 "$2" 2>/dev/null; do sleep 1; done
-  kill -0 "$2" 2>/dev/null || exit 0
-  kill -TERM "$2" 2>/dev/null
-  i=0
-  while [ "$i" -lt 10 ] && kill -0 "$2" 2>/dev/null; do sleep 1; i=$((i + 1)); done
-  kill -KILL "$2" 2>/dev/null
-) </dev/null >/dev/null 2>&1 &
-echo $!"#;
-    let started = Command::new("/bin/sh")
-        .args(["-c", SCRIPT, "troupe-watchdog", &app.to_string(), &server.to_string()])
-        .stdin(Stdio::null())
-        .stderr(Stdio::null())
-        .process_group(0)
-        .output();
-    match started {
-        Ok(out) if out.status.success() => {
-            let pid = String::from_utf8_lossy(&out.stdout).trim().parse().ok();
-            log::info!("[launcher] watchdog {pid:?} armed for server {server}");
-            pid
-        }
-        Ok(out) => {
-            log::warn!("[launcher] watchdog did not start ({})", out.status);
-            None
-        }
-        Err(e) => {
-            log::warn!("[launcher] watchdog did not start: {e}");
-            None
-        }
-    }
-}
 
 #[cfg(windows)]
 #[allow(unsafe_code)]
@@ -327,6 +318,23 @@ mod windows {
             }
             Ok(job)
         }
+    }
+
+    /// The process exists and has not exited.
+    pub fn alive(pid: u32) -> bool {
+        use windows_sys::Win32::System::Threading::{GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+        const STILL_ACTIVE: u32 = 259;
+        // SAFETY: OpenProcess takes plain values; a null handle means no such process (or no access).
+        let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
+        if handle.is_null() {
+            return false;
+        }
+        let mut code = 0u32;
+        // SAFETY: `handle` is valid until closed below and `code` outlives the call.
+        let read = unsafe { GetExitCodeProcess(handle, &mut code) };
+        // SAFETY: the handle came from OpenProcess and is closed once.
+        unsafe { CloseHandle(handle) };
+        read != 0 && code == STILL_ACTIVE
     }
 
     impl Drop for Job {

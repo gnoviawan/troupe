@@ -144,17 +144,28 @@ pub fn default_export_dir(env: impl Fn(&str) -> Option<String>) -> Option<PathBu
         .find(|dir| dir.is_dir())
 }
 
-/// `dir/name`, or `name (1)`, `name (2)`, ... before its extension when that file exists, so
-/// an export never replaces an earlier one.
-pub fn unique_path(dir: &Path, name: &str) -> PathBuf {
+/// Copies the log into `dir` as `name`, or `name (1)`, `name (2)`, ... before its extension,
+/// creating the file with `create_new`, so an export never replaces an earlier one, even one
+/// written between the check and the copy. Returns the file written.
+pub fn export_new(log_file: &Path, dir: &Path, name: &str) -> Result<PathBuf, String> {
+    log::logger().flush();
+    let mut source = File::open(log_file).map_err(|_| "Log file does not exist yet".to_string())?;
     let (stem, ext) = match name.rsplit_once('.') {
         Some((stem, ext)) if !stem.is_empty() => (stem, format!(".{ext}")),
         _ => (name, String::new()),
     };
-    std::iter::once(dir.join(name))
-        .chain((1..).map(|n| dir.join(format!("{stem} ({n}){ext}"))))
-        .find(|p| !p.exists())
-        .expect("an unused name")
+    let candidates = std::iter::once(dir.join(name)).chain((1..1000).map(|n| dir.join(format!("{stem} ({n}){ext}"))));
+    for dest in candidates {
+        match OpenOptions::new().write(true).create_new(true).open(&dest) {
+            Ok(mut file) => {
+                std::io::copy(&mut source, &mut file).map_err(|e| format!("Failed to export log file: {e}"))?;
+                return Ok(dest);
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(format!("Failed to export log file: {e}")),
+        }
+    }
+    Err("Failed to export log file: no unused name".into())
 }
 
 /// Copies the log to `dest`, after flushing what is buffered.

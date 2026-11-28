@@ -1,16 +1,15 @@
 //! `watch` / `unwatch` handlers: subscriptions to the watches of
 //! [`crate::web::watch::WatchHub`] (projects, chat-history index, agent
 //! roster, project file changes, store keys, project terminal set, chat
-//! activity). The notify watchers behind the `fs` watch live in
+//! activity, SSH events for a host-local connection, and browser screencasts).
+//! The notify watchers behind the `fs` watch live in
 //! [`crate::web::fs_watcher::FsWatchHub`]; connection close releases every
 //! subscription through `ConnectionCleanup`.
 
 use super::*;
 use crate::web::watch::{
-    agents_state, chat_activity_state, chat_history_state, fs_state,
-    projects_state, store_state,
-    terminals_state,
-    SubscribeError, WatchKind,
+    agents_state, chat_activity_state, chat_history_state, fs_state, projects_state, store_state,
+    terminals_state, SubscribeError, WatchKind,
 };
 
 /// `watch` / `unwatch` payload: `{watch, scope?}`.
@@ -27,7 +26,10 @@ fn parse_watch(payload: &Value, request: &str) -> Result<(WatchKind, String), St
     let kind = WatchKind::parse(&parsed.watch)
         .ok_or_else(|| format!("unknown watch `{}`", parsed.watch))?;
     if !kind.accepts_scope(&parsed.scope) {
-        return Err(format!("watch `{}` has no scope `{}`", parsed.watch, parsed.scope));
+        return Err(format!(
+            "watch `{}` has no scope `{}`",
+            parsed.watch, parsed.scope
+        ));
     }
     Ok((kind, parsed.scope))
 }
@@ -49,20 +51,22 @@ pub(super) fn handle_watch(id: String, payload: &Value, env: &HandlerEnv) -> WsR
         WatchKind::Projects
         | WatchKind::ChatHistory
         | WatchKind::Agents
-        | WatchKind::ChatActivity => {
-            hub.subscribe(kind, &scope, &env.out_tx, || match kind {
-                WatchKind::Projects => projects_state(&env.registry),
-                WatchKind::ChatHistory => chat_history_state(relay, env.history_mode),
-                WatchKind::ChatActivity => chat_activity_state(relay),
-                _ => agents_state(&env.acp),
-            })
-        }
+        | WatchKind::ChatActivity => hub.subscribe(kind, &scope, &env.out_tx, || match kind {
+            WatchKind::Projects => projects_state(&env.registry),
+            WatchKind::ChatHistory => chat_history_state(relay, env.history_mode),
+            WatchKind::ChatActivity => chat_activity_state(relay),
+            _ => agents_state(&env.acp),
+        }),
         WatchKind::Terminals => hub.subscribe(kind, &scope, &env.out_tx, || {
             terminals_state(&env.pty, &scope)
         }),
         WatchKind::Store => {
             let Some(store) = env.store.as_ref() else {
-                return WsReply::err_with_code(id, "STORE_UNAVAILABLE", "server store is unavailable");
+                return WsReply::err_with_code(
+                    id,
+                    "STORE_UNAVAILABLE",
+                    "server store is unavailable",
+                );
             };
             let Some(identity) = env.identity.get() else {
                 return WsReply::err(
@@ -78,6 +82,23 @@ pub(super) fn handle_watch(id: String, payload: &Value, env: &HandlerEnv) -> WsR
             }
             hub.subscribe(kind, &scope, &env.out_tx, || {
                 store_state(store, &scope, identity)
+            })
+        }
+        WatchKind::Ssh => {
+            // The capability check already admitted only a host-local
+            // connection (`ws_request_requirement`).
+            let Some(ssh) = relay.ssh() else {
+                return WsReply::err(id, WsErrorCode::Unsupported, "this host does not serve SSH");
+            };
+            let Some(owner) = super::ssh::ssh_owner(env) else {
+                return WsReply::err(
+                    id,
+                    WsErrorCode::Unauthorized,
+                    "SSH requires an authenticated principal",
+                );
+            };
+            hub.subscribe(kind, &owner, &env.out_tx, || {
+                crate::web::desktop_mode::ssh_state_for(&ssh, &owner)
             })
         }
         #[cfg(unix)]
@@ -148,7 +169,15 @@ pub(super) fn handle_unwatch(id: String, payload: &Value, env: &HandlerEnv) -> W
         Ok(parsed) => parsed,
         Err(message) => return WsReply::err(id, WsErrorCode::Unsupported, message),
     };
-    let mut was_subscribed = env.relay.watches().unsubscribe(kind, &scope, &env.out_tx);
+    let internal_scope = if kind == WatchKind::Ssh {
+        super::ssh::ssh_owner(env).unwrap_or_default()
+    } else {
+        scope.clone()
+    };
+    let mut was_subscribed = env
+        .relay
+        .watches()
+        .unsubscribe(kind, &internal_scope, &env.out_tx);
     if kind == WatchKind::Fs {
         was_subscribed |= env.relay.fs_watches().unsubscribe(&scope, &env.out_tx);
     }
@@ -159,6 +188,9 @@ pub(super) fn handle_unwatch(id: String, payload: &Value, env: &HandlerEnv) -> W
             tokio::spawn(async move { host.watcher_left(&label).await });
         }
     }
-    log::info!("[ws] unwatch watch={} was_subscribed={was_subscribed}", kind.as_str());
+    log::info!(
+        "[ws] unwatch watch={} was_subscribed={was_subscribed}",
+        kind.as_str()
+    );
     WsReply::ok(id, Some(json!({ "watch": kind.as_str(), "scope": scope })))
 }

@@ -59,6 +59,7 @@ struct Client {
     env: HandlerEnv,
     rx: OutboundReceiver,
     exec: KeyedExecutor,
+    watches: std::collections::VecDeque<Value>,
 }
 
 impl Client {
@@ -72,12 +73,29 @@ impl Client {
             &tx,
             &conn.subscriptions,
         );
+        env.identity
+            .set(ClientIdentity {
+                device_id: "test-device".into(),
+                client_instance_id: uuid::Uuid::new_v4().to_string(),
+            })
+            .unwrap();
         Self {
             conn,
             env,
             rx,
             exec: KeyedExecutor::new(CancellationToken::new()),
+            watches: std::collections::VecDeque::new(),
         }
+    }
+
+    fn claim(&self, attempt: &str) {
+        self.env
+            .relay
+            .ssh()
+            .unwrap()
+            .owners
+            .lock()
+            .insert(attempt.into(), super::ssh::ssh_owner(&self.env).unwrap());
     }
 
     async fn next(&mut self) -> Outbound {
@@ -88,11 +106,16 @@ impl Client {
     }
 
     async fn send(&mut self, type_: &str, payload: Value) -> WsReply {
-        let text = frame(type_, payload);
+        // A ledgered type carries a fresh `command_id`, like a client's.
+        let text = crate::web::command_ledger::test_clock::stamp_ws_text(&frame(type_, payload));
         assert!(dispatch_connection_text(&text, &mut self.conn, &self.env, &self.exec).await);
         loop {
-            if let Outbound::Reply(reply) = self.next().await {
-                return reply;
+            match self.next().await {
+                Outbound::Reply(reply) => return reply,
+                Outbound::Watch(frame) => {
+                    self.watches.push_back(serde_json::to_value(frame).unwrap())
+                }
+                _ => {}
             }
         }
     }
@@ -205,16 +228,24 @@ async fn a_malformed_payload_never_repeats_a_value() {
 }
 
 #[tokio::test]
-async fn trusting_a_host_key_is_refused_until_the_prompt_reaches_the_client() {
+async fn trusting_a_host_key_names_the_key_of_an_open_question() {
     let dir = tempfile::tempdir().unwrap();
     let mut client = Client::new(&relay_with_ssh(dir.path()));
-    let trusted = client
+    client.claim("s1");
+    let unnamed = client
         .send(
             "ssh_session_respond_host_key",
             json!({ "sessionId": "s1", "trust": true }),
         )
         .await;
-    assert_eq!(code(&trusted), "SSH_HOST_KEY_TRUST_UNAVAILABLE");
+    assert_eq!(code(&unnamed), "SSH_HOST_KEY_FINGERPRINT_REQUIRED");
+    let unasked = client
+        .send(
+            "ssh_session_respond_host_key",
+            json!({ "sessionId": "s1", "trust": true, "fingerprint": "SHA256:x" }),
+        )
+        .await;
+    assert_eq!(code(&unasked), "SSH_HOST_KEY_NOT_SHOWN");
     let rejected = client
         .send(
             "ssh_session_respond_host_key",
@@ -222,6 +253,77 @@ async fn trusting_a_host_key_is_refused_until_the_prompt_reaches_the_client() {
         )
         .await;
     assert!(rejected.ok, "{rejected:?}");
+}
+
+/// The next watch frame on the client's queue, skipping replies.
+async fn next_watch(client: &mut Client) -> Value {
+    if let Some(frame) = client.watches.pop_front() {
+        return frame;
+    }
+    loop {
+        if let Outbound::Watch(frame) = client.next().await {
+            return serde_json::to_value(frame).unwrap();
+        }
+    }
+}
+
+#[test]
+fn the_ssh_watch_is_forbidden_to_a_writer_that_is_not_host_local() {
+    let mut writer = test_access();
+    let mut authed = true;
+    let refused = handle_sync_with_access(
+        &frame("watch", json!({ "watch": "ssh", "scope": "" })),
+        &mut authed,
+        &mut None,
+        &mut writer,
+        None,
+    );
+    assert_eq!(code(&refused), "forbidden");
+    assert!(
+        message(&refused).contains("credentials"),
+        "{}",
+        message(&refused)
+    );
+}
+
+#[tokio::test]
+async fn the_ssh_watch_carries_ssh_events_to_a_host_local_client() {
+    let dir = tempfile::tempdir().unwrap();
+    let relay = relay_with_ssh(dir.path());
+    let mut client = Client::new(&relay);
+    let watched = client
+        .send("watch", json!({ "watch": "ssh", "scope": "" }))
+        .await;
+    assert!(watched.ok, "{watched:?}");
+    let state = next_watch(&mut client).await;
+    assert_eq!(state["state"], json!({ "hostKeys": [] }));
+
+    client.claim("s1");
+    let emit = Arc::clone(&relay.ssh().unwrap().emit);
+    emit(
+        crate::ssh::session::EVENT_PROGRESS,
+        json!({ "sessionId": "s1", "stage": "connecting" }),
+    );
+    emit(
+        crate::ssh::sftp::EVENT_TRANSFER_PROGRESS,
+        json!({
+            "connectionId": "s1", "remotePath": "/r", "localPath": "/l",
+            "bytesTransferred": 4, "totalBytes": 4, "direction": "upload",
+            "status": "completed", "error": null,
+        }),
+    );
+    let progress = next_watch(&mut client).await;
+    assert_eq!(
+        progress["delta"],
+        json!({ "event": "progress", "sessionId": "s1", "stage": "connecting" })
+    );
+    let transfer = next_watch(&mut client).await;
+    let delta: troupe_protocol::ws::SshWatchDelta =
+        serde_json::from_value(transfer["delta"].clone()).unwrap();
+    assert!(
+        matches!(delta, troupe_protocol::ws::SshWatchDelta::Transfer(ref t) if t.status == "completed"),
+        "{delta:?}"
+    );
 }
 
 fn password_profile(id: &str, host: &str, claims_stored: bool) -> Value {
@@ -464,5 +566,95 @@ async fn a_moved_key_profile_loses_its_stored_passphrase() {
             json!(false),
             "save {attempt} to the new host must not bring the old passphrase back"
         );
+    }
+}
+
+#[test]
+fn ownership_uses_the_handlers_payload_shape_even_with_extra_fields() {
+    let answer = serde_json::json!({"sessionId": "victim", "request": {}});
+    assert_eq!(
+        super::ssh::request_attempt("ssh_session_respond_host_key", &answer),
+        Some("victim")
+    );
+    let upload = serde_json::json!({"sessionId": "decoy", "request": {"connectionId": "actual"}});
+    assert_eq!(
+        super::ssh::request_attempt("sftp_upload", &upload),
+        Some("actual")
+    );
+}
+
+#[tokio::test]
+async fn two_local_clients_receive_only_their_own_host_key_prompts() {
+    let dir = tempfile::tempdir().unwrap();
+    let relay = relay_with_ssh(dir.path());
+    let mut a = Client::new(&relay);
+    let mut b = Client::new(&relay);
+    a.claim("a");
+    b.claim("b");
+    for client in [&mut a, &mut b] {
+        assert!(client.send("watch", json!({"watch": "ssh"})).await.ok);
+        assert_eq!(next_watch(client).await["state"], json!({"hostKeys": []}));
+    }
+    let emit = Arc::clone(&relay.ssh().unwrap().emit);
+    for id in ["a", "b"] {
+        emit(
+            crate::ssh::session::EVENT_HOST_KEY,
+            json!({
+                "sessionId": id, "status": "unknown", "host": id, "port": 22,
+                "keyType": "ssh-ed25519", "fingerprint": format!("SHA256:{id}"), "previousFingerprints": []
+            }),
+        );
+    }
+    assert_eq!(next_watch(&mut a).await["delta"]["sessionId"], "a");
+    assert_eq!(next_watch(&mut b).await["delta"]["sessionId"], "b");
+    let foreign = b
+        .send(
+            "ssh_session_respond_host_key",
+            json!({"sessionId": "a", "trust": false, "request": {}}),
+        )
+        .await;
+    assert_eq!(code(&foreign), "unauthorized");
+    assert!(a.watches.is_empty());
+    assert!(b.watches.is_empty());
+}
+
+#[test]
+fn every_sftp_route_uses_connection_id_and_refuses_alternate_targets() {
+    for route in super::ssh::SSH_WS_REQUESTS
+        .iter()
+        .filter(|r| r.starts_with("sftp_"))
+    {
+        let payload = json!({"request": {"connectionId": "victim", "sessionId": "own"}});
+        assert_eq!(
+            super::ssh::request_attempt(route, &payload),
+            Some("victim"),
+            "{route}"
+        );
+        assert!(!super::ssh::valid_target_fields(route, &payload), "{route}");
+        let valid = json!({"request": {"connectionId": "actual"}});
+        assert_eq!(
+            super::ssh::request_attempt(route, &valid),
+            Some("actual"),
+            "{route}"
+        );
+        assert!(super::ssh::valid_target_fields(route, &valid), "{route}");
+    }
+}
+
+#[test]
+fn ssh_session_routes_refuse_connection_id_decoys() {
+    for route in [
+        "ssh_session_open",
+        "ssh_session_cancel",
+        "ssh_session_close",
+        "ssh_session_respond_host_key",
+    ] {
+        let target = json!({"sessionId": "own", "connectionId": "victim"});
+        let payload = if route == "ssh_session_open" {
+            json!({"request": target})
+        } else {
+            target
+        };
+        assert!(!super::ssh::valid_target_fields(route, &payload), "{route}");
     }
 }

@@ -1,0 +1,2551 @@
+[
+ {
+  "store": "ssh",
+  "name": "tabs_focus_the_neighbour_when_one_closes",
+  "initial": {
+   "profiles": [
+    {
+     "id": "p1",
+     "name": "host p1",
+     "host": "prod.example",
+     "port": 22,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": []
+    },
+    {
+     "id": "p2",
+     "name": "host p2",
+     "host": "prod.example",
+     "port": 2222,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": [],
+     "favorite": true
+    }
+   ],
+   "isLoaded": true,
+   "workspaceOpen": false,
+   "activeTab": "hosts",
+   "selectedProfileId": null,
+   "showAddresses": false,
+   "sessions": [],
+   "pendingClose": null,
+   "transfers": [],
+   "editingFile": null,
+   "editingContent": ""
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "addSession",
+     "args": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "addSession",
+     "args": [
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p2",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p2",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "addSession",
+     "args": [
+      {
+       "id": "t3",
+       "attemptId": "t3",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p2",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t3",
+       "attemptId": "t3",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "setActiveTab",
+     "args": [
+      "t2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t2",
+     "selectedProfileId": "p2",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p2",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t3",
+       "attemptId": "t3",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "removeSession",
+     "args": [
+      "t2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t3",
+     "selectedProfileId": "p2",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t3",
+       "attemptId": "t3",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "removeSession",
+     "args": [
+      "t3"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t1",
+     "selectedProfileId": "p2",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "setActiveTab",
+     "args": [
+      "missing"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "hosts",
+     "selectedProfileId": "p2",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "setActiveTab",
+     "args": [
+      "t1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t1",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "removeSession",
+     "args": [
+      "t1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "hosts",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "removeSession",
+     "args": [
+      "t1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "hosts",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   }
+  ]
+ },
+ {
+  "store": "ssh",
+  "name": "select_a_host_opens_its_latest_session",
+  "initial": {
+   "profiles": [
+    {
+     "id": "p1",
+     "name": "host p1",
+     "host": "prod.example",
+     "port": 22,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": []
+    },
+    {
+     "id": "p2",
+     "name": "host p2",
+     "host": "prod.example",
+     "port": 2222,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": [],
+     "favorite": true
+    }
+   ],
+   "isLoaded": true,
+   "workspaceOpen": false,
+   "activeTab": "hosts",
+   "selectedProfileId": null,
+   "showAddresses": false,
+   "sessions": [],
+   "pendingClose": null,
+   "transfers": [],
+   "editingFile": null,
+   "editingContent": ""
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "selectProfile",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "hosts",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "addSession",
+     "args": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "hosts",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "addSession",
+     "args": [
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "hosts",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "selectProfile",
+     "args": [
+      "p2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "hosts",
+     "selectedProfileId": "p2",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "selectProfile",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t2",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "selectProfile",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "t2",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "openWorkspace",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t2",
+     "selectedProfileId": "p1",
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "toggleShowAddresses",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t2",
+     "selectedProfileId": "p1",
+     "showAddresses": true,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "setPendingClose",
+     "args": [
+      "t2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t2",
+     "selectedProfileId": "p1",
+     "showAddresses": true,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": "t2",
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "setPendingClose",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t2",
+     "selectedProfileId": "p1",
+     "showAddresses": true,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      },
+      {
+       "id": "t2",
+       "attemptId": "t2",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   }
+  ]
+ },
+ {
+  "store": "ssh",
+  "name": "a_session_patch_replaces_its_fields",
+  "initial": {
+   "profiles": [
+    {
+     "id": "p1",
+     "name": "host p1",
+     "host": "prod.example",
+     "port": 22,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": []
+    },
+    {
+     "id": "p2",
+     "name": "host p2",
+     "host": "prod.example",
+     "port": 2222,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": [],
+     "favorite": true
+    }
+   ],
+   "isLoaded": true,
+   "workspaceOpen": true,
+   "activeTab": "t1",
+   "selectedProfileId": null,
+   "showAddresses": false,
+   "sessions": [
+    {
+     "id": "t1",
+     "attemptId": "t1",
+     "profileId": "p1",
+     "status": "connecting",
+     "stage": "connecting",
+     "hostKeyPrompt": null,
+     "credentialPrompt": null,
+     "error": null,
+     "ended": null,
+     "ptyId": null,
+     "claim": null,
+     "attached": false,
+     "connectedAt": null
+    }
+   ],
+   "pendingClose": null,
+   "transfers": [],
+   "editingFile": null,
+   "editingContent": ""
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "patchSession",
+     "args": [
+      "t1",
+      {
+       "status": "awaitingInput",
+       "hostKeyPrompt": {
+        "sessionId": "t1",
+        "status": "changed",
+        "host": "prod.example",
+        "port": 22,
+        "keyType": "ssh-ed25519",
+        "fingerprint": "SHA256:new"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t1",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "awaitingInput",
+       "stage": "connecting",
+       "hostKeyPrompt": {
+        "sessionId": "t1",
+        "status": "changed",
+        "host": "prod.example",
+        "port": 22,
+        "keyType": "ssh-ed25519",
+        "fingerprint": "SHA256:new"
+       },
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "patchSession",
+     "args": [
+      "t1",
+      {
+       "status": "connecting",
+       "hostKeyPrompt": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t1",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connecting",
+       "stage": "connecting",
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": null,
+       "claim": null,
+       "attached": false,
+       "connectedAt": null
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "patchSession",
+     "args": [
+      "t1",
+      {
+       "status": "connected",
+       "stage": null,
+       "ptyId": "pty-1",
+       "claim": "claim-1",
+       "connectedAt": "2026-11-28T10:00:00Z"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t1",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connected",
+       "stage": null,
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": "pty-1",
+       "claim": "claim-1",
+       "attached": false,
+       "connectedAt": "2026-11-28T10:00:00Z"
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "patchSession",
+     "args": [
+      "other",
+      {
+       "status": "failed"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": true,
+     "activeTab": "t1",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [
+      {
+       "id": "t1",
+       "attemptId": "t1",
+       "profileId": "p1",
+       "status": "connected",
+       "stage": null,
+       "hostKeyPrompt": null,
+       "credentialPrompt": null,
+       "error": null,
+       "ended": null,
+       "ptyId": "pty-1",
+       "claim": "claim-1",
+       "attached": false,
+       "connectedAt": "2026-11-28T10:00:00Z"
+      }
+     ],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   }
+  ]
+ },
+ {
+  "store": "ssh",
+  "name": "transfers_merge_and_clear",
+  "initial": {
+   "profiles": [
+    {
+     "id": "p1",
+     "name": "host p1",
+     "host": "prod.example",
+     "port": 22,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": []
+    },
+    {
+     "id": "p2",
+     "name": "host p2",
+     "host": "prod.example",
+     "port": 2222,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": [],
+     "favorite": true
+    }
+   ],
+   "isLoaded": true,
+   "workspaceOpen": false,
+   "activeTab": "hosts",
+   "selectedProfileId": null,
+   "showAddresses": false,
+   "sessions": [],
+   "pendingClose": null,
+   "transfers": [],
+   "editingFile": null,
+   "editingContent": ""
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "updateTransferProgress",
+     "args": [
+      {
+       "connectionId": "a",
+       "remotePath": "/x",
+       "localPath": "/tmp/x",
+       "bytesTransferred": 1,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "in-progress",
+       "error": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "a",
+       "remotePath": "/x",
+       "localPath": "/tmp/x",
+       "bytesTransferred": 1,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "in-progress",
+       "error": null
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "updateTransferProgress",
+     "args": [
+      {
+       "connectionId": "a",
+       "remotePath": "/x",
+       "localPath": "/tmp/x",
+       "bytesTransferred": 10,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "completed",
+       "error": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "a",
+       "remotePath": "/x",
+       "localPath": "/tmp/x",
+       "bytesTransferred": 10,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "completed",
+       "error": null
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "updateTransferProgress",
+     "args": [
+      {
+       "connectionId": "b",
+       "remotePath": "/y",
+       "localPath": "/tmp/y",
+       "bytesTransferred": 4,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "failed",
+       "error": "Write error"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "a",
+       "remotePath": "/x",
+       "localPath": "/tmp/x",
+       "bytesTransferred": 10,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "completed",
+       "error": null
+      },
+      {
+       "connectionId": "b",
+       "remotePath": "/y",
+       "localPath": "/tmp/y",
+       "bytesTransferred": 4,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "failed",
+       "error": "Write error"
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "updateTransferProgress",
+     "args": [
+      {
+       "connectionId": "a",
+       "remotePath": "/z",
+       "localPath": "/tmp/z",
+       "bytesTransferred": 3,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "in-progress",
+       "error": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "a",
+       "remotePath": "/x",
+       "localPath": "/tmp/x",
+       "bytesTransferred": 10,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "completed",
+       "error": null
+      },
+      {
+       "connectionId": "b",
+       "remotePath": "/y",
+       "localPath": "/tmp/y",
+       "bytesTransferred": 4,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "failed",
+       "error": "Write error"
+      },
+      {
+       "connectionId": "a",
+       "remotePath": "/z",
+       "localPath": "/tmp/z",
+       "bytesTransferred": 3,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "in-progress",
+       "error": null
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "clearCompletedTransfers",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "b",
+       "remotePath": "/y",
+       "localPath": "/tmp/y",
+       "bytesTransferred": 4,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "failed",
+       "error": "Write error"
+      },
+      {
+       "connectionId": "a",
+       "remotePath": "/z",
+       "localPath": "/tmp/z",
+       "bytesTransferred": 3,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "in-progress",
+       "error": null
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "clearCompletedTransfers",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "a",
+       "remotePath": "/z",
+       "localPath": "/tmp/z",
+       "bytesTransferred": 3,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "in-progress",
+       "error": null
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "updateTransferProgress",
+     "args": [
+      {
+       "connectionId": "a",
+       "remotePath": "/z",
+       "localPath": "/tmp/z",
+       "bytesTransferred": 10,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "completed",
+       "error": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "a",
+       "remotePath": "/z",
+       "localPath": "/tmp/z",
+       "bytesTransferred": 10,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "completed",
+       "error": null
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "clearCompletedTransfers",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [
+      {
+       "connectionId": "a",
+       "remotePath": "/z",
+       "localPath": "/tmp/z",
+       "bytesTransferred": 10,
+       "totalBytes": 10,
+       "direction": "upload",
+       "status": "completed",
+       "error": null
+      }
+     ],
+     "editingFile": null,
+     "editingContent": ""
+    }
+   }
+  ]
+ },
+ {
+  "store": "ssh",
+  "name": "the_remote_editor_keeps_its_file",
+  "initial": {
+   "profiles": [
+    {
+     "id": "p1",
+     "name": "host p1",
+     "host": "prod.example",
+     "port": 22,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": []
+    },
+    {
+     "id": "p2",
+     "name": "host p2",
+     "host": "prod.example",
+     "port": 2222,
+     "username": "deploy",
+     "authMethod": "key",
+     "portForwards": [],
+     "favorite": true
+    }
+   ],
+   "isLoaded": true,
+   "workspaceOpen": false,
+   "activeTab": "hosts",
+   "selectedProfileId": null,
+   "showAddresses": false,
+   "sessions": [],
+   "pendingClose": null,
+   "transfers": [],
+   "editingFile": null,
+   "editingContent": ""
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setEditingFile",
+     "args": [
+      {
+       "connectionId": "t1",
+       "path": "/home/deploy/notes.txt",
+       "name": "notes.txt",
+       "content": "a",
+       "originalContent": "a"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": {
+      "connectionId": "t1",
+      "path": "/home/deploy/notes.txt",
+      "name": "notes.txt",
+      "content": "a",
+      "originalContent": "a"
+     },
+     "editingContent": ""
+    }
+   },
+   {
+    "event": {
+     "action": "setEditingContent",
+     "args": [
+      "ab"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": {
+      "connectionId": "t1",
+      "path": "/home/deploy/notes.txt",
+      "name": "notes.txt",
+      "content": "a",
+      "originalContent": "a"
+     },
+     "editingContent": "ab"
+    }
+   },
+   {
+    "event": {
+     "action": "setEditingFile",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "profiles": [
+      {
+       "id": "p1",
+       "name": "host p1",
+       "host": "prod.example",
+       "port": 22,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": []
+      },
+      {
+       "id": "p2",
+       "name": "host p2",
+       "host": "prod.example",
+       "port": 2222,
+       "username": "deploy",
+       "authMethod": "key",
+       "portForwards": [],
+       "favorite": true
+      }
+     ],
+     "isLoaded": true,
+     "workspaceOpen": false,
+     "activeTab": "hosts",
+     "selectedProfileId": null,
+     "showAddresses": false,
+     "sessions": [],
+     "pendingClose": null,
+     "transfers": [],
+     "editingFile": null,
+     "editingContent": "ab"
+    }
+   }
+  ]
+ }
+]

@@ -111,6 +111,9 @@ fn every_routed_request_type_has_a_class() {
         .collect();
     names.remove("panic_for_test");
     names.insert("send_prompt");
+    // SSH and remote access route by table (`t if SSH_WS_REQUESTS...`).
+    names.extend(crate::web::ws::SSH_WS_REQUESTS);
+    names.extend(crate::web::ws::LISTENERS_WS_REQUESTS);
 
     for name in &names {
         assert!(
@@ -157,6 +160,18 @@ fn only_creates_and_non_prompt_commands_enter_the_ledger() {
             "add_antigravity_account",
             "start_antigravity_account_login",
             "check_antigravity_usage",
+            "ssh_delete_profile",
+            "ssh_duplicate_profile",
+            "ssh_import_config",
+            "ssh_session_open",
+            "ssh_session_respond_host_key",
+            "sftp_download",
+            "sftp_upload",
+            "sftp_delete",
+            "sftp_mkdir",
+            "sftp_rename",
+            "sftp_create_file",
+            "listeners_rotate_token",
         ])
     );
     assert!(
@@ -172,9 +187,46 @@ fn credential_bearing_kinds_are_receipt_only() {
         "respond_elicitation",
         "acp_deliver_auth_redirect",
         "finish_claude_link_login",
+        // A terminal claim and token-bearing share URLs.
+        "ssh_session_open",
+        "listeners_rotate_token",
     ] {
         assert!(!class_of(name).unwrap().1.stores_payload(), "{name}");
     }
+}
+
+#[test]
+fn an_ssh_fingerprint_never_derives_from_a_password_or_file_contents() {
+    let open = |secret: &str| {
+        Fingerprint::of(
+            "ssh_session_open",
+            &json!({"request": {"sessionId": "s1", "profileId": "p1", "cols": 80,
+                    "rows": 24, "secret": secret, "saveSecret": true}}),
+        )
+    };
+    assert_eq!(open("hunter2"), open("other"));
+    let other_session = Fingerprint::of(
+        "ssh_session_open",
+        &json!({"request": {"sessionId": "s2", "profileId": "p1"}}),
+    );
+    assert_ne!(open("hunter2"), other_session);
+
+    let answer = |trust: bool, fingerprint: &str| {
+        Fingerprint::of(
+            "ssh_session_respond_host_key",
+            &json!({"sessionId": "s1", "trust": trust, "fingerprint": fingerprint}),
+        )
+    };
+    assert_ne!(answer(true, "SHA256:a"), answer(false, "SHA256:a"));
+    assert_ne!(answer(true, "SHA256:a"), answer(true, "SHA256:b"));
+
+    let rename = |to: &str| {
+        Fingerprint::of(
+            "sftp_rename",
+            &json!({"request": {"connectionId": "s1", "oldPath": "/a", "newPath": to}}),
+        )
+    };
+    assert_ne!(rename("/b"), rename("/c"));
 }
 
 #[test]

@@ -141,29 +141,28 @@ fn health_needs_a_200_with_status_ok() {
     assert!(!process::healthy(port), "nothing listens any more");
 }
 
-#[cfg(unix)]
 #[test]
-fn the_watchdog_stops_the_server_when_the_app_dies() {
-    use std::process::Command;
-    let mut app = Command::new("sleep").arg("60").spawn().unwrap();
-    let mut server = Command::new("sleep").arg("60").spawn().unwrap();
-    let watchdog = process::watchdog(app.id(), server.id()).expect("the watchdog's pid");
-    std::thread::sleep(Duration::from_millis(300));
-    // A closed terminal hangs up the app's process group; the watchdog is in its own and
-    // ignores the signal anyway.
-    Command::new("kill").args(["-HUP", &watchdog.to_string()]).status().unwrap();
-    std::thread::sleep(Duration::from_millis(200));
-    assert!(Command::new("kill").args(["-0", &watchdog.to_string()]).status().unwrap().success(), "the watchdog survives SIGHUP");
-    assert_eq!(server.try_wait().unwrap(), None, "the server runs while the app does");
-    app.kill().unwrap();
-    app.wait().unwrap();
-    let until = Instant::now() + Duration::from_secs(5);
-    while Instant::now() < until && server.try_wait().unwrap().is_none() {
-        std::thread::sleep(Duration::from_millis(100));
-    }
-    let status = server.try_wait().unwrap().expect("the watchdog stopped the server within 5 s");
-    use std::os::unix::process::ExitStatusExt;
-    assert_eq!(status.signal(), Some(15), "SIGTERM first");
+fn a_managed_server_runs_in_desktop_mode_and_watches_the_app() {
+    let paths = paths("args");
+    let args = process::server_args(&paths, 8195, Some(4242));
+    assert_eq!(&args[..3], ["--desktop", "--parent-pid", "4242"]);
+    let at = |flag: &str| args.iter().position(|a| a == flag).map(|i| args[i + 1].clone());
+    assert_eq!(at("--host").as_deref(), Some("127.0.0.1"));
+    assert_eq!(at("--port").as_deref(), Some("8195"));
+    assert_eq!(at("--state-dir"), Some(paths.data_dir.to_string_lossy().into_owned()));
+    let kept = process::server_args(&paths, 8195, None);
+    assert_eq!(kept[0], "--desktop");
+    assert!(!kept.iter().any(|a| a == "--parent-pid"), "a kept-alive server outlives the app");
+}
+
+#[test]
+fn the_host_local_credential_is_read_fresh_and_trimmed() {
+    let paths = paths("credential");
+    assert_eq!(process::read_host_local_token(&paths), None);
+    std::fs::write(paths.host_local_token_file(), "first\n").unwrap();
+    assert_eq!(process::read_host_local_token(&paths).as_deref(), Some("first"));
+    std::fs::write(paths.host_local_token_file(), "second").unwrap();
+    assert_eq!(process::read_host_local_token(&paths).as_deref(), Some("second"));
 }
 
 fn paths(name: &str) -> crate::paths::Paths {
@@ -286,7 +285,9 @@ fn the_lock_names_its_holder_by_pid() {
     assert!(super::holds_lock(7, Some(&held(Some(7)))));
     assert!(!super::holds_lock(7, Some(&held(Some(8)))));
     assert!(!super::holds_lock(7, None));
-    assert_eq!(super::holds_lock(7, Some(&held(None))), cfg!(windows));
+    // A Windows lock names no pid: the recorded server must still run.
+    assert_eq!(super::holds_lock(std::process::id(), Some(&held(None))), cfg!(windows));
+    assert!(!super::holds_lock(u32::MAX - 1, Some(&held(None))), "a gone server never holds it");
 }
 
 #[test]
