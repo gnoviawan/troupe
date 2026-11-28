@@ -33,6 +33,7 @@ Troupe is a project-aware desktop terminal workspace built with Tauri 2. It comb
 - [Contribution Guide](./contribution-guide.md) - Contribution process and coding conventions
 - [Native SSH](./ssh-native.md) - SSH sessions, host keys, credentials and the russh stack
 - [Canvas](./canvas.md) - The built-in figcraft design editor: documents, lifecycle, persistence, access control, agent gateway and the pinned bundle
+- [Computer Use (Troupe Comu)](./comu.md) - Local desktop computer use for ACP agents: per-app consent, self-target guard, virtual agent cursor, OS permissions, `comu_*` MCP tools, and pinned Cua driver engine
 
 ### Optional / Conditional Documentation
 

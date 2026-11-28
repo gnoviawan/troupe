@@ -12,14 +12,21 @@ import type { McpInstallRequestEvent } from '@/lib/mcp-install-request'
  * means the host sent no list of that kind (a host without those tickets, or
  * one that predates them), so the client keeps what it has.
  */
+export interface ComuSessionState {
+  active: boolean
+  stopped: boolean
+  seq: number
+}
+
 export interface PendingPrompts {
   permissions: PermissionRequestEvent[] | null
   questions: AskUserQuestionEvent[] | null
   elicitations: ElicitationRequestEvent[] | null
   mcpInstalls: McpInstallRequestEvent[] | null
+  comuState?: ComuSessionState | null
 }
 
-export type PendingPromptKind = keyof PendingPrompts
+export type PendingPromptKind = 'permissions' | 'questions' | 'elicitations' | 'mcpInstalls'
 
 export type PendingPromptsHandler = (sessionId: string, prompts: PendingPrompts) => void
 
@@ -87,25 +94,37 @@ function readList<T>(
   return list.filter((value): value is T => isRequest(value, sessionId))
 }
 
+function readComuState(reply: unknown): ComuSessionState | null {
+  if (!reply || typeof reply !== 'object') return null
+  const raw = (reply as Fields).comuState
+  if (!raw || typeof raw !== 'object') return null
+  const fields = raw as Fields
+  if (typeof fields.active !== 'boolean' || typeof fields.stopped !== 'boolean') return null
+  const seq = typeof fields.seq === 'number' && Number.isFinite(fields.seq) ? fields.seq : 0
+  return { active: fields.active, stopped: fields.stopped, seq }
+}
+
 /**
- * The reply's `pendingPermissions`, `pendingQuestions` and
- * `pendingElicitations` for `sessionId`. An absent key reads as `null`;
- * malformed entries and entries of another session are skipped.
+ * The reply's `pendingPermissions`, `pendingQuestions`, `pendingElicitations`,
+ * `pendingMcpInstalls`, and `comuState` for `sessionId`. An absent key reads as
+ * `null`; malformed entries and entries of another session are skipped.
  */
 export function readPendingPrompts(sessionId: string, reply: unknown): PendingPrompts {
+  const comuState = readComuState(reply)
   return {
     permissions: readList(reply, 'pendingPermissions', sessionId, isPermissionRequest),
     questions: readList(reply, 'pendingQuestions', sessionId, isQuestionRequest),
     elicitations: readList(reply, 'pendingElicitations', sessionId, isElicitationRequest),
-    mcpInstalls: readList(reply, 'pendingMcpInstalls', sessionId, isMcpInstallRequest)
+    mcpInstalls: readList(reply, 'pendingMcpInstalls', sessionId, isMcpInstallRequest),
+    ...(comuState ? { comuState } : {})
   }
 }
 
 /** Counts of the non-empty lists for a log line (`1 permissions, 2 elicitations`), or `''`. */
 export function pendingPromptCounts(prompts: PendingPrompts): string {
-  return Object.entries(prompts)
-    .filter(([, list]) => list && list.length > 0)
-    .map(([kind, list]) => `${list?.length} ${kind}`)
+  return (['permissions', 'questions', 'elicitations', 'mcpInstalls'] as const)
+    .filter((kind) => (prompts[kind]?.length ?? 0) > 0)
+    .map((kind) => `${prompts[kind]?.length} ${kind}`)
     .join(', ')
 }
 

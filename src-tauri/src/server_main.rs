@@ -94,7 +94,7 @@ fn main() -> ExitCode {
         return ExitCode::from(termul_manager_lib::host_mcp::child::run() as u8);
     }
 
-    // Hidden `openapi`: prints the API spec. Needs no state dir or config, so
+    // `openapi`: prints the API spec. Needs no state dir or config, so
     // it runs before the server parser and before tracing starts.
     if raw_args.first().is_some_and(|arg| arg == "openapi") {
         return termul_manager_lib::web::openapi::cli::run(&raw_args[1..]);
@@ -481,6 +481,7 @@ fn main() -> ExitCode {
             termul_manager_lib::codex_limit::CodexLimitHandle::channel();
         let (antigravity_limit, antigravity_limit_inbox) =
             termul_manager_lib::antigravity_limit::AntigravityLimitHandle::channel();
+        let orchestrator_wake = termul_manager_lib::orchestrator::wake_sink();
         let acp = Arc::new(
             AcpManager::with_persistence_and_host_agents(
                 vec![
@@ -488,8 +489,9 @@ fn main() -> ExitCode {
                     claude_limit.sink(),
                     codex_limit.sink(),
                     antigravity_limit.sink(),
+                    orchestrator_wake.clone(),
                 ],
-                persistence,
+                Arc::clone(&persistence),
                 claude_agent,
                 codex_agent,
             )
@@ -570,6 +572,25 @@ fn main() -> ExitCode {
             );
             Arc::new(ProjectRegistry::new())
         };
+        // `--browser-host`: agent browser tabs on a Chromium of this host.
+        #[cfg(unix)]
+        if let Some(options) = launch.browser_host {
+            if let Err(error) = termul_manager_lib::web::hosted_browser::install(
+                options,
+                &data_paths.state_dir,
+                &ws_relay,
+                &persistence,
+                &registry,
+            )
+            .await
+            {
+                warn!("troupe-server: browser host not started: {error}");
+            }
+        }
+        #[cfg(not(unix))]
+        if launch.browser_host.is_some() {
+            warn!("troupe-server: --browser-host is not available on this OS yet");
+        }
         // The MCP server list is one host-wide store value; a host that kept
         // one list per project file merges them into it once.
         termul_manager_lib::host_mcp::mcp_install::install_live(Arc::clone(&store));
@@ -594,6 +615,8 @@ fn main() -> ExitCode {
             .collect();
         termul_manager_lib::orchestrator::install(
             Arc::clone(&acp),
+            Arc::clone(&ws_relay),
+            orchestrator_wake,
             cfg.service_account_state_dir(),
             acp_install.clone(),
             sweep_roots,
@@ -1048,6 +1071,7 @@ USAGE:
     troupe-server [OPTIONS]
     troupe-server onboard          Guided setup + background launch
     troupe-server qr [OPTIONS]     Show a scannable QR code for connecting a phone
+    troupe-server openapi          Print the OpenAPI spec to stdout
     troupe-server --check-update   One-shot self-update
 
 OPTIONS:
@@ -1146,6 +1170,15 @@ OPTIONS:
                                   warning is logged at startup).
 
   Experimental:
+    --browser-host                Serve the agent browser tool from a Chrome,
+                                  Edge or Chromium on this host (headless,
+                                  driven over a pipe). Off by default. Tabs
+                                  cannot reach loopback or private addresses.
+                                  [env: TROUPE_CHROMIUM_PATH picks the binary]
+    --browser-host-allow-internal Let browser-host tabs reach loopback and
+                                  private networks.
+    --browser-host-no-sandbox     Run Chromium without its sandbox, which it
+                                  needs when the server runs as root.
     --experimental-rune-client    Serve the Rune web client preview at /rune/
                                   and redirect /?ui=rune there. Needs
                                   --rune-web-dir; off by default, when /rune/
@@ -1220,6 +1253,10 @@ OPTIONS:
                                   Embeds #token=... when auth is active (TTY
                                   only; pass --no-token for non-TTY output).
                                   Run `troupe-server qr --help` for options.
+    openapi [OPTIONS]             Print the OpenAPI 3.1 spec to stdout.
+                                  Default yaml; `--format json` for JSON.
+                                  Needs no running server.
+                                  Run `troupe-server openapi --help` for options.
 
     -h, --help                    Show this help
     -V, --version                 Show the version
@@ -1265,6 +1302,9 @@ EXAMPLES:
 
     # Show a scannable QR code in an interactive terminal
     troupe-server qr
+
+    # Print the OpenAPI spec of this binary
+    troupe-server openapi
 
     # One-shot self-update check
     troupe-server --check-update

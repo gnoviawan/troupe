@@ -1,6 +1,7 @@
 import type { DetectedShells } from '@shared/types/ipc.types'
 import { useEffect, useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { ComuSection } from '@/components/settings/ComuPolicySettings'
 import { SettingsLayout } from '@/components/settings/SettingsLayout'
 import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import {
@@ -165,6 +166,7 @@ export function AppPreferencesModal(): React.JSX.Element {
           <ProviderSection />
           <McpServersSection />
           <BrowserSection />
+          <ComuSection />
           <ShortcutsSection
             shortcuts={shortcuts}
             updateShortcut={updateShortcut}

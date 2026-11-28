@@ -50,6 +50,10 @@ vi.mock('@/components/settings/SettingsLayout', () => ({
 vi.mock('@/components/settings/BrowserPolicySettings', () => ({
   BrowserProjectPolicy: () => null
 }))
+vi.mock('@/components/settings/ComuPolicySettings', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/settings/ComuPolicySettings')>()),
+  ComuProjectPolicy: () => null
+}))
 vi.mock('@/components/ConfirmDialog', () => ({
   ConfirmDialog: ({
     isOpen,
@@ -359,7 +363,8 @@ describe('ProjectSettings layout', () => {
       ['Project', 'env-vars'],
       ['Project', 'symlinks'],
       ['Agents', 'provider'],
-      ['Agents', 'browser']
+      ['Agents', 'browser'],
+      ['Agents', 'comu']
     ])
     expect(PROJECT_SETTINGS_SEARCH_INDEX.some((e) => e.categoryId === 'emergency')).toBe(false)
   })
@@ -367,9 +372,9 @@ describe('ProjectSettings layout', () => {
   it('points every search anchor at a rendered settings row', () => {
     renderSettings()
 
-    // Browser rows come from BrowserProjectPolicy, which is mocked out here.
+    // Browser and Comu rows come from BrowserProjectPolicy / ComuProjectPolicy, mocked out here.
     const anchors = PROJECT_SETTINGS_SEARCH_INDEX.flatMap((e) =>
-      e.anchorId && e.categoryId !== 'browser' ? [e.anchorId] : []
+      e.anchorId && e.categoryId !== 'browser' && e.categoryId !== 'comu' ? [e.anchorId] : []
     )
     expect(anchors.length).toBeGreaterThan(0)
     for (const anchor of anchors) {

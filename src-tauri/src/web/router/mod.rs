@@ -405,6 +405,16 @@ pub fn router(
                 },
             },
         ))
+        .merge(crate::web::comu_api::comu_router(
+            crate::web::comu_api::ComuRouteState {
+                service: crate::comu::policy::installed(),
+                token_gated: web_auth.is_some(),
+                write_flags: crate::web::capabilities::WriteFlags {
+                    allow_remote_writes,
+                    shared_live_writes_denied,
+                },
+            },
+        ))
         .merge(crate::web::automation_api::automation_router(
             crate::web::automation_api::AutomationRouteState {
                 service: crate::automation::service::installed(),
@@ -640,6 +650,16 @@ pub fn router_with_static(
         .merge(crate::web::browser_policy_api::browser_policy_router(
             crate::web::browser_policy_api::PolicyRouteState {
                 service: crate::acp::browser_policy::installed(),
+                token_gated: web_auth.is_some(),
+                write_flags: crate::web::capabilities::WriteFlags {
+                    allow_remote_writes,
+                    shared_live_writes_denied,
+                },
+            },
+        ))
+        .merge(crate::web::comu_api::comu_router(
+            crate::web::comu_api::ComuRouteState {
+                service: crate::comu::policy::installed(),
                 token_gated: web_auth.is_some(),
                 write_flags: crate::web::capabilities::WriteFlags {
                     allow_remote_writes,

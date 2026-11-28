@@ -2,8 +2,10 @@ import { useEffect } from 'react'
 import {
   type AgentChatNotifyEvent,
   type AgentChatNotifySnapshot,
-  decideAgentChatNotifications
+  decideAgentChatNotifications,
+  isNotifiableStopReason
 } from '@/lib/agent-chat-notify'
+import { logFrontendError } from '@/lib/log-api'
 import { openAgentChatInOwnProject } from '@/lib/open-agent-chat'
 import { sendDesktopNotification } from '@/lib/tauri-notification-api'
 import { isEphemeralAcpSession, useAcpStore } from '@/stores/acp-store'
@@ -12,6 +14,13 @@ import { useProjectStore } from '@/stores/project-store'
 import { sessionTurnBusy } from '@/stores/prompt-queue-orchestration'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { sanitizeNotificationText } from './use-terminal-exit-notification'
+
+/**
+ * How long a chat must stay idle after its last background command ends
+ * before its deferred "finished" ping goes out. The agent usually wakes up
+ * right after the command ends (Claude Code runs a turn of its own).
+ */
+export const DEFERRED_FINISH_SETTLE_MS = 5_000
 
 function windowIsFocused(): boolean {
   if (typeof document !== 'undefined' && typeof document.hasFocus === 'function') {
@@ -32,7 +41,11 @@ function readSnapshot(): AgentChatNotifySnapshot {
       busy: sessionTurnBusy(session),
       queueLength: acp.promptQueues?.[sessionId]?.length ?? 0,
       turnEndSeq: notice?.seq ?? 0,
-      stopReason: notice?.stopReason ?? null
+      stopReason: notice?.stopReason ?? null,
+      backgroundRunning: Boolean(
+        session.backgroundCommands?.agentId === session.agentId &&
+          session.backgroundCommands.commands.some((command) => command.state === 'running')
+      )
     }
   }
   const activeTab = useWorkspaceStore.getState().getActiveTab()
@@ -62,7 +75,7 @@ function notificationCopy(event: AgentChatNotifyEvent): { title: string; body: s
   const title = sanitizeNotificationText(project?.name ?? 'Troupe')
   const chat = sanitizeNotificationText(session?.title || indexed?.title || 'Agent Chat')
   const suffix =
-    event.kind === 'turn-finished'
+    event.kind === 'turn-finished' || event.kind === 'turn-finish-deferred'
       ? 'finished'
       : event.kind === 'needs-approval'
         ? 'needs approval'
@@ -77,17 +90,81 @@ function notificationCopy(event: AgentChatNotifyEvent): { title: string; body: s
 export function useAgentChatNotification(): void {
   useEffect(() => {
     let prev: AgentChatNotifySnapshot | null = null
+    // Finished turns that left a background command running.
+    const deferred = new Set<string>()
+    const settleTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+    const send = (event: AgentChatNotifyEvent): void => {
+      const copy = notificationCopy(event)
+      // Click opens the chat in its own project (switching if needed).
+      void sendDesktopNotification(copy.title, copy.body, {
+        onClick: () => openAgentChatInOwnProject(event.sessionId, 'useAgentChatNotification')
+      })
+    }
+
+    const cancelSettle = (sessionId: string): void => {
+      const timer = settleTimers.get(sessionId)
+      if (timer === undefined) return
+      clearTimeout(timer)
+      settleTimers.delete(sessionId)
+    }
+
+    const settle = (event: AgentChatNotifyEvent): void => {
+      if (settleTimers.has(event.sessionId)) return
+      const timer = setTimeout(() => {
+        settleTimers.delete(event.sessionId)
+        if (!deferred.has(event.sessionId)) return
+        const now = readSnapshot()
+        const session = now.sessions[event.sessionId]
+        // Still idle after the settle window: the agent did not wake up.
+        if (!session || session.busy || session.backgroundRunning || session.queueLength > 0) {
+          return
+        }
+        deferred.delete(event.sessionId)
+        if (!now.notifyTurnFinished || now.viewingSessionId === event.sessionId) return
+        send(event)
+      }, DEFERRED_FINISH_SETTLE_MS)
+      settleTimers.set(event.sessionId, timer)
+    }
 
     const emit = (): void => {
       const next = readSnapshot()
+      for (const sessionId of deferred) {
+        const session = next.sessions[sessionId]
+        const prevSeq = prev?.sessions[sessionId]?.turnEndSeq ?? 0
+        // A newer turn that ended without a notifiable reason (cancelled)
+        // supersedes the deferred finish.
+        const superseded =
+          session !== undefined &&
+          session.turnEndSeq > prevSeq &&
+          !isNotifiableStopReason(session.stopReason)
+        if (!session || !next.notifyTurnFinished || superseded) {
+          deferred.delete(sessionId)
+          cancelSettle(sessionId)
+        } else if (session.busy) {
+          // The agent woke up: the next idle stretch gets a full settle window.
+          cancelSettle(sessionId)
+        }
+      }
+      next.deferredFinishes = new Set(deferred)
       const events = decideAgentChatNotifications(prev, next)
       prev = next
       for (const event of events) {
-        const copy = notificationCopy(event)
-        // Click opens the chat in its own project (switching if needed).
-        void sendDesktopNotification(copy.title, copy.body, {
-          onClick: () => openAgentChatInOwnProject(event.sessionId, 'useAgentChatNotification')
-        })
+        if (event.kind === 'turn-finish-deferred') {
+          deferred.add(event.sessionId)
+          void logFrontendError({
+            level: 'info',
+            message: `agent chat finished ping deferred: background command running, sessionId=${event.sessionId}`,
+            source: 'useAgentChatNotification'
+          })
+          continue
+        }
+        if (event.kind === 'turn-finished' && event.deferred) {
+          settle(event)
+          continue
+        }
+        if (event.kind === 'turn-finished') deferred.delete(event.sessionId)
+        send(event)
       }
     }
 
@@ -96,6 +173,7 @@ export function useAgentChatNotification(): void {
     const unsubscribeWorkspace = useWorkspaceStore.subscribe(emit)
     const unsubscribeSettings = useAppSettingsStore.subscribe(emit)
     return () => {
+      for (const timer of settleTimers.values()) clearTimeout(timer)
       unsubscribeAcp()
       unsubscribeWorkspace()
       unsubscribeSettings()

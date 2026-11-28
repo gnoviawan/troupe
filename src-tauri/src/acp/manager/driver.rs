@@ -468,11 +468,12 @@ fn session_info_notices(
 
 /// Report the end of agent work outside a prompt turn
 /// (`session::unprompted`): sleep until a working session can go quiet, then
-/// tell every sink which sessions did. Waits without a timer while no session
-/// can go quiet.
+/// drop its host tool route and tell every sink which sessions did. Waits
+/// without a timer while no session can go quiet.
 pub(super) async fn sweep_unprompted_work(
     state: Arc<Mutex<DriverState>>,
     sinks: Vec<Arc<dyn EventSink>>,
+    host_plan_server: Arc<crate::acp::host_mcp::parent::HostPlanServer>,
     agent_id: AgentId,
 ) {
     let wake = state.lock().unprompted().wake();
@@ -492,6 +493,7 @@ pub(super) async fn sweep_unprompted_work(
             .unprompted()
             .take_quiet(tokio::time::Instant::now());
         for session_id in quiet {
+            host_plan_server.end_unprompted_work(&agent_id.0, &session_id);
             crate::acp::events::emit_agent_working(&sinks, &agent_id, &session_id, false);
         }
     }
@@ -607,8 +609,14 @@ pub(super) async fn drive_connection(
     let notif_state = driver_state.clone();
     // Lives as long as this connection: dropping the handle aborts it.
     let _unprompted_sweeper = tokio_util::task::AbortOnDropHandle::new(tokio::spawn(
-        sweep_unprompted_work(driver_state.clone(), sinks.clone(), agent_id.clone()),
+        sweep_unprompted_work(
+            driver_state.clone(),
+            sinks.clone(),
+            host_plan_server.clone(),
+            agent_id.clone(),
+        ),
     ));
+    let notif_plan_server = host_plan_server.clone();
     // AD-8: capture persistence into the notification closure so the host can
     // gate `session_info_update` fan-out on `title_source`. When a background
     // title (`BackgroundGenerated`) or a future local alias (`LocalAlias`) owns
@@ -693,14 +701,22 @@ pub(super) async fn drive_connection(
         .on_receive_notification(
             async move |notification: agent_client_protocol::schema::v1::SessionNotification,
                         _cx| {
-                handle_session_notification(
+                let session_id = notification.session_id.0.to_string();
+                let result = handle_session_notification(
                     &notif_state,
                     notif_persistence.as_ref(),
                     &notif_sinks,
                     &notif_agent_id,
                     notification,
                 )
-                .await
+                .await;
+                // Work the agent does on its own (Claude Code waking up after
+                // a background shell) may call host tools such as Computer
+                // Use; route them like a prompt turn's until it goes quiet.
+                if notif_state.lock().unprompted().is_working(&session_id) {
+                    notif_plan_server.begin_unprompted_work(&notif_agent_id.0, &session_id);
+                }
+                result
             },
             agent_client_protocol::on_receive_notification!(),
         )

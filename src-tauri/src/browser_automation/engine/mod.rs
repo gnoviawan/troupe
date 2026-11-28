@@ -2,8 +2,8 @@
 //! capability, trait and error types every adapter reports in.
 //!
 //! Dependency direction: the core depends on this module; adapters
-//! (`webview2`, `webkitgtk`, `wkwebview`) implement it and never import
-//! core types. Tab events flow back through [`events`]. Platform crates
+//! (`webview2`, `webkitgtk`, `wkwebview`, `chromium`) implement it and
+//! never import core types. Tab events flow back through [`events`]. Platform crates
 //! and per-OS code live only inside the adapter directories; `cdp` holds
 //! engine-neutral CDP logic over `CdpTransport`.
 //!
@@ -11,8 +11,13 @@
 //! an isolated script world. No page-callable channel carries them.
 
 pub mod assets;
-#[cfg(any(test, target_os = "windows"))]
+#[cfg_attr(
+    not(target_os = "windows"),
+    allow(dead_code, reason = "the Chromium engine uses a subset of the CDP helpers")
+)]
 pub mod cdp;
+#[cfg(unix)]
+pub mod chromium;
 pub mod dialogs;
 pub mod events;
 #[cfg(any(test, target_os = "macos", target_os = "linux"))]

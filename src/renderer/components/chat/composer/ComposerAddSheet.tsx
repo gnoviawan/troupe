@@ -247,7 +247,7 @@ export function ComposerAddSheet({
                   </SheetIconWell>
                 }
                 title="Troupe tools"
-                subtitle="Browser, canvas, automations and orchestration"
+                subtitle="Browser, canvas, computer use, automations and orchestration"
                 accessory="chevron"
                 subview="tools"
                 disabled={disabled}

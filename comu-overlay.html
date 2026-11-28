@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Troupe Computer Use indicator</title>
+  </head>
+
+  <body>
+    <div id="comu-overlay" data-state="off">
+      <div class="comu-overlay-glow" aria-hidden="true"></div>
+      <div class="comu-overlay-pill" role="status">
+        <span class="comu-overlay-dot" aria-hidden="true"></span>
+        <span data-comu-overlay-label></span>
+      </div>
+    </div>
+    <script type="module" src="/src/renderer/comu-overlay/main.ts"></script>
+  </body>
+</html>
