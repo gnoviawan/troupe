@@ -1,0 +1,38 @@
+[package]
+name = "troupe-desktop"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+description = "troupe-preview: the Rune desktop app. It owns a local troupe-server (single instance, supervised, stopped with the app), opens the workspace shell in a native window, and adds the app menu, the tray and the OS services."
+
+[[bin]]
+name = "troupe-preview"
+path = "src/main.rs"
+
+# `drive` links the live driver (`RUNE_DRIVE_SOCK`), which the live checks and
+# tools/parity use. The release build (R12) turns it off.
+[features]
+default = ["drive"]
+drive = ["automation/tooling"]
+
+[dependencies]
+automation = { path = "../automation" }
+client = { path = "../client" }
+getrandom = "0.3"
+log = "0.4"
+rune = { workspace = true, features = ["native-file-dialog"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { workspace = true }
+theme = { path = "../theme" }
+troupe-app = { path = "../app" }
+troupe-canvas = { path = "../canvas" }
+ui = { path = "../ui" }
+
+[target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
+notify-rust = "4"
+
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+rune-notify = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d172053a0b6469a334c0bfc227" }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }

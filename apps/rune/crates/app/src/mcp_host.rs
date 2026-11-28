@@ -127,19 +127,42 @@ impl State {
         }
     }
 
-    /// Steps the model with an MCP answer; a refusal it raises shows as `on_reject`.
-    fn mcp_step(&mut self, event: Event, on_reject: OnReject) {
-        self.mcp_ui.rejection = Some(on_reject);
+    /// Steps the model with an MCP answer. A refusal of the answered command shows as
+    /// `on_reject`; in a registry answer, a later refusal is a queued page write's.
+    fn mcp_step(&mut self, event: Event, on_reject: Option<OnReject>, registry: bool) {
+        self.mcp_ui.rejection = on_reject;
+        self.mcp_ui.registry_step = registry;
         self.acp_step(event);
         self.mcp_ui.rejection = None;
+        self.mcp_ui.registry_step = false;
     }
 
     /// A refusal the model raised while it read an MCP answer: true when it was shown here.
+    ///
+    /// The model refuses the answered command first, then runs the next queued registry write,
+    /// whose refusal comes after. A write that started has left the action queue, so a refusal
+    /// with no answered command to own it belongs to the page write at the front of the queue.
     pub(crate) fn mcp_rejected(&mut self, message: &str) -> bool {
-        let Some(on_reject) = self.mcp_ui.rejection.take() else { return false };
-        log::warn!("[settings.McpServersSettings] {message}");
-        if let OnReject::Toast(text) = on_reject {
-            self.toasts.push(self.now, ui::overlay::ToastKind::Error, &text, None);
+        if let Some(on_reject) = self.mcp_ui.rejection.take() {
+            log::warn!("[settings.McpServersSettings] {message}");
+            if let OnReject::Toast(text) = on_reject {
+                self.toasts.push(self.now, ui::overlay::ToastKind::Error, &text, None);
+            }
+            return true;
+        }
+        if !self.mcp_ui.registry_step {
+            return false;
+        }
+        let Some(action) = self.mcp_ui.actions.pop_front() else { return false };
+        log::warn!("[settings.McpServersSettings] the registry refused a page write: {message}");
+        match action {
+            Action::Install => self.install_saved(false),
+            other => {
+                self.toasts.push(self.now, ui::overlay::ToastKind::Error, other.failure(), None);
+                if matches!(other, Action::Add(_) | Action::Edit) {
+                    self.mcp_dialog_settled();
+                }
+            }
         }
         true
     }
@@ -238,18 +261,21 @@ impl State {
 
     /// Hands an answer to the model, with the toast, dialog close or Undo the page waits for.
     fn mcp_answer(&mut self, effect: Effect, outcome: Result<Value, McpError>, action: Option<Action>) {
+        let registry = matches!(effect, Effect::SaveMcpServers { .. } | Effect::LoadMcpServers { .. });
         let on_reject = match (&effect, &outcome) {
-            (Effect::SaveMcpServers { .. }, _) => OnReject::Toast(action.as_ref().map_or("Could not save the MCP servers.", Action::failure).to_owned()),
-            (Effect::StartMcpOAuth { .. }, Err(e)) => OnReject::Toast(oauth_failure_message(e.code.as_deref()).to_owned()),
-            (Effect::DisconnectMcpOAuth { .. }, _) => OnReject::Toast("Could not disconnect OAuth. Try again.".into()),
+            (Effect::SaveMcpServers { .. }, Ok(_)) => None,
+            (Effect::SaveMcpServers { .. }, _) if matches!(action, Some(Action::Install)) => Some(OnReject::Quiet),
+            (Effect::SaveMcpServers { .. }, _) => Some(OnReject::Toast(action.as_ref().map_or("Could not save the MCP servers.", Action::failure).to_owned())),
+            (Effect::StartMcpOAuth { .. }, Err(e)) => Some(OnReject::Toast(oauth_failure_message(e.code.as_deref()).to_owned())),
+            (Effect::DisconnectMcpOAuth { .. }, _) => Some(OnReject::Toast("Could not disconnect OAuth. Try again.".into())),
             (Effect::CompleteMcpOAuth { .. }, Err(e)) => {
                 self.paste_failed(e);
-                OnReject::Quiet
+                Some(OnReject::Quiet)
             }
             (Effect::HasMcpOAuthToken { check: TokenCheck::Paste { server_name, .. }, .. }, _) => {
-                OnReject::Toast(format!("The sign-in to {server_name} expired. Press Connect to start again."))
+                Some(OnReject::Toast(format!("The sign-in to {server_name} expired. Press Connect to start again.")))
             }
-            _ => OnReject::Quiet,
+            _ => Some(OnReject::Quiet),
         };
         let connected_before = match &effect {
             Effect::StartMcpOAuth { server_id, .. } => Some((server_id.clone(), self.mcp_flag(&self.chat.acp.mcp_oauth_connecting, server_id))),
@@ -260,7 +286,7 @@ impl State {
             Ok(value) => Event::McpCommandDone(effect, value),
             Err(error) => Event::McpCommandFailed(effect, error),
         };
-        self.mcp_step(event, on_reject);
+        self.mcp_step(event, on_reject, registry);
         if let Some((id, true)) = connected_before {
             let acp = &self.chat.acp;
             if ok && !self.mcp_flag(&acp.mcp_oauth_connecting, &id) && self.mcp_flag(&acp.mcp_oauth_connected, &id) {
@@ -271,6 +297,7 @@ impl State {
         match action {
             Some(action) if ok => self.mcp_action_landed(action),
             Some(Action::Add(_) | Action::Edit) => self.mcp_dialog_settled(),
+            Some(Action::Install) => self.install_saved(false),
             _ => {}
         }
         self.mcp_after();
@@ -280,6 +307,7 @@ impl State {
     fn mcp_after(&mut self) {
         self.paste_sync();
         self.mcp_settle();
+        self.install_follow();
     }
 
     pub(crate) fn mcp_flag(&self, map: &std::collections::BTreeMap<String, Value>, id: &str) -> bool {

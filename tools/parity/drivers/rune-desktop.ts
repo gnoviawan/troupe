@@ -244,7 +244,10 @@ export async function openRuneDesktop(opts: RuneDesktopOptions): Promise<RuneDes
 
 /**
  * The matrix's `rune-desktop` client: `troupe-dev` (or `TROUPE_RUNE_APP_BIN`)
- * pointed at the seeded server through `TROUPE_SERVER_URL`.
+ * pointed at the seeded server through `TROUPE_SERVER_URL`. With
+ * `TROUPE_RUNE_APP_BIN` set to `troupe-preview`, the desktop app attaches to
+ * that server instead of starting its own, and keeps its logs, lock and frame
+ * under the session's state dir.
  */
 export function runeDesktopClient(): ClientLauncher {
   return {
@@ -262,7 +265,8 @@ export function runeDesktopClient(): ClientLauncher {
           TROUPE_SERVER_URL: world.server.baseUrl,
           TROUPE_SERVER_TOKEN: TOKEN,
           TROUPE_DEVICE_ID: deviceId,
-          TROUPE_ROUTE: surface.start?.hash ?? ''
+          TROUPE_ROUTE: surface.start?.hash ?? '',
+          TROUPE_PREVIEW_DATA_DIR: path.join(stateDir, 'preview')
         }
       })
       try {

@@ -33,6 +33,10 @@ mod automations_tests;
 mod automations_view;
 #[cfg(test)]
 mod answers_tests;
+mod canvas_host;
+#[cfg(test)]
+mod canvas_host_tests;
+mod canvas_web;
 #[cfg(test)]
 mod cards_tests;
 mod chat;
@@ -89,16 +93,22 @@ mod rail;
 mod rail_forms;
 mod rail_menus;
 mod mcp_catalog;
+mod mcp_install;
+mod mcp_install_view;
 mod mcp_host;
 mod project_settings;
 mod project_settings_view;
 mod rail_view;
 mod settings;
+mod settings_accounts;
+mod settings_accounts_dialogs;
 mod settings_mcp;
 mod settings_mcp_dialog;
+mod settings_mcp_json;
 mod settings_pages;
 mod settings_profiles;
 mod settings_shortcuts;
+mod settings_subagents;
 #[cfg(test)]
 mod settings_tests;
 mod settings_view;
@@ -158,6 +168,17 @@ impl Route {
 pub struct Launch {
     pub config: Option<Config>,
     pub route: Route,
+}
+
+/// A bar the desktop shell draws above the frame (the in-window app menu on Linux and
+/// Windows). It may push its open menus onto the overlay layer.
+pub type ShellBar = fn(&State, &'static Tokens, &mut Vec<rune::El>) -> rune::El;
+
+static SHELL_BAR: OnceLock<ShellBar> = OnceLock::new();
+
+/// Sets the shell's bar; call before the app runs.
+pub fn set_shell_bar(bar: ShellBar) {
+    let _ = SHELL_BAR.set(bar);
 }
 
 static LAUNCH: OnceLock<Launch> = OnceLock::new();
@@ -221,6 +242,8 @@ pub struct State {
     pub project_ui: project_settings::ProjectSettingsUi,
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
+    pub subagents_ui: settings_subagents::SubagentsUi,
+    pub accounts_ui: settings_accounts::AccountsUi,
     pub(crate) sync: sync::Sync,
     /// The Report a Bug dialog.
     pub bug: bug_report::BugReportUi,
@@ -230,6 +253,11 @@ pub struct State {
     pub snapshots: snapshots::SnapshotsUi,
     /// The Automations tab's reads, selection and canvases.
     pub automations: automations::AutomationsUi,
+    /// The design canvases (FigCraft): per-project sessions, persistence and gateway.
+    pub canvases: ui::canvas::Canvases,
+    pub(crate) canvas_host: canvas_host::CanvasHost,
+    /// The window's waker, kept for `reload`.
+    pub(crate) waker: Option<Waker>,
 }
 
 /// A resizable edge of the shell.
@@ -289,11 +317,16 @@ impl Default for State {
             settings_ui: settings_view::SettingsUi::default(),
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
+            subagents_ui: settings_subagents::SubagentsUi::default(),
+            accounts_ui: settings_accounts::AccountsUi::default(),
             sync: sync::Sync::default(),
             bug: bug_report::BugReportUi::default(),
             first_run: first_run::FirstRun::default(),
             snapshots: snapshots::SnapshotsUi::default(),
             automations: automations::AutomationsUi::default(),
+            canvases: ui::canvas::Canvases::default(),
+            canvas_host: canvas_host::CanvasHost::default(),
+            waker: None,
         }
     }
 }
@@ -358,7 +391,22 @@ fn seed() -> u64 {
     (js_sys::Math::random() * 9_007_199_254_740_992.0) as u64 ^ js_sys::Date::now() as u64
 }
 
+/// Drops every connection and all view state, then connects again as at launch: the desktop
+/// menu's Reload, as a webview reload rebuilds the React client.
+pub fn reload(state: &mut State) {
+    let Some(wake) = state.waker.clone() else { return };
+    log::info!("[app] reload");
+    *state = State::default();
+    setup(state, wake);
+}
+
+/// The shell's bar above the frame, if the entry has one.
+pub(crate) fn shell_bar() -> Option<ShellBar> {
+    SHELL_BAR.get().copied()
+}
+
 fn setup(state: &mut State, wake: Waker) {
+    state.waker = Some(wake.clone());
     ui::overlay::history::install(wake.clone());
     state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     state.viewers.images = Some(rune::ImageCache::new(wake.clone()));
@@ -400,6 +448,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_github = state.github_tick();
     let next_mcp = state.mcp_tick(now);
     let next_catalog = state.catalog_tick(now);
+    let next_accounts = state.accounts_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let next_first_run = state.first_run_tick(now);
@@ -409,6 +458,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     }
     let next_automation = state.automations_tick(now);
     let next_preview = state.automation_editor_tick(now);
+    let (canvas_changed, next_canvas) = state.pump_canvases(tx);
+    changed |= canvas_changed;
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -422,9 +473,11 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_mcp,
         next_first_run,
         next_catalog,
+        next_accounts,
         next_completion,
         next_automation,
         next_preview,
+        next_canvas,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);
@@ -440,10 +493,16 @@ fn on_key(state: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
 /// The app for `launch`. The entries call `run` on it, the desktop one after linking the live
 /// driver. Call it once per process.
 pub fn app(launch: Launch) -> rune::App<State> {
+    app_with(spec(launch))
+}
+
+/// The app's spec for `launch`, for a shell that changes the window before `app_with` builds
+/// it. Call it once per process.
+pub fn spec(launch: Launch) -> AppSpec<State> {
     if LAUNCH.set(launch).is_err() {
         log::warn!("[app] launched twice; keeping the first launch");
     }
-    let spec = AppSpec {
+    AppSpec {
         fonts: theme::FONTS,
         families: theme::FAMILIES,
         setup: Some(setup),
@@ -451,7 +510,10 @@ pub fn app(launch: Launch) -> rune::App<State> {
         on_key: Some(on_key),
         min_size: Some((360.0, 400.0)),
         ..AppSpec::new("Troupe", (1280.0, 800.0), State::default, view)
-    };
+    }
+}
+
+pub fn app_with(spec: AppSpec<State>) -> rune::App<State> {
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens.
     rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).on_ime(editor_host::on_ime)
 }

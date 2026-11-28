@@ -75,7 +75,7 @@ pub const APP_PAGES: [Page; 12] = [
         Some("Agents"),
         "KeyRound",
         "The accounts that agent chats use, and how much of each limit is used.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "ai-agents",
@@ -91,7 +91,7 @@ pub const APP_PAGES: [Page; 12] = [
         Some("Agents"),
         "GitBranch",
         "Agents your chats can hand work to, and what each one runs with.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "skills",

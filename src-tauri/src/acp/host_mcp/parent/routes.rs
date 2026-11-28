@@ -73,11 +73,6 @@ impl TurnRoutes {
             .is_some_and(|sessions| sessions.contains(session_id))
     }
 
-    /// Whether `agent_id` runs a prompt turn in any session.
-    pub(super) fn any_prompt(&self, agent_id: &str) -> bool {
-        self.prompt.lock().contains_key(agent_id)
-    }
-
     /// Every routable session of `agent_id`: prompt turns and unprompted work.
     pub(super) fn routable(&self, agent_id: &str) -> HashSet<String> {
         let mut sessions = self

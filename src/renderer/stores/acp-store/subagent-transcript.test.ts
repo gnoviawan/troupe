@@ -232,11 +232,53 @@ describe('subagent transcript ingest (live)', () => {
     toolCall({
       toolCallId: 'd1',
       status: 'completed',
-      subagentMessages: [{ seq: 4, timestamp: 9, text: 'Kept.', extra: true }, { seq: 'x' }, null]
+      subagentMessages: [
+        { seq: 4, timestamp: 9, text: 'Kept.', extra: true },
+        { seq: 5, timestamp: 10, text: 'Follow up.', sender: 'Claude Code' },
+        { seq: 'x' },
+        null
+      ]
     })
     toolCall({ toolCallId: 'd2', status: 'completed', subagentMessages: 'not a list' })
-    expect(stored('d1').subagentMessages).toEqual([{ seq: 4, timestamp: 9, text: 'Kept.' }])
+    expect(stored('d1').subagentMessages).toEqual([
+      { seq: 4, timestamp: 9, text: 'Kept.' },
+      { seq: 5, timestamp: 10, text: 'Follow up.', sender: 'Claude Code' }
+    ])
     expect(stored('d2')).not.toHaveProperty('subagentMessages')
+  })
+
+  it('keeps parent-attributed follow-up chunks separate and drops unattributed user echoes', () => {
+    toolCall({ toolCallId: 'd1', status: 'in_progress', rawInput: dispatchInput })
+    chunk('Initial pass.', 'd1')
+    useAcpStore.getState()._onMessageChunk({
+      agentId: 'agent-1',
+      sessionId: 's1',
+      role: 'user',
+      parentToolCallId: 'd1',
+      content: { type: 'text', text: 'echo without sender' }
+    })
+    useAcpStore.getState()._onMessageChunk({
+      agentId: 'agent-1',
+      sessionId: 's1',
+      role: 'user',
+      parentToolCallId: 'd1',
+      sender: 'Claude Code',
+      content: { type: 'text', text: 'Check error handling too.' }
+    })
+    _flushCoalescedForTesting()
+    chunk('Checked error handling.', 'd1')
+
+    expect(
+      stored('d1').subagentMessages?.map(({ text, sender }) => ({
+        text,
+        ...(sender ? { sender } : {})
+      }))
+    ).toEqual([
+      { text: 'Initial pass.' },
+      { text: 'Check error handling too.', sender: 'Claude Code' },
+      { text: 'Checked error handling.' }
+    ])
+    expect(useAcpStore.getState().messages.s1).toEqual([])
   })
 })
 

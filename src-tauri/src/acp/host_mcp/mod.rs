@@ -102,11 +102,11 @@ JSON, read it with your own tools and call `mcp_install`. The user approves on a
 /// agent, goes through the orchestrator, where the user sees and stops it; a
 /// short lookup stays on the client's lighter built-in subagent, which is also
 /// the fallback when the orchestrator refuses.
-pub const DELEGATION_INSTRUCTIONS: &str = "Delegate long work through Troupe: for a long or \
-parallel task, or to use a cheaper agent, call `subagent_list_agents`, `subagent_start` \
-an allowed agent with a self-contained `task`, then `subagent_wait`. Use your client's built-in \
-subagent tool for short lookups, or when Troupe sub-agents are off, none is allowed, or \
-`subagent_start` refuses.";
+pub const DELEGATION_INSTRUCTIONS: &str = "Delegate long work through Troupe: for long or \
+parallel work, or a cheaper agent, call `subagent_list_agents`, `subagent_start` \
+an allowed agent with a self-contained `task`, then `subagent_wait`; follow up with \
+`subagent_send`. Use your client's built-in subagent tool for short lookups or when sub-agents \
+are off, disallowed, or refused.";
 
 /// The context budget Claude Code gives a server's `instructions`: it keeps
 /// this many UTF-16 code units (`CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH`,
@@ -115,7 +115,8 @@ subagent tool for short lookups, or when Troupe sub-agents are off, none is allo
 pub const CLAUDE_INSTRUCTIONS_BUDGET: usize = 4096;
 
 /// Markdown affordances of the chat renderer.
-pub const TERMUL_CHAT_INSTRUCTIONS: &str = "Troupe renders your markdown replies in a rich chat UI. \
+pub const TERMUL_CHAT_INSTRUCTIONS: &str =
+    "Troupe renders your markdown replies in a rich chat UI. \
 Embed images and videos (charts, screenshots, recordings) inline with \
 `![alt](path)`: relative, absolute, `file://` and https paths render on desktop and web, and a \
 markdown link to an image or video also shows it inline. Reference files as `[label](path)` \
@@ -310,14 +311,14 @@ fn reject(text: String) -> Result<TermulBrowserInput, String> {
     Err(text)
 }
 
-fn string_field(
-    value: Option<serde_json::Value>,
-    key: &str,
-) -> Result<Option<String>, String> {
+fn string_field(value: Option<serde_json::Value>, key: &str) -> Result<Option<String>, String> {
     match value {
         None | Some(serde_json::Value::Null) => Ok(None),
         Some(serde_json::Value::String(s)) => Ok(Some(s)),
-        Some(other) => Err(format!("'{key}' must be a string, not {}", json_type_name(&other))),
+        Some(other) => Err(format!(
+            "'{key}' must be a string, not {}",
+            json_type_name(&other)
+        )),
     }
 }
 

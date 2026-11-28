@@ -31,3 +31,17 @@ fn the_screens_rows_reach_the_accessibility_tree_as_text_runs() {
     assert_eq!(runs.get(..3), Some(&["hello rows\n".to_owned(), "second line\n".to_owned(), "\n".to_owned()][..]), "{runs:?}");
     assert_eq!(runs.len(), 24, "one run per screen row");
 }
+
+#[test]
+fn a_finished_commands_dot_shows_in_the_padding_outside_the_screens_clip() {
+    let mut rt = crate::term_select::tests::shown(b"\x1b]133;A;termul\x07ls /nope\r\nno such file\r\n\x1b]133;D;2;termul\x07");
+    rt.frame(0.1);
+    let elements = rt.elements();
+    let dot = elements
+        .iter()
+        .find(|e| e.label.as_deref() == Some("Command failed (exit code 2)") && !e.exiting)
+        .expect("the failure dot");
+    assert_eq!((dot.visible[2], dot.visible[3]), (6.0, 6.0), "drawn whole, not clipped: {:?}", dot.visible);
+    let grid = elements.iter().find(|e| e.key.as_deref().is_some_and(|k| k.ends_with("-grid"))).expect("the grid").rect;
+    assert_eq!(grid[0] - (dot.rect[0] + dot.rect[2]), 5.0, "5 px left of the text");
+}

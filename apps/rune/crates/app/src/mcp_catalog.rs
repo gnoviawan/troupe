@@ -1,14 +1,14 @@
 //! The MCP catalog under the servers you added (`McpCatalogBrowser.tsx`, `McpCatalogCard.tsx`
 //! and the search and status hooks): a debounced search of `/mcp-catalog/search` with pages of
-//! 50, the catalog's source card with its sync switch, polled while it syncs, and two cards per
-//! row (one on a phone). The rules and words are `model::settings::mcp_catalog`.
+//! 50, the catalog's source card with its sync switch, polled while it syncs, and two or three
+//! cards per row by width (one on a phone). The rules and words are `model::settings::mcp_catalog`.
 
 use client::http::{HttpError, HttpRequest, Method};
 use model::settings::mcp_catalog::{self as rules, Block, More, Page, Row, Search};
 use rune::{El, TextEdit, Tx, col, row, text};
 use serde_json::{Value, json};
 use theme::Tokens;
-use ui::settings::{StatusTone, card, filter, group_with_meta, letter_tile, notice, status_word, switch_row, toned_notice};
+use ui::settings::{Heading, Layout, StatusTone, card, filter, letter_tile, section, notice, status_word, switch_row, toned_notice};
 use ui::type_::{mono, sans};
 use ui::{Button, ButtonSize, ButtonVariant};
 
@@ -30,6 +30,8 @@ pub enum CatalogFetch {
     Status(u64),
     /// `/mcp-catalog/sync`, by request number.
     Sync(u64),
+    /// An install step (`mcp_install`).
+    Install(crate::mcp_install::InstallFetch),
 }
 
 /// `McpCatalogStatusState`.
@@ -64,6 +66,13 @@ pub struct CatalogUi {
     pub active: bool,
 }
 
+impl CatalogUi {
+    #[cfg(test)]
+    pub(crate) fn search_generation(&self) -> u64 {
+        self.generation
+    }
+}
+
 fn glyph(name: &str) -> &'static rune::Icon {
     theme::icons::named(name).expect("bundled icon")
 }
@@ -86,7 +95,7 @@ fn code_of(e: &HttpError) -> String {
 }
 
 impl State {
-    fn catalog_send(&mut self, request: HttpRequest, tag: CatalogFetch) {
+    pub(crate) fn catalog_send(&mut self, request: HttpRequest, tag: CatalogFetch) {
         #[cfg(test)]
         self.mcp_ui.posted.push((request.path.clone(), request.body.clone().unwrap_or(Value::Null)));
         if let Some(host) = &mut self.host {
@@ -160,7 +169,7 @@ impl State {
     }
 
     /// The switch: `setSync`, with the choice shown until the host answers.
-    fn catalog_set_sync(&mut self, enabled: bool) {
+    pub(crate) fn catalog_set_sync(&mut self, enabled: bool) {
         log::info!("[settings.McpCatalogBrowser] sync {}", if enabled { "on" } else { "off" });
         let c = &mut self.mcp_ui.catalog;
         c.toggling = true;
@@ -216,6 +225,7 @@ impl State {
     /// A catalog answer.
     pub(crate) fn catalog_fetched(&mut self, tag: CatalogFetch, result: Result<Value, HttpError>) {
         match tag {
+            CatalogFetch::Install(tag) => return self.install_fetched(tag, result),
             CatalogFetch::Search { generation, query, append } => {
                 let c = &mut self.mcp_ui.catalog;
                 if generation != c.generation {
@@ -355,7 +365,7 @@ fn catalog_card(s: &State, t: &'static Tokens, r: &Row, block: Option<Block>) ->
             .disabled(block.is_some() || r.state != "installable")
             .build(t)
             .key("install")
-            .on_press(move |s: &mut State| s.toast_later(&format!("Installing {row_for} from the catalog")))
+            .on_press(move |s: &mut State| s.install_start(&row_for))
     };
     let head = row().key("head").w_full().gap(10.0).items_center().child(letter_tile(t, &name, 32.0)).child(title).child(action);
     let mut body = col().key(format!("catalog-{}", r.name)).role("group").label(name.clone()).gap(10.0).padding(14.0).radius(8.0).fill(c.card).border(1.0, c.border).items_stretch().child(head);
@@ -491,7 +501,14 @@ pub fn browser(s: &State, t: &'static Tokens, phone: bool) -> El {
                 ),
             ),
             Some(results) => {
-                let per_row = if phone { 1 } else { 2 };
+                // `catalogColumnsForWidth`: three columns from 860 px.
+                let per_row = if phone {
+                    1
+                } else if ui::settings::column_width() >= 860.0 {
+                    3
+                } else {
+                    2
+                };
                 let mut grid = col().key("catalog-grid").w_full().gap(12.0).items_stretch();
                 for (i, chunk) in results.rows.chunks(per_row).enumerate() {
                     let mut line = row().key(format!("line-{i}")).w_full().gap(12.0).items_stretch();
@@ -541,7 +558,7 @@ pub fn browser(s: &State, t: &'static Tokens, phone: bool) -> El {
         content.push(notice(t, "install-block", block.text()));
     }
     let meta = shown.map(rules::summary).unwrap_or_default();
-    group_with_meta(t, "mcp-catalog", "From the catalog", &meta, vec![], content)
+    section(t, "mcp-catalog", Heading { title: "From the catalog", meta: &meta, ..Heading::default() }, Layout::Stacked, vec![], content)
 }
 
 #[cfg(test)]

@@ -243,6 +243,59 @@ pub(super) fn cwd_string<T>(resolved: &std::path::Path) -> Result<String, RouteE
     Ok(simplified)
 }
 
+/// `FORBIDDEN` when `path` under `cwd` is a host credential or a directory
+/// holding one (`web::host_secrets`): a diff would print it, and staging it
+/// would let a commit and push carry it off the host. A `..`, root or drive
+/// component is refused first (`PATH_TRAVERSAL`): git resolves `..` even
+/// where the filesystem cannot (`missing/../host-local.token`), so the
+/// secrets check could not see where such a path lands.
+pub(super) fn host_secret_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T>> {
+    use std::path::Component;
+    if Path::new(path).components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    }) {
+        tracing::warn!("[Security] a git route refused a path leaving the repository");
+        return Some((
+            StatusCode::OK,
+            Json(IpcBody::<T>::err(
+                "the path must be relative to the repository, without '..'",
+                "PATH_TRAVERSAL",
+            )),
+        ));
+    }
+    host_credential_refusal(cwd, path)
+}
+
+/// `FORBIDDEN` when `path` under `cwd` is a host credential or a directory
+/// holding one. Callers refuse `..` first ([`host_secret_refusal`]) or rely
+/// on their own relative-path check.
+pub(super) fn host_credential_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T>> {
+    if !crate::web::host_secrets::exposed(&Path::new(cwd).join(path)) {
+        return None;
+    }
+    tracing::warn!("[Security] a git route refused a host credential path");
+    Some((
+        StatusCode::OK,
+        Json(IpcBody::<T>::err(
+            "this path holds a host credential and is not served",
+            "FORBIDDEN",
+        )),
+    ))
+}
+
+/// The top of the work tree `cwd` is in, if git can tell.
+fn git_work_tree(cwd: &str) -> Option<String> {
+    let output = GitTracker::run_git_command(cwd, &["rev-parse", "--show-toplevel"])?;
+    if !output.status.success() {
+        return None;
+    }
+    let top = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    (!top.is_empty()).then_some(top)
+}
+
 // ============================ Route handlers ============================
 
 /// `POST /git/status` — list modified/staged/untracked entries.
@@ -297,6 +350,9 @@ pub async fn get_diff(
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    if let Some(refused) = host_secret_refusal::<String>(&cwd, &req.path) {
+        return refused;
+    }
     let cwd_for_log = cwd.clone();
     let path = req.path;
     let staged = req.staged;
@@ -644,6 +700,29 @@ pub async fn stash_save(
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    // `stash -u` moves every untracked file of the work tree into the stash,
+    // from where it can be applied anywhere: never with a host credential
+    // in the tree.
+    if req.include_untracked.unwrap_or(false) {
+        let probe = cwd.clone();
+        let work_tree = tokio::task::spawn_blocking(move || git_work_tree(&probe))
+            .await
+            .ok()
+            .flatten();
+        let Some(work_tree) = work_tree else {
+            tracing::warn!("[Security] stash -u refused: the work tree could not be found");
+            return (
+                StatusCode::OK,
+                Json(IpcBody::<()>::err(
+                    "cannot tell which work tree a stash with untracked files would move",
+                    "FORBIDDEN",
+                )),
+            );
+        };
+        if let Some(refused) = host_secret_refusal::<()>(&work_tree, "") {
+            return refused;
+        }
+    }
     let body = run_http(
         state.relay.ledger(),
         &headers,
@@ -912,6 +991,9 @@ async fn run_git_path_write(
         Ok(s) => s,
         Err((st, body)) => return (st, body),
     };
+    if let Some(refused) = host_secret_refusal::<()>(&cwd, &req.path) {
+        return refused;
+    }
     let (raw_cwd, req_path) = (req.cwd, req.path);
     let body = run_http(
         state.relay.ledger(),

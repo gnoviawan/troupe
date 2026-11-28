@@ -56,10 +56,12 @@ pub struct ServerDialog {
     /// Save was pressed on an invalid form: its errors show from then on.
     pub show_errors: bool,
     pub saving: bool,
+    /// The JSON view, while it shows instead of the form.
+    pub json: Option<crate::settings_mcp_json::JsonView>,
 }
 
 impl ServerDialog {
-    fn of(draft: &Draft, editing: Option<Object>) -> Self {
+    pub(crate) fn of(draft: &Draft, editing: Option<Object>) -> Self {
         let advanced = draft.remote.transport_pinned || (draft.remote.auth == Auth::Browser && draft.remote.headers.iter().any(|r| !r.name.trim().is_empty()));
         Self {
             editing,
@@ -75,6 +77,7 @@ impl ServerDialog {
             advanced,
             show_errors: false,
             saving: false,
+            json: None,
         }
     }
 
@@ -173,22 +176,33 @@ impl State {
             }
         };
         dialog.saving = true;
-        let mut server = config.clone();
         match dialog.editing.clone() {
             None => {
+                let mut server = config;
                 server.insert("id".into(), json!(crate::ids::uuid()));
                 server.insert("enabled".into(), json!(true));
                 self.mcp_write(Action::Add(1), Event::ImportMcpServers(vec![server]));
             }
             Some(target) => {
-                server.insert("id".into(), target["id"].clone());
-                server.insert("enabled".into(), json!(target.get("enabled") != Some(&json!(false))));
-                if let Some(catalog) = target.get("catalog").filter(|_| rules::same_launch(&target, &config)) {
-                    server.insert("catalog".into(), catalog.clone());
-                }
-                self.mcp_write(Action::Edit, Event::SaveMcpServer(server));
+                let enabled = target.get("enabled") != Some(&json!(false));
+                self.mcp_commit_edit(&target, config, enabled);
             }
         }
+    }
+
+    /// `commitEdit`: the config over the target's id, keeping its catalog record while the launch is the same.
+    pub(crate) fn mcp_commit_edit(&mut self, target: &Object, config: Object, enabled: bool) {
+        let mut server = config.clone();
+        server.insert("id".into(), target["id"].clone());
+        server.insert("enabled".into(), json!(enabled));
+        if let Some(catalog) = target.get("catalog").filter(|_| rules::same_launch(target, &config)) {
+            server.insert("catalog".into(), catalog.clone());
+        }
+        self.mcp_write(Action::Edit, Event::SaveMcpServer(server));
+    }
+
+    pub(crate) fn mcp_dialog_saving(&mut self) {
+        self.with_dialog(|d| d.saving = true);
     }
 
     /// A write the dialog sent answered: the form is no longer saving.
@@ -487,10 +501,13 @@ fn local_fields(t: &'static Tokens, d: &ServerDialog, errors: &[(Field, String)]
 /// The Add or Edit dialog, in its form view.
 /// What the dialog's header, footer and padding take: the form scrolls in the rest of 90% of
 /// the window (`max-h-[90dvh] overflow-y-auto`).
-const DIALOG_CHROME: f32 = 190.0;
+pub(crate) const DIALOG_CHROME: f32 = 190.0;
 
 pub fn server_dialog(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mut Vec<El>) {
     let Some(d) = &s.mcp_ui.dialog else { return };
+    if let Some(view) = &d.json {
+        return crate::settings_mcp_json::json_dialog(t, d, view, height, layer);
+    }
     let errors = if d.show_errors { rules::draft_to_config(&d.draft()).err().unwrap_or_default() } else { Vec::new() };
     let mut menus = Vec::new();
     let name = Input::new(&d.name)
@@ -523,11 +540,19 @@ pub fn server_dialog(s: &State, t: &'static Tokens, phone: bool, height: f32, la
         (false, true) => "Add server",
         (false, false) => "Save",
     };
+    let json_link = Button::new(if adding { "Import JSON instead" } else { "Edit as JSON" })
+        .variant(ButtonVariant::Link)
+        .size(ButtonSize::Sm)
+        .disabled(d.saving)
+        .build(t)
+        .key("show-json")
+        .on_press(|s: &mut State| s.mcp_show_json());
     let save = Button::new(save_label).size(ButtonSize::Sm).disabled(d.saving).build(t).key("save").on_press(|s: &mut State| s.save_mcp_dialog());
     Dialog::new("mcp-server-dialog", if adding { "Add MCP server" } else { "Edit MCP server" })
         .description(if adding { "Where does this server run? The setup page or README usually tells you." } else { "Change how Troupe reaches this server." })
         .width(576.0)
         .child(col().key("mcp-form-scroll").w_full().max_h((height * 0.9 - DIALOG_CHROME).max(160.0)).child(body).scroll(rune::ScrollSpec { stick_bottom: false }))
+        .footer(json_link)
         .footer(cancel)
         .footer(save)
         .open(true)

@@ -15,7 +15,7 @@ name: Rune
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*", "rune/r7a-terminal-*", "rune/r7b-terminal-*", "rune/r8a-editor-*"]
+    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*", "rune/r7a-terminal-*", "rune/r7b-terminal-*", "rune/r8a-editor-*", "rune/r10a-*"]
     paths:
       - '.github/workflows/rune.yml'
       - 'apps/rune/**'
@@ -93,6 +93,14 @@ on:
       - 'src/renderer/lib/mcp-server-draft.ts'
       - 'src/renderer/components/settings/mcp-server-view.ts'
       - 'src/renderer/lib/mcp-catalog-copy.ts'
+      - 'src/renderer/lib/mcp-json-import.ts'
+      - 'src/renderer/components/settings/McpInstallForm.tsx'
+      - 'src/renderer/hooks/use-mcp-catalog-install.ts'
+      - 'src/renderer/pages/app-preferences/subagent-profiles/profile-model.ts'
+      - 'src/renderer/lib/claude-usage-format.ts'
+      - 'src/renderer/lib/codex-usage-format.ts'
+      - 'src/renderer/lib/antigravity-usage-format.ts'
+      - 'src/renderer/components/settings/provider/account-status.tsx'
       - 'src/renderer/stores/acp-reuse-keys.ts'
       - 'src/renderer/stores/acp-store/agent-roster-watch.ts'
       - 'src/renderer/stores/acp-store/browser-agent-tabs.ts'
@@ -268,6 +276,17 @@ jobs:
           icd=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json | head -1)
           VK_ICD_FILENAMES="$icd" ./target/debug/troupe-dev --snap troupe-dev-Linux.png
 
+      # The desktop app (troupe-preview). A headless run starts no server, so this
+      # draws the shell unconnected at the desktop window's 1200x800 default.
+      - name: Snapshot the desktop app (Linux)
+        if: runner.os == 'Linux'
+        working-directory: apps/rune
+        run: |
+          cargo build -p troupe-desktop
+          icd=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json | head -1)
+          TROUPE_PREVIEW_DATA_DIR="$RUNNER_TEMP/troupe-preview" VK_ICD_FILENAMES="$icd" \
+            ./target/debug/troupe-preview --snap troupe-preview-Linux.png
+
       # `cargo test` built the gallery binary; renders one design-system scene.
       - name: Snapshot the gallery (Linux)
         if: runner.os == 'Linux'
@@ -315,6 +334,13 @@ jobs:
         with:
           name: troupe-dev-Linux
           path: apps/rune/troupe-dev-Linux.png
+
+      - name: Upload the desktop app snapshot (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: troupe-preview-Linux
+          path: apps/rune/troupe-preview-Linux.png
 
       - name: Upload driven frame (Linux)
         if: runner.os == 'Linux'

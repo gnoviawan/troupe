@@ -52,9 +52,11 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::git_view::dialogs(s, t, &mut layer);
     crate::automations_view::dialogs(s, t, &mut layer);
     crate::automation_editor_view::dialogs(s, t, &mut layer);
-    crate::settings_view::build(s, t, phone, window.1, &mut layer);
+    crate::settings_view::build(s, t, phone, window, &mut layer);
     crate::snapshots_view::dialogs(s, t, phone, &mut layer);
     crate::bug_report::build(s, t, phone, &mut layer);
+    ui::canvas::view::unmount_confirms(s, |s: &State| &s.canvases, |s: &mut State| &mut s.canvases, t, &mut layer);
+    s.sync_canvas_slots(cx, phone, !layer.is_empty());
     layer.push(
         row()
             .key("toaster-layer")
@@ -65,7 +67,13 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
                 |id| Some(Box::new(move |s: &mut State| s.run_undo(id)) as Box<dyn Fn(&mut State)>),
             )),
     );
-    ui::overlay::root(root, layer)
+    match crate::shell_bar().filter(|_| !phone) {
+        Some(bar) => {
+            let bar = bar(s, t, &mut layer);
+            ui::overlay::root(col().w_full().h_full().child(bar).child(root.grow(1.0).min_h(0.0)), layer)
+        }
+        None => ui::overlay::root(root, layer),
+    }
 }
 
 fn workspace(s: &mut State) -> &mut ui::workspace::Workspace {
@@ -213,6 +221,7 @@ fn main_area(
                 .or_else(|| crate::github_item_view::tab_body(s, t, tab, false, &mut menus.borrow_mut()))
                 .or_else(|| editor_body(s, t, tab))
                 .or_else(|| crate::automations_view::tab_body(s, t, tab, false))
+                .or_else(|| s.canvas_tab_body(t, tab, false))
         };
         let slots = ui::workspace::Slots {
             leading,
@@ -455,6 +464,11 @@ fn workspace_main(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     }
     if let Some(tab @ model::workspace::Tab::Automations { .. }) = active_phone_tab(s)
         && let Some(body) = crate::automations_view::tab_body(s, t, tab, true)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
+    }
+    if let Some(tab @ model::workspace::Tab::Canvas { .. }) = active_phone_tab(s)
+        && let Some(body) = s.canvas_tab_body(t, tab, true)
     {
         return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
     }

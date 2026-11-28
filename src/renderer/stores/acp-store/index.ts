@@ -373,16 +373,17 @@ async function installTransportRecovery(
       // Subagent text is transparent to the run (host fold parity) and
       // belongs to its dispatch card.
       if (typeof payload.parentToolCallId === 'string' && payload.parentToolCallId) {
-        const text = subagentChunkText(payload.role, payload.content)
+        const parsed = subagentChunkText(payload.role, payload.content, payload.sender)
         const idx = recoveredToolCalls.findIndex((t) => t.toolCallId === payload.parentToolCallId)
-        if (text !== null && idx !== -1) {
+        if (parsed !== null && idx !== -1) {
           recoveredToolCalls[idx] = withSubagentText(
             recoveredToolCalls[idx],
-            text,
+            parsed.text,
             {
               seq: event.seq,
               timestamp: Date.now(),
-              messageId: typeof payload.messageId === 'string' ? payload.messageId : undefined
+              messageId: typeof payload.messageId === 'string' ? payload.messageId : undefined,
+              sender: parsed.sender
             },
             recoveredToolCalls
           )

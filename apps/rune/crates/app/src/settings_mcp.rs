@@ -10,7 +10,7 @@ use model::settings::mcp::{self as rules, Object, Tone};
 use rune::{El, TextEdit, col, row, text};
 use serde_json::{Value, json};
 use theme::Tokens;
-use ui::settings::{StatusTone, card, empty_state, filter, group, group_with_meta, letter_tile, status_word, toned_notice};
+use ui::settings::{Heading, Layout, StatusTone, card, described, empty_state, filter, group, group_with_meta, letter_tile, section, status_word, toned_notice};
 use ui::type_::{mono, sans};
 use ui::{Button, ButtonSize, ButtonVariant, Switch};
 
@@ -34,6 +34,8 @@ pub enum Action {
     /// The dialog's Add, with how many servers it adds.
     Add(usize),
     Edit,
+    /// A catalog install's commit, saved into the registry.
+    Install,
 }
 
 impl Action {
@@ -45,6 +47,7 @@ impl Action {
             Action::Toggle => "Could not update the MCP server. Your previous setting was restored.",
             Action::Add(_) => "Could not save the MCP servers. Your previous settings were restored.",
             Action::Edit => "Could not save the MCP server. Your previous settings were restored.",
+            Action::Install => "Troupe couldn't save the server after you approved it. Start over to try again.",
         }
     }
 }
@@ -64,11 +67,14 @@ pub struct McpUi {
     /// Page writes in the order the model saves them.
     pub actions: VecDeque<Action>,
     pub rejection: Option<OnReject>,
+    /// The model may run a queued registry write in this step: a page write or a registry answer.
+    pub registry_step: bool,
     pub polls: Vec<Poll>,
     pub dialog: Option<crate::settings_mcp_dialog::ServerDialog>,
     pub paste: crate::settings_mcp_dialog::PasteUi,
     /// The catalog under the added servers.
     pub catalog: crate::mcp_catalog::CatalogUi,
+    pub install: crate::mcp_install::InstallUi,
     /// Every POST this client sent, for the tests (a test state has no host).
     #[cfg(test)]
     pub posted: Vec<(String, Value)>,
@@ -117,7 +123,7 @@ impl State {
         rules::status(enabled(server), self.mcp_flag(&self.chat.acp.mcp_probing, id), self.probe_status(id))
     }
 
-    fn mcp_project(&self) -> String {
+    pub(crate) fn mcp_project(&self) -> String {
         self.active_project().map(|p| p.id.clone()).unwrap_or_default()
     }
 
@@ -171,7 +177,9 @@ impl State {
     /// A page write: the model saves it, and `mcp_host` answers with what the page does next.
     pub(crate) fn mcp_write(&mut self, action: Action, event: Event) {
         self.mcp_ui.actions.push_back(action);
+        self.mcp_ui.registry_step = true;
         self.acp_step(event);
+        self.mcp_ui.registry_step = false;
     }
 
     /// The page's write landed.
@@ -193,6 +201,7 @@ impl State {
                 self.toasts.push(self.now, ui::overlay::ToastKind::Success, "MCP server updated", None);
                 self.close_mcp_dialog();
             }
+            Action::Install => self.install_saved(true),
         }
         self.mcp_settle();
     }
@@ -260,12 +269,19 @@ pub fn page(s: &State, t: &'static Tokens, phone: bool) -> Vec<El> {
             "Add a stdio, HTTP, or SSE server, or install one from the catalog below. New agent chats can then use its tools.",
             Some(add()),
         );
-        return vec![group(t, "mcp-added", "Added", vec![], vec![empty]), later];
+        return vec![section(t, "mcp-added", Heading { title: "Added", ..Heading::default() }, Layout::Stacked, vec![], vec![empty]), later];
     }
     let on = servers.iter().filter(|s| enabled(s)).count();
     let plural = if servers.len() == 1 { "" } else { "s" };
     let meta = format!("{} server{plural} · {on} on", servers.len());
-    let per_row = if phone { 1 } else { 2 };
+    // `sm:grid-cols-2 @[56rem]/settings:grid-cols-3`.
+    let per_row = if phone {
+        1
+    } else if ui::settings::column_width() >= 896.0 {
+        3
+    } else {
+        2
+    };
     let cards: Vec<El> = servers.iter().map(|server| server_card(s, t, server)).collect();
     let mut grid = col().key("mcp-grid").w_full().gap(12.0).items_stretch();
     let mut cards = cards.into_iter();
@@ -286,7 +302,7 @@ pub fn page(s: &State, t: &'static Tokens, phone: bool) -> Vec<El> {
         grid = grid.child(r);
         line += 1;
     }
-    vec![group_with_meta(t, "mcp-added", "Added", &meta, vec![add()], vec![grid]), later]
+    vec![section(t, "mcp-added", Heading { title: "Added", meta: &meta, ..Heading::default() }, Layout::Stacked, vec![add()], vec![grid]), later]
 }
 
 fn switch(t: &Tokens, server: &Object) -> El {
@@ -530,15 +546,17 @@ fn detail(s: &State, t: &'static Tokens, server: &Object, phone: bool) -> Vec<El
                 .key("remove")
                 .on_press(move |s: &mut State| s.remove_mcp_server(&target)),
         );
+    // The server's header sits above Connection, so Connection draws its hairline.
+    ui::settings::after_lead();
     vec![col()
         .key("mcp-server-detail")
         .w_full()
-        .gap(32.0)
+        .gap(if ui::settings::split() { 24.0 } else { 32.0 })
         .items_stretch()
         .child(top)
         .child(group(t, "connection", "Connection", actions, connection))
         .child(tools(s, t, server, phone))
-        .child(remove)]
+        .child(described(t, "mcp-remove", "Remove", "Stop offering this server's tools to new chats.", vec![], vec![remove]))]
 }
 
 /// `ToolsGroup`: the first five, a filter once there are more, and Show all.

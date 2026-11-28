@@ -353,6 +353,7 @@ pub(super) async fn run_command_loop(
                 additional_directories,
                 mcp_servers,
                 import_history,
+                child_origin,
                 reply,
             } => {
                 let slot = reply_slot(reply);
@@ -392,7 +393,7 @@ pub(super) async fn run_command_loop(
                     // The reservation acquired by the command loop is held for
                     // the whole reopen; the RAII guard releases it on every
                     // outcome (success, agent error, timeout, early return).
-                    let _reopen_reservation = reopen_reservation;
+                    let reopen_reservation = reopen_reservation;
                     // Reinstall the durable writer BEFORE sending session/load
                     // so POST-window live events (the follow-up prompt's
                     // chunks, status updates, last_seq-derived title-gen) are
@@ -405,13 +406,16 @@ pub(super) async fn run_command_loop(
                     // from the on-disk catalog before the agent starts
                     // streaming. Idempotent (no-op if already installed) and
                     // non-fatal (unknown/ephemeral id surfaces SessionNotFound,
-                    // logged + skipped).
-                    if let Some(persistence) = &req_persistence {
-                        if let Err(error) = persistence.reopen_writer(&session_id.0).await {
-                            log::warn!(
-                                "[acp] session {} reopen_writer failed: {error} (continuing load)",
-                                crate::logging::redact_session_id(&session_id.0)
-                            );
+                    // logged + skipped). Orchestrated child sessions are
+                    // ephemeral and skip durable writer reinstall.
+                    if child_origin.is_none() {
+                        if let Some(persistence) = &req_persistence {
+                            if let Err(error) = persistence.reopen_writer(&session_id.0).await {
+                                log::warn!(
+                                    "[acp] session {} reopen_writer failed: {error} (continuing load)",
+                                    crate::logging::redact_session_id(&session_id.0)
+                                );
+                            }
                         }
                     }
                     if answer_reopen_of_held_session(&req_state, &session_id.0, "load", &task_slot)
@@ -434,7 +438,7 @@ pub(super) async fn run_command_loop(
                     } else {
                         ReplayWindowGuard::try_new(req_state.clone(), session_id.0.to_string())
                     };
-                    let Some(_replay_guard) = replay_guard else {
+                    let Some(replay_guard) = replay_guard else {
                         log::warn!(
                             "[acp] session {} load rejected: prompt turn active or history import open (ACP_REOPEN_TURN_ACTIVE)",
                             crate::logging::redact_session_id(&session_id.0)
@@ -464,6 +468,27 @@ pub(super) async fn run_command_loop(
                         send_with_legacy_models(&req_cx, request),
                     )
                     .await;
+                    if let Ok(outcome) = &result {
+                        if let Some(id) =
+                            events::model_config_id_from_options(outcome.config_options.as_deref())
+                        {
+                            req_state
+                                .lock()
+                                .set_model_config_id(session_id.0.clone(), id);
+                        }
+                        // Seed an orchestrated child's route only AFTER
+                        // `session/load` succeeds so its replayed history was
+                        // dropped by the replay window above and never
+                        // duplicated into the chat.
+                        if let Some(origin) = &child_origin {
+                            let mut state = req_state.lock();
+                            state.mark_ephemeral(session_id.0.clone());
+                            state.seed_child_route(origin, &session_id.0);
+                            if origin.auto_approve {
+                                state.auto_approve(session_id.0.clone());
+                            }
+                        }
+                    }
                     if import_history && result.is_ok() {
                         if let Err(error) = finish_history_import(
                             &req_state,
@@ -474,11 +499,18 @@ pub(super) async fn run_command_loop(
                             result = Err(error);
                         }
                     }
-                    if let (Ok(outcome), Some(persistence)) = (&result, &req_persistence) {
-                        persistence
-                            .record_session_model(&session_id.0, outcome.models.as_ref())
-                            .await;
+                    if child_origin.is_none() {
+                        if let (Ok(outcome), Some(persistence)) = (&result, &req_persistence) {
+                            persistence
+                                .record_session_model(&session_id.0, outcome.models.as_ref())
+                                .await;
+                        }
                     }
+                    // Release both guards before waking the caller so an
+                    // immediate `SendPrompt` cannot race their drop and hit
+                    // `ACP_TURN_IN_PROGRESS`.
+                    drop(replay_guard);
+                    drop(reopen_reservation);
                     send_reply(&task_slot, result);
                 });
             }
@@ -1311,6 +1343,7 @@ pub(super) async fn run_command_loop(
             AcpCommand::UpsertSubagent {
                 record,
                 content,
+                allow_resume,
                 reply,
             } => {
                 let slot = reply_slot(reply);
@@ -1323,11 +1356,12 @@ pub(super) async fn run_command_loop(
                     let now = crate::acp::session_persistence::now_millis();
                     let updates = {
                         let mut state = req_state.lock();
-                        super::native_subagents::orchestrated_updates(
+                        super::native_subagents::orchestrated_updates_with(
                             &mut state,
                             record,
                             content.as_deref(),
                             now,
+                            allow_resume,
                         )
                     };
                     let result = super::native_subagents::deliver_routed(

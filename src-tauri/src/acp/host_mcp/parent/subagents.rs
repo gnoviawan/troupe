@@ -10,17 +10,17 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 
 use super::HostPlanServer;
+use crate::acp::config::{AgentId, SessionId};
 use crate::acp::host_mcp::subagent_tools::{
-    SubagentRefInput, SubagentStartInput, SubagentStatusInput, SubagentTool, SubagentWaitInput,
-    SubagentWorkspaceInput, WAIT_MAX_MS, WAIT_MIN_MS,
+    SubagentRefInput, SubagentSendInput, SubagentStartInput, SubagentStatusInput, SubagentTool,
+    SubagentWaitInput, SubagentWorkspaceInput, WAIT_MAX_MS, WAIT_MIN_MS,
 };
 use crate::acp::host_mcp::FrameReply;
 use crate::acp::orchestrator::{
-    CallerRef, OrchestratorEngine, RunId, RunState, RunSummary, StartError, StartRequest,
-    StopError, StopOutcome, WaitOutcome,
+    CallerRef, OrchestratorEngine, RunId, RunState, RunSummary, SendError, SendRequest, StartError,
+    StartRequest, StopError, StopOutcome, WaitOutcome,
 };
 use crate::acp::subagents::SubagentWorkspaceMode;
-use crate::acp::config::{AgentId, SessionId};
 
 /// A refused call: the wire code and its agent-facing message, sent as
 /// `{code, message}` (the automation tools' refusal shape).
@@ -53,6 +53,22 @@ fn start_refusal(error: &StartError) -> FrameReply {
         StartError::InvalidInput(_) => "invalid_input",
         StartError::WorkspaceUnavailable(_) => "workspace_failed",
         StartError::SpawnFailed(_) => "spawn_failed",
+    };
+    refusal(code, error.to_string())
+}
+
+fn send_refusal(error: &SendError) -> FrameReply {
+    let code = match error {
+        SendError::NotFound => "not_found",
+        SendError::InvalidInput(_) => "invalid_input",
+        SendError::Disabled => "disabled",
+        SendError::UnknownAgent(_) => "unknown_agent",
+        SendError::AgentNotAllowed(_) => "agent_not_allowed",
+        SendError::Capacity { .. } => "capacity",
+        SendError::Busy(_) => "busy",
+        SendError::NotResumable(_) => "not_resumable",
+        SendError::SessionUnloadable(_) => "session_unloadable",
+        SendError::SpawnFailed(_) => "spawn_failed",
     };
     refusal(code, error.to_string())
 }
@@ -138,6 +154,10 @@ impl HostPlanServer {
             SubagentTool::ListAgents => list_agents(&engine),
             SubagentTool::Start => match parse::<SubagentStartInput>(input) {
                 Ok(input) => start(engine, caller, input, hung_up).await,
+                Err(message) => refusal("invalid_input", message),
+            },
+            SubagentTool::Send => match parse::<SubagentSendInput>(input) {
+                Ok(input) => send(engine, caller, input, hung_up).await,
                 Err(message) => refusal("invalid_input", message),
             },
             SubagentTool::Wait => match parse::<SubagentWaitInput>(input) {
@@ -236,6 +256,47 @@ async fn start(
     }
 }
 
+/// Runs on its own task so a client cancel hangs up cleanly without dropping a
+/// resume mid-flight: `abandoned` signals the engine to tear down a partial
+/// relaunch and restore the run.
+async fn send(
+    engine: std::sync::Arc<OrchestratorEngine>,
+    caller: CallerRef,
+    input: SubagentSendInput,
+    hung_up: impl Future<Output = ()>,
+) -> FrameReply {
+    let request = SendRequest {
+        subagent_id: input.subagent_id,
+        message: input.message,
+        interrupt: input.interrupt.unwrap_or(false),
+    };
+    let abandoned = tokio_util::sync::CancellationToken::new();
+    let mut task = {
+        let abandoned = abandoned.clone();
+        tokio::spawn(async move { engine.send_until(caller, request, abandoned).await })
+    };
+    let sent = tokio::select! {
+        biased;
+        sent = &mut task => sent,
+        () = hung_up => {
+            abandoned.cancel();
+            return FrameReply::err("the caller hung up");
+        }
+    };
+    match sent {
+        Ok(Ok(outcome)) => FrameReply::ok_with(json!({
+            "subagentId": outcome.run.0,
+            "state": state_name(outcome.state),
+            "queued": outcome.queued,
+        })),
+        Ok(Err(error)) => send_refusal(&error),
+        Err(error) => {
+            log::error!("[host-mcp] subagent_send task failed: {error}");
+            refusal("internal", "the host could not send the follow-up message")
+        }
+    }
+}
+
 async fn wait(
     engine: &OrchestratorEngine,
     caller: CallerRef,
@@ -262,7 +323,11 @@ async fn wait(
     }
 }
 
-fn status(engine: &OrchestratorEngine, caller: CallerRef, input: SubagentStatusInput) -> FrameReply {
+fn status(
+    engine: &OrchestratorEngine,
+    caller: CallerRef,
+    input: SubagentStatusInput,
+) -> FrameReply {
     let runs = input
         .subagent_ids
         .filter(|ids| !ids.is_empty())

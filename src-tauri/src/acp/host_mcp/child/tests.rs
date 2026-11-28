@@ -272,6 +272,7 @@ async fn initialize_advertises_the_chat_and_canvas_instructions() {
             "load its definition (for example with tool search)",
             "Delegate long work through Troupe",
             "`subagent_list_agents`, `subagent_start` an allowed agent",
+            "`subagent_send`",
             "Use your client's built-in subagent tool for short lookups",
             "call `comu_guide` first, then use the `comu_*` tools",
         ] {
@@ -692,6 +693,7 @@ const HOST_TOOLS: [&str; 24] = [
     "set_session_title",
     "start_chat",
     "subagent_list_agents",
+    "subagent_send",
     "subagent_start",
     "subagent_status",
     "subagent_stop",

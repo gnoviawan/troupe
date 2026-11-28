@@ -3,7 +3,10 @@
 //! stepper, the notice, the empty state, the filter well and the segmented switch. The window
 //! shell and the pages are the app's; these hold the look.
 
+mod group;
 pub mod pages;
+
+pub use group::{COLUMN, Heading, Layout, SPLIT_FROM, after_lead, column_width, described, group, group_with_meta, page, section, split, split_heading, split_row};
 
 use rune::{El, TextEdit, col, el, icon, row, text, text_input};
 use theme::Tokens;
@@ -12,8 +15,6 @@ use crate::Switch;
 use crate::paint::shadows;
 use crate::type_::sans;
 
-/// The page column's widest (`SETTINGS_COLUMN_CLASS`, `max-w-[640px]`).
-pub const COLUMN: f32 = 640.0;
 /// The rail's width at `md` and up (`md:w-60`).
 pub const RAIL: f32 = 240.0;
 
@@ -27,36 +28,6 @@ pub fn header(t: &Tokens, title: &str, description: &str) -> El {
         .pb(32.0)
         .child(text(title).font(sans(20.0, 500.0, 28.0)).color(c.foreground).role("heading"))
         .child(text(description).font(sans(14.0, 400.0, 20.0)).color(c.muted_foreground).wrap())
-}
-
-/// `SettingsGroup`: a 14/20 heading, its actions at the right, then 12 px, then `content`.
-pub fn group(t: &Tokens, key: &str, title: &str, actions: Vec<El>, content: Vec<El>) -> El {
-    group_with_meta(t, key, title, "", actions, content)
-}
-
-/// `SettingsGroup` with its `meta`: a 12 px note after the heading, such as a count.
-pub fn group_with_meta(t: &Tokens, key: &str, title: &str, meta: &str, actions: Vec<El>, content: Vec<El>) -> El {
-    let c = &t.colors;
-    let mut head = row().key("head").w_full().min_h(28.0).items_center().justify_between().gap(12.0);
-    if !title.is_empty() {
-        let mut words = row().key("title").min_w(0.0).gap(8.0).items_center().child(text(title).font(sans(14.0, 500.0, 20.0)).color(c.foreground).role("heading"));
-        if !meta.is_empty() {
-            words = words.child(text(meta).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).single_line().truncate());
-        }
-        head = head.child(words);
-    }
-    if !actions.is_empty() {
-        head = head.child(row().key("actions").gap(8.0).items_center().children(actions));
-    }
-    col()
-        .key(key.to_owned())
-        .role("group")
-        .label(title.to_owned())
-        .w_full()
-        .gap(12.0)
-        .items_stretch()
-        .child(head)
-        .children(content)
 }
 
 /// `SettingsCard`: the card fill, a 0.5 px edge and the control drop, radius 8, its rows split by
@@ -80,8 +51,21 @@ pub fn card(t: &Tokens, key: &str, rows: Vec<El>) -> El {
     shadows(body, &t.shadows.shadow_control)
 }
 
-/// `SettingsRow`: the label and help on the left, the control on the right.
+/// The settings column width below which a row puts its control under its label (`35rem`).
+const STACK_BELOW: f32 = 560.0;
+
+/// `SettingsRow`: the label and help on the left, the control on the right. In a settings
+/// column narrower than 560 px the control goes on its own line under them.
 pub fn setting(t: &Tokens, key: &str, label: &str, description: &str, control: Option<El>) -> El {
+    let width = column_width();
+    match control {
+        Some(control) if width > 0.0 && width < STACK_BELOW => setting_stacked(t, key, label, description, control),
+        control => inline_setting(t, key, label, description, control),
+    }
+}
+
+/// `SettingsRow` `layout="inline"`: the control stays on the label's line at any width.
+fn inline_setting(t: &Tokens, key: &str, label: &str, description: &str, control: Option<El>) -> El {
     let c = &t.colors;
     let mut words = col()
         .key("words")
@@ -133,7 +117,7 @@ pub fn setting_stacked(t: &Tokens, key: &str, label: &str, description: &str, co
 /// `on_press` to the switch through `wire`.
 pub fn switch_row(t: &Tokens, key: &str, label: &str, description: &str, checked: bool, wire: impl FnOnce(El) -> El) -> El {
     let toggle = wire(Switch::new(checked).label(label).build(t).key(format!("{key}-switch")));
-    setting(t, key, label, description, Some(toggle))
+    inline_setting(t, key, label, description, Some(toggle))
 }
 
 /// A stepper's parts: the value as shown and whether each button is at its limit.
@@ -224,6 +208,7 @@ pub enum Tone {
     Info,
     Warning,
     Danger,
+    Success,
 }
 
 /// `SettingsNotice` in `tone`: the tone's edge, wash and glyph.
@@ -233,6 +218,7 @@ pub fn toned_notice(t: &Tokens, key: &str, tone: Tone, body: &str) -> El {
         Tone::Info => ("Info", c.muted_foreground, c.border, c.foreground.alpha(0.03)),
         Tone::Warning => ("AlertTriangle", c.warning, c.warning.alpha(0.2), c.warning.alpha(0.1)),
         Tone::Danger => ("AlertCircle", c.destructive, c.destructive.alpha(0.2), c.destructive.alpha(0.1)),
+        Tone::Success => ("CheckCircle2", c.success, c.success.alpha(0.2), c.success.alpha(0.1)),
     };
     let g = theme::icons::named(glyph).expect("bundled icon");
     row()

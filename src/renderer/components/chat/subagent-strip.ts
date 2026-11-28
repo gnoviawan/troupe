@@ -265,10 +265,15 @@ function lastLine(text: string | undefined): string | undefined {
   return undefined
 }
 
-/** The subagent's newest message; undefined when it wrote nothing or only whitespace. */
+/** The subagent's newest message (excluding parent follow-ups); undefined when it wrote nothing or only whitespace. */
 export function lastSubagentMessage(toolCall: ToolCall): string | undefined {
-  const text = toolCall.subagentMessages?.at(-1)?.text
-  return text?.trim() ? text : undefined
+  const messages = toolCall.subagentMessages ?? []
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (!message || message.sender) continue
+    if (message.text.trim()) return message.text
+  }
+  return undefined
 }
 
 /**

@@ -12,7 +12,8 @@ use crate::ssh::config_parser;
 use crate::ssh::connection::SshConnection;
 use crate::ssh::keys::{self, KeyFileInfo};
 use crate::ssh::profile_manager::SSHProfile;
-use crate::ssh::session::{OpenedSession, SessionInfo, SessionTarget};
+use crate::ssh::service::{self, SSHSessionOpenRequest, SSHSessionOpenResponse, SshResult};
+use crate::ssh::session::SessionInfo;
 use crate::ssh::sftp as sftp_ops;
 use crate::ssh::SSHManager;
 
@@ -75,34 +76,24 @@ pub async fn ssh_list_profiles(
     }
 }
 
+/// A service result as the IPC envelope.
+fn ipc<T>(result: SshResult<T>) -> IpcResult<T> {
+    match result {
+        Ok(value) => IpcResult::success(value),
+        Err(failure) => IpcResult::error(failure.message, failure.code),
+    }
+}
+
+/// Through `ssh::service::save_profile`, the path `troupe-server` serves: the
+/// renderer's `hasStoredPassword` / `hasStoredPassphrase` are never trusted,
+/// and a profile moved to another host, port, user, auth method or key
+/// loses its stored secrets.
 #[tauri::command]
 pub async fn ssh_save_profile(
     profile: SSHProfile,
     ssh_manager: State<'_, Arc<SSHManager>>,
 ) -> Result<IpcResult<()>, String> {
-    // A new secret, or a different host/user/auth, makes the in-memory copy
-    // kept for live sessions stale (a later tab would try the old one first).
-    let profile_id = profile.id.clone();
-    let secret_changed = profile.password.is_some() || profile.passphrase.is_some();
-    let target_changed = match ssh_manager.profiles.get(&profile_id) {
-        Ok(Some(previous)) => {
-            previous.host != profile.host
-                || previous.port != profile.port
-                || previous.username != profile.username
-                || previous.auth_method != profile.auth_method
-                || previous.private_key_path != profile.private_key_path
-        }
-        _ => false,
-    };
-    match ssh_manager.profiles.save(profile) {
-        Ok(()) => {
-            if secret_changed || target_changed {
-                ssh_manager.sessions.forget_secret(&profile_id);
-            }
-            Ok(IpcResult::success(()))
-        }
-        Err(e) => Ok(IpcResult::error(e, "SSH_PROFILE_ERROR")),
-    }
+    Ok(ipc(service::save_profile(&ssh_manager, profile)))
 }
 
 #[tauri::command]
@@ -155,109 +146,21 @@ pub async fn ssh_list_keys() -> Result<IpcResult<Vec<KeyFileInfo>>, String> {
 // Interactive sessions
 // ---------------------------------------------------------------------------
 
-/// The keychain secret matching the profile's auth method.
-fn stored_secret(profile: &SSHProfile) -> Option<String> {
-    match profile.auth_method.as_str() {
-        "password" => profile.password.clone(),
-        "key" => profile.passphrase.clone(),
-        _ => None,
-    }
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SSHSessionOpenRequest {
-    /// Chosen by the renderer so progress events can be matched before the
-    /// command returns.
-    pub session_id: String,
-    pub profile_id: String,
-    pub cols: u16,
-    pub rows: u16,
-    /// Password or key passphrase typed at a prompt.
-    pub secret: Option<String>,
-    /// Save `secret` to the OS keychain once it worked.
-    #[serde(default)]
-    pub save_secret: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SSHSessionOpenResponse {
-    #[serde(flatten)]
-    pub opened: OpenedSession,
-    /// The prompt secret was saved to the keychain.
-    pub secret_saved: bool,
-}
-
+/// Through `ssh::service::open_session`: the cached secret is reused only
+/// for the exact target it worked for, and a typed secret is saved only if
+/// the profile still points there.
 #[tauri::command]
 pub async fn ssh_session_open(
     request: SSHSessionOpenRequest,
     ssh_manager: State<'_, Arc<SSHManager>>,
     pty_manager: State<'_, Arc<PtyManager>>,
 ) -> Result<IpcResult<SSHSessionOpenResponse>, String> {
-    let profile = match ssh_manager
-        .profiles
-        .get_with_credentials(&request.profile_id)
-    {
-        Ok(Some(p)) => p,
-        Ok(None) => {
-            return Ok(IpcResult::error(
-                "Profile not found",
-                "SSH_PROFILE_NOT_FOUND",
-            ))
-        }
-        Err(e) => return Ok(IpcResult::error(e, "SSH_PROFILE_ERROR")),
-    };
-
-    // Prompt answer, then the secret a live session to this host used, then
-    // the keychain.
-    let prompted = request.secret.clone();
-    let secret = prompted
-        .clone()
-        .or_else(|| ssh_manager.sessions.cached_secret(&profile.id))
-        .or_else(|| stored_secret(&profile));
-    let target = SessionTarget {
-        profile_id: profile.id.clone(),
-        host: profile.host.clone(),
-        port: profile.port,
-        username: profile.username.clone(),
-        auth_method: profile.auth_method.clone(),
-        key_path: profile.private_key_path.clone(),
-    };
-
-    let opened = match ssh_manager
-        .sessions
-        .open(
-            &pty_manager,
-            &request.session_id,
-            target,
-            secret,
-            request.cols.max(1),
-            request.rows.max(1),
-        )
-        .await
-    {
-        Ok(opened) => opened,
-        Err(e) => return Ok(IpcResult::error(e.detail, e.kind.code())),
-    };
-
-    let mut secret_saved = false;
-    if request.save_secret {
-        if let Some(secret) = prompted.as_deref() {
-            match ssh_manager.profiles.store_secret(&profile.id, secret) {
-                Ok(()) => secret_saved = true,
-                Err(e) => log::warn!("[SSH] Could not save secret to keychain: {}", e),
-            }
-        }
-    }
-    if let Err(e) = ssh_manager.profiles.update_last_connected(&profile.id) {
-        log::warn!("[SSH] Could not record last connection: {}", e);
-    }
-
-    Ok(IpcResult::success(SSHSessionOpenResponse {
-        opened,
-        secret_saved,
-    }))
+    Ok(ipc(service::open_session(
+        &ssh_manager,
+        &pty_manager,
+        request,
+    )
+    .await))
 }
 
 #[tauri::command]

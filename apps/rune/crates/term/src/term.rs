@@ -101,6 +101,9 @@ pub(crate) struct Emu {
     /// The width of the last character printed in this run (xterm.js's join state), or 0 after
     /// any other action: a zero-width character after it combines onto it.
     pub preceding: u8,
+    /// The normal buffer's line (counted from its first line ever, [`Buffer::dropped`] included)
+    /// where the latest `OSC 133;A;termul` prompt started, until a finish mark closes it.
+    pub prompt_mark: Option<usize>,
 }
 
 impl Emu {
@@ -124,6 +127,7 @@ impl Emu {
             title: String::new(),
             replies: Vec::new(),
             preceding: 0,
+            prompt_mark: None,
         }
     }
 

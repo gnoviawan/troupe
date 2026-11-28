@@ -439,6 +439,16 @@ pub(crate) fn resolve_request_path(path: &Path) -> Result<PathBuf, (String, &'st
         }
     };
 
+    // 3) Host credentials (`web::host_secrets`) are never read, written,
+    //    listed or moved through a file route.
+    if crate::web::host_secrets::snapshot().covers(&safe_path) {
+        tracing::warn!("[Security] a file route refused a host credential path");
+        return Err((
+            "this path holds a host credential and is not served".to_string(),
+            "FORBIDDEN",
+        ));
+    }
+
     Ok(safe_path)
 }
 
@@ -886,6 +896,16 @@ pub async fn rename(
             return (StatusCode::OK, Json(IpcBody::<()>::err(msg, code)));
         }
     };
+    if crate::web::host_secrets::snapshot().exposes(&from) {
+        tracing::warn!("[Security] /fs/rename refused to move a directory holding a host credential");
+        return (
+            StatusCode::OK,
+            Json(IpcBody::<()>::err(
+                "this directory holds a host credential and cannot be moved".to_string(),
+                "FORBIDDEN",
+            )),
+        );
+    }
     if let Some(outside) = ensure_remote_within_project_root::<()>(&from, peer, &state) {
         return (StatusCode::OK, Json(outside));
     }

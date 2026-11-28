@@ -73,11 +73,13 @@ mod commands;
 mod dispatch;
 mod import_session;
 mod lifecycle;
+mod listeners;
 mod mcp_catalog;
 mod projects;
 mod prompts;
 mod relay;
 mod sessions;
+mod ssh;
 mod store;
 mod subagents;
 mod subscribe;
@@ -97,10 +99,12 @@ use commands::*;
 use dispatch::*;
 use import_session::*;
 use lifecycle::*;
+use listeners::*;
 use projects::*;
 use prompts::*;
 use relay::*;
 use sessions::*;
+use ssh::*;
 use store::*;
 use subagents::*;
 use subscribe::*;
@@ -110,6 +114,8 @@ use watch::*;
 #[cfg(test)]
 pub(crate) use relay::{outbound_channel, OutboundReceiver, OUTBOUND_QUEUE_CAPACITY};
 pub use relay::{ws_upgrade, AUTH_REQUIRED_TYPE, WS_BATCH_TYPE, WS_GAP_TYPE, WS_HEARTBEAT_TYPE};
+pub use listeners::LISTENERS_WS_REQUESTS;
+pub use ssh::SSH_WS_REQUESTS;
 pub(crate) use relay::{EnqueueOutcome, Outbound, OutboundSender};
 
 // ---------------------------------------------------------------------------
@@ -689,6 +695,8 @@ mod capability_tests;
 #[cfg(test)]
 pub(crate) mod harness;
 #[cfg(test)]
+mod host_local_tests;
+#[cfg(test)]
 mod host_ticket_route_tests;
 #[cfg(test)]
 mod mcp_install_route_tests;
@@ -708,5 +716,7 @@ mod provider_error_tests;
 mod registry_check_tests;
 #[cfg(test)]
 mod spawn_rejection_tests;
+#[cfg(test)]
+mod ssh_tests;
 #[cfg(test)]
 mod tests;

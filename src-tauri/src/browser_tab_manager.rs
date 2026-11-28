@@ -178,21 +178,7 @@ impl BrowserTabManager {
         };
         if enabled && crate::host_perimeter::agentation_allowed(&tab_id) {
             if let Some(endpoint_url) = &endpoint {
-                let encoded_endpoint =
-                    serde_json::to_string(endpoint_url).unwrap_or_else(|_| "\"\"".into());
-                let encoded_tab = serde_json::to_string(&tab_id).unwrap_or_else(|_| "\"\"".into());
-                let encoded_nonce = serde_json::to_string(&self.agentation_bridge_nonce)
-                    .unwrap_or_else(|_| "\"\"".into());
-                let init_script = format!(
-                    r#"
-                    if (window.top === window) {{
-                      window.__TERMUL_AGENTATION_ENDPOINT__ = {encoded_endpoint};
-                      window.__TERMUL_TAB_ID__ = {encoded_tab};
-                      window.__TERMUL_AGENTATION_NONCE__ = {encoded_nonce};
-                      window.__TERMUL_ANNOTATION_MODE__ = true;
-                    }}
-                    "#
-                );
+                let init_script = build_agentation_init_script(endpoint_url, &tab_id);
                 builder = builder.initialization_script(&init_script);
                 log::info!("[BrowserTab] Agentation init script set for tab={tab_id}");
             }
@@ -500,24 +486,26 @@ impl BrowserTabManager {
             .unwrap_or_else(|e| e.into_inner())
             .clone();
         let encoded_tab = serde_json::to_string(tab_id).unwrap_or_else(|_| "\"\"".into());
-        let encoded_nonce =
-            serde_json::to_string(&self.agentation_bridge_nonce).unwrap_or_else(|_| "\"\"".into());
         let mut globals_script = format!(
-            "window.__TERMUL_TAB_ID__ = {encoded_tab}; window.__TERMUL_AGENTATION_NONCE__ = {encoded_nonce}; window.__TERMUL_ANNOTATION_MODE__ = true;"
+            "window.__TERMUL_TAB_ID__ = {encoded_tab}; window.__TERMUL_ANNOTATION_MODE__ = true;"
         );
-        if let Some(ep) = endpoint {
-            let encoded_ep = serde_json::to_string(&ep).unwrap_or_else(|_| "\"\"".into());
+        let bridge_nonce = if let Some(ep) = &endpoint {
+            let encoded_ep = serde_json::to_string(ep).unwrap_or_else(|_| "\"\"".into());
             globals_script.push_str(&format!(
                 " window.__TERMUL_AGENTATION_ENDPOINT__ = {encoded_ep};"
             ));
-        }
+            Some(self.agentation_bridge_nonce.as_str())
+        } else {
+            None
+        };
         let _ = webview.eval(&globals_script);
 
-        // Inject the agentation toolbar bundle (bundled IIFE).
-        // The bundle self-checks __TERMUL_AGENTATION_HOST__ to avoid double-mount.
+        // Pass the bridge nonce via an IIFE closure parameter so page scripts
+        // cannot read it from `window` before or after the overlay mounts.
         let toolbar_script = include_str!("../resources/agentation-toolbar.js");
+        let wrapped = wrap_agentation_toolbar_script(toolbar_script, bridge_nonce);
         webview
-            .eval(toolbar_script)
+            .eval(&wrapped)
             .map_err(|e| format!("Failed to inject agentation toolbar: {}", e))?;
 
         log::info!(
@@ -778,6 +766,31 @@ fn native_history(platform: &tauri::webview::PlatformWebview, direction: History
         HistoryDirection::Back => webview.go_back(),
         HistoryDirection::Forward => webview.go_forward(),
     }
+}
+
+pub(crate) fn build_agentation_init_script(endpoint_url: &str, tab_id: &str) -> String {
+    let encoded_endpoint = serde_json::to_string(endpoint_url).unwrap_or_else(|_| "\"\"".into());
+    let encoded_tab = serde_json::to_string(tab_id).unwrap_or_else(|_| "\"\"".into());
+    format!(
+        r#"
+        if (window.top === window) {{
+          window.__TERMUL_AGENTATION_ENDPOINT__ = {encoded_endpoint};
+          window.__TERMUL_TAB_ID__ = {encoded_tab};
+          window.__TERMUL_ANNOTATION_MODE__ = true;
+        }}
+        "#
+    )
+}
+
+pub(crate) fn wrap_agentation_toolbar_script(
+    toolbar_script: &str,
+    bridge_nonce: Option<&str>,
+) -> String {
+    let encoded_nonce = match bridge_nonce {
+        Some(n) if !n.is_empty() => serde_json::to_string(n).unwrap_or_else(|_| "null".into()),
+        _ => "null".to_string(),
+    };
+    format!("(function(__troupeBridgeNonce){{\n{toolbar_script}\n}})({encoded_nonce});")
 }
 
 #[cfg(test)]

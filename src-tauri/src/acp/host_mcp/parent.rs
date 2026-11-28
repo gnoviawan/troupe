@@ -48,6 +48,7 @@ use crate::acp::host_mcp::presence::Presence;
 /// Per-session auth + routing context, keyed by the random token.
 #[derive(Clone)]
 struct SessionAuth {
+    generation: Uuid,
     /// Host-generated provisional id (passed to the child via env, echoed in
     /// the frame for defense-in-depth — does NOT match the real ACP id).
     provisional_sid: String,
@@ -252,6 +253,7 @@ impl HostPlanServer {
             sessions.insert(
                 token.clone(),
                 SessionAuth {
+                    generation: Uuid::new_v4(),
                     provisional_sid: provisional_sid.clone(),
                     agent_id: agent_id.to_string(),
                     real_session_id: None,
@@ -556,6 +558,16 @@ impl HostPlanServer {
         Ok(())
     }
 
+    /// Dispatch accepts only the exact registration captured during authentication.
+    fn registration_is_live(&self, token: &str, auth: &SessionAuth) -> bool {
+        self.sessions.lock().get(token).is_some_and(|current| {
+            current.generation == auth.generation
+                && current.real_session_id == auth.real_session_id
+                && current.agent_id == auth.agent_id
+                && !current.reopen_pending
+        })
+    }
+
     /// Authenticate + dispatch a validated frame. Returns the reply (ok/err).
     /// `hung_up` resolves when the child closes the connection.
     async fn process_request(
@@ -610,19 +622,42 @@ impl HostPlanServer {
         };
 
         // Agents may retain and call an MCP child created for an older session.
-        // Prefer the token's bound session when it runs a prompt turn, or when
-        // it works on its own and no prompt turn of the agent could own the
-        // call instead. Otherwise, repair the route only when this runtime
-        // agent has exactly one routable session; multiple are ambiguous and
-        // must never cross-route.
+        // Prefer the token's bound session while its registration is open: it
+        // may be in a prompt turn, working on its own after a background job
+        // woke it, or idle. Otherwise, repair the route only when this runtime
+        // agent has exactly one routable session (a prompt turn or unprompted
+        // work); multiple are ambiguous and must never cross-route.
+        // This host registry tracks successfully bound sessions and is evicted
+        // on close/dispose/driver teardown. Persisted chat history alone is not
+        // evidence that a session is still loaded on this host.
+        let bound_is_open = {
+            let sessions = self.sessions.lock();
+            let Some(current) = sessions.get(&req.token) else {
+                return FrameReply::err_code(
+                    CanvasErrorCode::NoActiveTurn.as_str(),
+                    "no active turn",
+                );
+            };
+            if current.generation != auth.generation || current.reopen_pending {
+                return FrameReply::err_code(
+                    CanvasErrorCode::NoActiveTurn.as_str(),
+                    "no active turn",
+                );
+            }
+            current.agent_id == auth.agent_id
+                && current.real_session_id.as_deref() == Some(&bound_session_id)
+                && sessions
+                    .values()
+                    .filter(|entry| {
+                        !entry.reopen_pending
+                            && entry.real_session_id.as_deref() == Some(&bound_session_id)
+                    })
+                    .all(|entry| entry.agent_id == auth.agent_id)
+        };
         let real_session_id = {
-            let agent_id = auth.agent_id.as_str();
-            let prompt_owned = self.active_turns.prompt_active(agent_id, &bound_session_id);
-            let own_work = self.active_turns.unprompted_active(agent_id, &bound_session_id)
-                && !self.active_turns.any_prompt(agent_id);
-            let sessions = self.active_turns.routable(agent_id);
+            let sessions = self.active_turns.routable(&auth.agent_id);
             match sessions.len() {
-                _ if prompt_owned || own_work => bound_session_id.clone(),
+                _ if bound_is_open => bound_session_id.clone(),
                 1 => {
                     let active_session_id = sessions.iter().next().expect("len checked").clone();
                     log::info!(
@@ -658,6 +693,10 @@ impl HostPlanServer {
                 }
             }
         };
+
+        if !self.registration_is_live(&req.token, &auth) {
+            return FrameReply::err_code(CanvasErrorCode::NoActiveTurn.as_str(), "no active turn");
+        }
 
         let card_session_id = auth
             .card_session_id

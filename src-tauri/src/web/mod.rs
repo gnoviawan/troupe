@@ -33,6 +33,9 @@ pub mod command_ledger;
 pub mod comu_api;
 pub mod config;
 pub mod connection_runtime;
+pub mod desktop_mode;
+#[cfg(test)]
+mod desktop_mode_tests;
 pub mod diagnostics_api;
 pub mod fs_api;
 pub mod fs_watcher;
@@ -42,6 +45,10 @@ pub mod git_history_api;
 pub mod git_hunk_api;
 pub mod github_api;
 pub mod host_allow;
+pub mod host_local;
+#[cfg(test)]
+mod host_local_tests;
+pub mod host_secrets;
 pub mod html_preview_api;
 pub mod install_api;
 pub mod log_api;
@@ -50,6 +57,9 @@ pub mod mcp_catalog_api;
 pub(crate) mod log_capture;
 pub mod mcp_oauth_api;
 pub mod link_preview_api;
+pub mod listeners_api;
+#[cfg(test)]
+mod listeners_api_tests;
 #[cfg(test)]
 mod html_preview_api_tests;
 #[cfg(test)]
@@ -58,6 +68,9 @@ pub mod mcp_probe_api;
 pub mod mcp_registry;
 pub mod openapi;
 pub mod origin;
+pub mod parent_watch;
+#[cfg(test)]
+mod parent_watch_tests;
 pub mod permissions;
 pub mod presence;
 pub mod project_icon_api;
@@ -76,6 +89,9 @@ pub mod setup;
 pub mod sink;
 pub mod skills_api;
 pub mod store;
+pub mod stream_cutoff;
+#[cfg(test)]
+mod stream_cutoff_tests;
 pub mod terminal_ws;
 pub mod watch;
 pub mod worktree_api;
@@ -159,6 +175,9 @@ fn oauth_redirect_base(addr: SocketAddr) -> String {
 /// The standalone binary owns its agent lifetime end-to-end, so it kills agents
 /// on exit. The desktop-hosted shared-live path calls [`serve_router`] directly
 /// and must NOT kill the desktop's live agents — see [`serve_router`].
+///
+/// `remote_listeners` (`--desktop`) attaches the remote access controls
+/// ([`listeners_api`]) to the relay; they stop before the agents do.
 #[allow(clippy::too_many_arguments)]
 pub async fn serve(
     acp: Arc<AcpManager>,
@@ -174,7 +193,24 @@ pub async fn serve(
     acp_install: Option<Arc<crate::acp::install::AcpInstallService>>,
     store: Arc<WebStore>,
     web_auth: Option<Arc<auth::WebAuth>>,
+    remote_listeners: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if remote_listeners {
+        ws_relay.set_listeners(Some(Arc::new(listeners_api::Listeners::new(
+            listeners_api::ListenerParts {
+                acp: Arc::clone(&acp),
+                pty: Arc::clone(&pty),
+                relay: Arc::clone(&ws_relay),
+                registry: Arc::clone(&registry),
+                acp_catalog: acp_catalog.clone(),
+                acp_install: acp_install.clone(),
+                store: Arc::clone(&store),
+                state_dir: cfg.service_account_state_dir(),
+                allow_remote_writes: cfg.allow_remote_writes,
+            },
+        ))));
+    }
+    let listeners_relay = Arc::clone(&ws_relay);
     // Idle agent reaper (standalone server; the desktop starts its own from
     // `lib.rs` — see the module doc for why this is NOT in `serve_router`).
     // The shutdown future resolves
@@ -274,6 +310,12 @@ pub async fn serve(
     .await?;
 
     let serve_result = handle.await;
+
+    // The remote listeners drain their sockets before the agents stop.
+    if let Some(listeners) = listeners_relay.listeners() {
+        listeners.stop_all().await;
+        listeners_relay.set_listeners(None);
+    }
 
     // Reap loop cleanup: signal it to stop (no-op if the OS signal already
     // resolved its shutdown future) and join so a slow sweep cannot leak the
@@ -478,7 +520,11 @@ pub async fn serve_router(
         connections,
         server_admin,
         cfg.rune_web_dir.clone(),
-    );
+    )
+    .layer(axum::middleware::from_fn_with_state(
+        socket_shutdown.stop_token(),
+        stream_cutoff::end_streams_on_stop,
+    ));
 
     // Stale device partitions are swept daily while this host serves; the
     // task stops with it (the desktop shared-live host starts and stops).
@@ -541,7 +587,27 @@ async fn shutdown_signal_future() {
     }
 }
 
-/// Wait for Ctrl-C (SIGINT) or, on Unix, SIGTERM.
+/// The in-process stop request ([`request_shutdown`]).
+fn shutdown_request() -> &'static tokio::sync::watch::Sender<bool> {
+    static REQUEST: std::sync::OnceLock<tokio::sync::watch::Sender<bool>> =
+        std::sync::OnceLock::new();
+    REQUEST.get_or_init(|| tokio::sync::watch::channel(false).0)
+}
+
+/// Stop the standalone server as SIGTERM would: every waiter on the shutdown
+/// signal resolves, including ones that start waiting later.
+pub fn request_shutdown() {
+    shutdown_request().send_replace(true);
+}
+
+async fn shutdown_requested() {
+    let mut requested = shutdown_request().subscribe();
+    if requested.wait_for(|stop| *stop).await.is_err() {
+        std::future::pending::<()>().await;
+    }
+}
+
+/// Wait for Ctrl-C (SIGINT), on Unix SIGTERM, or [`request_shutdown`].
 ///
 /// Returns `Err` if signal handlers cannot be installed (no `expect`/`unwrap`).
 async fn shutdown_signal() -> Result<(), std::io::Error> {
@@ -554,6 +620,7 @@ async fn shutdown_signal() -> Result<(), std::io::Error> {
         tokio::select! {
             result = ctrl_c => result?,
             _ = sigterm.recv() => {},
+            () = shutdown_requested() => {},
         }
         Ok(())
     }
@@ -562,6 +629,9 @@ async fn shutdown_signal() -> Result<(), std::io::Error> {
     {
         // Windows: Ctrl-C / console ctrl handler via tokio. SIGTERM is not a
         // portable Win32 signal; service-stop is out of scope for this scaffold.
-        ctrl_c.await
+        tokio::select! {
+            result = ctrl_c => result,
+            () = shutdown_requested() => Ok(()),
+        }
     }
 }

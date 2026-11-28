@@ -22,7 +22,7 @@ fn js_space(c: char) -> bool {
     c == '\u{feff}' || (c.is_whitespace() && c != '\u{85}')
 }
 
-fn trim(text: &str) -> &str {
+pub(crate) fn trim(text: &str) -> &str {
     text.trim_matches(js_space)
 }
 

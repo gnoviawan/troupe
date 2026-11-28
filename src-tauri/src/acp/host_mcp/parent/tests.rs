@@ -120,11 +120,13 @@ fn bound_session_emits_plan_update() {
 }
 
 #[test]
-fn bound_session_without_an_active_turn_is_rejected() {
+fn pending_reopen_without_an_active_turn_is_rejected() {
     let sink = Arc::new(CapturingSink::default());
     let server = HostPlanServer::start(vec![sink.clone()], None);
     let (port, token, provisional) = server.register_session("agent-1");
-    server.bind_session(&token, "sess-real");
+    let (_, older, _) = server.register_session("agent-1");
+    server.bind_session(&older, "sess-real");
+    server.bind_reopen_session(&token, "sess-real");
 
     let runtime = Runtime::new().unwrap();
     runtime.block_on(async move {
@@ -140,6 +142,46 @@ fn bound_session_without_an_active_turn_is_rejected() {
     });
 
     assert!(sink.events.lock().unwrap().is_empty());
+}
+
+#[test]
+fn open_bound_session_routes_without_a_turn() {
+    let sink = Arc::new(CapturingSink::default());
+    let server = HostPlanServer::start(vec![sink.clone()], None);
+    let (port, token, provisional) = server.register_session("agent-1");
+    server.bind_session(&token, "sess-open");
+    server.begin_turn("agent-1", "sess-other");
+    let runtime = Runtime::new().unwrap();
+    let reply = runtime.block_on(connect_and_send(
+        port,
+        &serde_json::json!({
+            "token": token, "session_id": provisional,
+            "todos": [{"content": "background work"}]
+        }),
+    ));
+    assert_eq!(reply["ok"], true);
+    assert_eq!(sink.events.lock().unwrap()[0].1["sessionId"], "sess-open");
+}
+
+#[test]
+fn unknown_or_foreign_bound_session_has_no_turn_route() {
+    for foreign in [false, true] {
+        let server = HostPlanServer::start(vec![], None);
+        let (port, token, provisional) = server.register_session("agent-1");
+        server.bind_session(&token, "sess-real");
+        server.sessions.lock().remove(&token);
+        if foreign {
+            let (_, other, _) = server.register_session("agent-2");
+            server.bind_session(&other, "sess-real");
+        }
+        let reply = Runtime::new().unwrap().block_on(connect_and_send(
+            port,
+            &serde_json::json!({
+                "token": token, "session_id": provisional, "todos": []
+            }),
+        ));
+        assert_eq!(reply["error"], "auth rejected");
+    }
 }
 
 #[test]
@@ -163,9 +205,9 @@ fn stale_binding_routes_to_the_agents_only_active_turn() {
 
     let captured = sink.events.lock().unwrap();
     assert_eq!(captured.len(), 1);
-    assert_eq!(captured[0].1["sessionId"], "sess-current");
-    assert!(server.plan_store.get("sess-old").is_none());
-    assert_eq!(server.plan_store.get("sess-current").unwrap().len(), 1);
+    assert_eq!(captured[0].1["sessionId"], "sess-old");
+    assert!(server.plan_store.get("sess-current").is_none());
+    assert_eq!(server.plan_store.get("sess-old").unwrap().len(), 1);
 }
 
 #[test]
@@ -193,7 +235,7 @@ fn bound_active_session_wins_when_agent_has_multiple_active_turns() {
 }
 
 #[test]
-fn ambiguous_stale_binding_is_rejected_instead_of_cross_routed() {
+fn open_binding_wins_even_with_multiple_other_turns() {
     let sink = Arc::new(CapturingSink::default());
     let server = HostPlanServer::start(vec![sink.clone()], None);
     let (port, token, provisional) = server.register_session("agent-1");
@@ -209,12 +251,10 @@ fn ambiguous_stale_binding_is_rejected_instead_of_cross_routed() {
             "todos": [{"content": "ambiguous work"}],
         });
         let reply = connect_and_send(port, &frame).await;
-        assert_eq!(reply["ok"], false);
-        assert_eq!(reply["error"], "ambiguous active session");
-        assert_eq!(reply["code"], "AMBIGUOUS_SESSION");
+        assert_eq!(reply["ok"], true);
     });
 
-    assert!(sink.events.lock().unwrap().is_empty());
+    assert_eq!(sink.events.lock().unwrap()[0].1["sessionId"], "sess-old");
 }
 
 #[test]
@@ -225,19 +265,22 @@ fn end_turn_removes_routing_candidate() {
     assert!(server.active_turns.routable("agent-1").is_empty());
 }
 
-/// Claude Code wakes up when a background shell it started finishes and runs a
-/// turn of its own, with no prompt open. Its host tool calls (Computer Use,
-/// browser, plan) must route instead of failing with `no active turn`.
+/// An open binding always routes to its own session. When the binding is not
+/// open (here another agent shares the session), a call made while the agent
+/// works on its own after a background job woke it must still reach that work
+/// instead of failing with `no active turn`.
 #[test]
-fn unprompted_work_routes_calls_until_it_ends() {
+fn unprompted_work_is_the_fallback_route_until_it_ends() {
     let sink = Arc::new(CapturingSink::default());
     let server = HostPlanServer::start(vec![sink.clone()], None);
     let (port, token, provisional) = server.register_session("agent-1");
     server.bind_session(&token, "sess-real");
+    let (_, foreign, _) = server.register_session("agent-2");
+    server.bind_session(&foreign, "sess-real");
     // The prompt turn that started the background timer is over.
-    server.begin_turn("agent-1", "sess-real");
-    server.end_turn("agent-1", "sess-real");
-    server.begin_unprompted_work("agent-1", "sess-real");
+    server.begin_turn("agent-1", "sess-work");
+    server.end_turn("agent-1", "sess-work");
+    server.begin_unprompted_work("agent-1", "sess-work");
 
     let frame = serde_json::json!({
         "token": token,
@@ -248,22 +291,24 @@ fn unprompted_work_routes_calls_until_it_ends() {
     let runtime = Runtime::new().unwrap();
     let reply = runtime.block_on(connect_and_send(port, &frame));
     assert_eq!(reply["ok"], true, "{reply}");
-    assert_eq!(sink.events.lock().unwrap()[0].1["sessionId"], "sess-real");
+    assert_eq!(sink.events.lock().unwrap()[0].1["sessionId"], "sess-work");
 
-    server.end_unprompted_work("agent-1", "sess-real");
+    server.end_unprompted_work("agent-1", "sess-work");
     let reply = runtime.block_on(connect_and_send(port, &frame));
     assert_eq!(reply["ok"], false);
     assert_eq!(reply["code"], "NO_ACTIVE_TURN");
 }
 
-/// A session working on its own must not pull a call away from another
-/// session's prompt turn: with both live the binding is ambiguous.
+/// Unprompted work does not win over another session's prompt turn on the
+/// fallback route: with both live the call is ambiguous.
 #[test]
-fn unprompted_bound_session_does_not_override_another_prompt_turn() {
+fn unprompted_work_and_a_prompt_turn_are_ambiguous_on_the_fallback_route() {
     let sink = Arc::new(CapturingSink::default());
     let server = HostPlanServer::start(vec![sink.clone()], None);
     let (port, token, provisional) = server.register_session("agent-1");
-    server.bind_session(&token, "sess-a");
+    server.bind_session(&token, "sess-real");
+    let (_, foreign, _) = server.register_session("agent-2");
+    server.bind_session(&foreign, "sess-real");
     server.begin_unprompted_work("agent-1", "sess-a");
     server.begin_turn("agent-1", "sess-b");
 
@@ -460,7 +505,12 @@ fn browser_failures_log_code_and_arg_key_names_never_values() {
             call: BrowserCall,
             _deadline: crate::browser_automation::budgets::Deadline,
         ) -> std::pin::Pin<
-            Box<dyn std::future::Future<Output = Result<crate::browser_automation::Success, BrowserError>> + Send + 'a>,
+            Box<
+                dyn std::future::Future<
+                        Output = Result<crate::browser_automation::Success, BrowserError>,
+                    > + Send
+                    + 'a,
+            >,
         > {
             // The action selects the failure shape; per-site arg_keys are
             // attached only where a real error site would ("navigate":
@@ -499,8 +549,7 @@ fn browser_failures_log_code_and_arg_key_names_never_values() {
                 _ => BrowserError {
                     code: crate::browser_automation::ERR_CONFIRMATION,
                     reason: None,
-                    message: "user did not grant browser automation for this session"
-                        .to_string(),
+                    message: "user did not grant browser automation for this session".to_string(),
                     arg_keys: Vec::new(),
                 },
             };
@@ -514,7 +563,14 @@ fn browser_failures_log_code_and_arg_key_names_never_values() {
     crate::browser_automation::set_browser_host(std::sync::Arc::new(FailingHost));
 
     runtime.block_on(async {
-        for action in ["navigate", "click", "fill", "snapshot", "screenshot", "hover"] {
+        for action in [
+            "navigate",
+            "click",
+            "fill",
+            "snapshot",
+            "screenshot",
+            "hover",
+        ] {
             let reply = connect_and_send(port, &frame_for(action)).await;
             assert_eq!(reply["ok"], false, "{action} must fail");
             replies.lock().unwrap().push((action.to_string(), reply));
@@ -579,7 +635,10 @@ fn browser_failures_log_code_and_arg_key_names_never_values() {
             ("fill", "stale_ref: @e42 detached"),
             ("snapshot", "eval timed out"),
             ("screenshot", "eval failed after fill 'hunter2'"),
-            ("hover", "user did not grant browser automation for this session"),
+            (
+                "hover",
+                "user did not grant browser automation for this session",
+            ),
         ];
         for (action, message) in expect_message {
             let reply = by_action(action);
@@ -590,7 +649,11 @@ fn browser_failures_log_code_and_arg_key_names_never_values() {
             );
             assert_eq!(reply["result"]["ok"], false, "{action}");
             assert_eq!(reply["result"]["code"], reply["code"], "{action}");
-            assert_eq!(reply["result"]["message"].as_str(), Some(message), "{action}");
+            assert_eq!(
+                reply["result"]["message"].as_str(),
+                Some(message),
+                "{action}"
+            );
         }
         assert_eq!(by_action("list_tabs")["code"], "capability_unavailable");
         assert_eq!(by_action("navigate")["code"], "invalid_params");
@@ -615,7 +678,9 @@ fn browser_frame_from_flat_call_carries_folded_args_to_dispatch() {
 
     let frame = FrameRequest {
         kind: FrameKind::Browser,
-        browser_input: Some(serde_json::json!({ "action": "navigate", "url": "https://example.com" })),
+        browser_input: Some(
+            serde_json::json!({ "action": "navigate", "url": "https://example.com" }),
+        ),
         ..FrameRequest::default()
     };
 
@@ -1584,7 +1649,15 @@ impl crate::browser_automation::BrowserHost for EchoHost {
         call: crate::browser_automation::BrowserCall,
         _deadline: crate::browser_automation::budgets::Deadline,
     ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<crate::browser_automation::Success, crate::browser_automation::BrowserError>> + Send + 'a>,
+        Box<
+            dyn std::future::Future<
+                    Output = Result<
+                        crate::browser_automation::Success,
+                        crate::browser_automation::BrowserError,
+                    >,
+                > + Send
+                + 'a,
+        >,
     > {
         Box::pin(async move {
             Ok(crate::browser_automation::Success {
@@ -1683,7 +1756,11 @@ fn a_child_ask_user_shows_on_its_chat_and_is_answered_from_there() {
         let question_id = wait_for_open_ask(&server).await;
 
         server.cancel_asks_for_session("chat-root");
-        assert_eq!(server.open_ask_ids(), std::slice::from_ref(&question_id), "the chat's turn end keeps it");
+        assert_eq!(
+            server.open_ask_ids(),
+            std::slice::from_ref(&question_id),
+            "the chat's turn end keeps it"
+        );
         assert!(server.answer_ask(&question_id, Some(vec!["Yes".to_string()])));
 
         let reply = call.await.unwrap();
@@ -1694,4 +1771,44 @@ fn a_child_ask_user_shows_on_its_chat_and_is_answered_from_there() {
     assert_eq!(payloads.len(), 1, "exactly one question event");
     assert_eq!(payloads[0]["sessionId"], "chat-root");
     assert_eq!(payloads[0]["agentId"], "child-agent");
+}
+
+#[test]
+fn dispatch_rejects_removed_or_replaced_authenticated_registration() {
+    let server = HostPlanServer::start(vec![], None);
+    let (_, token, _) = server.register_session("agent-1");
+    server.bind_session(&token, "sess-real");
+    let authenticated = server.sessions.lock().get(&token).unwrap().clone();
+    assert!(server.registration_is_live(&token, &authenticated));
+    server.sessions.lock().remove(&token);
+    assert!(!server.registration_is_live(&token, &authenticated));
+    let mut replacement = authenticated.clone();
+    replacement.generation = uuid::Uuid::new_v4();
+    server.sessions.lock().insert(token.clone(), replacement);
+    assert!(!server.registration_is_live(&token, &authenticated));
+}
+
+#[test]
+fn foreign_binding_is_refused_without_fallback_turn() {
+    let server = HostPlanServer::start(vec![], None);
+    let (port, token, provisional) = server.register_session("agent-1");
+    server.bind_session(&token, "sess-real");
+    let (_, foreign, _) = server.register_session("agent-2");
+    server.bind_session(&foreign, "sess-real");
+    let reply = Runtime::new().unwrap().block_on(connect_and_send(
+        port,
+        &serde_json::json!({
+            "token": token, "session_id": provisional, "todos": []
+        }),
+    ));
+    assert_eq!(reply["code"], "NO_ACTIVE_TURN");
+    server.begin_turn("agent-1", "sess-a");
+    server.begin_turn("agent-1", "sess-b");
+    let reply = Runtime::new().unwrap().block_on(connect_and_send(
+        port,
+        &serde_json::json!({
+            "token": token, "session_id": provisional, "todos": []
+        }),
+    ));
+    assert_eq!(reply["code"], "AMBIGUOUS_SESSION");
 }
