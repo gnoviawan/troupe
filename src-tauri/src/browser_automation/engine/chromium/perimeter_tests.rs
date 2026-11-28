@@ -64,7 +64,11 @@ async fn the_url_verdict_follows_the_internal_address_switch() {
         ("file:///etc/passwd", false, false),
         ("chrome://settings/", false, false),
         ("about:blank", true, true),
-        ("data:text/html,hi", true, true),
+        ("data:text/html,hi", false, false),
+        ("javascript:alert(1)", false, false),
+        ("blob:https://example.com/id", false, false),
+        ("about:config", false, false),
+        ("about:blank#fragment", false, false),
     ];
     for (url, denied_mode, allowed_mode) in cases {
         let url = Url::parse(url).unwrap();
