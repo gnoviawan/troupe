@@ -412,12 +412,7 @@ impl DesktopComuHost {
                 out = async { self.backend.call_tool(session_id, step_tool, merged).await } => out,
             };
             let ok = step_out.ok;
-            if !ok {
-                all_ok = false;
-                if stop_on_error {
-                    return Some(step_out);
-                }
-            }
+            all_ok &= ok;
 
             let error_texts: Vec<String> = if ok {
                 Vec::new()
@@ -452,6 +447,11 @@ impl DesktopComuHost {
                     }
                     ComuContentBlock::Text { .. } => {}
                 }
+            }
+            // Report the steps that already ran with the failure, so the
+            // caller knows what not to repeat.
+            if !ok && stop_on_error {
+                break;
             }
         }
 
@@ -556,6 +556,16 @@ impl DesktopComuHost {
                 return ComuCallOutput::error_text(refusal.code(), refusal.message());
             }
             Some(Ok(())) => {}
+        }
+
+        // Consent can wait behind another prompt. Read the policy again so
+        // turning Computer Use off during that wait takes effect.
+        let app_policy = self.policy.read_app_policy().await;
+        if !app_policy.enabled {
+            log::info!(
+                "[comu] refused (disabled during consent): tool={tool_name} agent={agent_id} session={redacted_sid}"
+            );
+            return ComuCallOutput::error_text("comu_disabled", ComuAuthRefusal::Disabled.message());
         }
 
         // Re-validate self-target protection against current window bounds after consent

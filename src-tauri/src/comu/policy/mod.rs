@@ -11,9 +11,9 @@ use serde_json::Value;
 use crate::web::{fan_out, EventSink};
 
 pub use model::{
-    app_entry_matches, normalize_app_entry, validate_project_id, ComuAppOp, ComuAppPolicy,
-    ComuAppPolicyView, ComuCallerScope, ComuPolicyChanged, ComuPolicyRefusal, ComuProjectOp,
-    ComuProjectPolicy, ComuProjectPolicyView, ComuWireCode,
+    app_entry_matches, app_identity_key, normalize_app_entry, validate_project_id, ComuAppOp,
+    ComuAppPolicy, ComuAppPolicyView, ComuCallerScope, ComuPolicyChanged, ComuPolicyRefusal,
+    ComuProjectOp, ComuProjectPolicy, ComuProjectPolicyView, ComuWireCode,
 };
 use model::{parse_app_op, parse_project_op};
 use store::ComuPolicyFiles;

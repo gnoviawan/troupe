@@ -881,3 +881,5 @@ async fn screen_indicator_ignores_read_only_batches() {
         vec!["show:Claude is using this computer"]
     );
 }
+
+mod review;

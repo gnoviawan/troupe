@@ -292,15 +292,23 @@ fn canvas_route(tool: Tool) -> ToolRoute<TermulPlanServer> {
 
 fn comu_route(tool: Tool) -> ToolRoute<TermulPlanServer> {
     ToolRoute::new_dyn(tool, |context: ToolCallContext<'_, TermulPlanServer>| {
+        let cancelled = context.request_context.ct.clone();
         let config = context.service.config.clone();
         let name = context.name.to_string();
         let arguments = context
             .arguments
             .map_or_else(|| json!({}), Value::Object);
         Box::pin(async move {
-            Ok(comu_tools::call_tool(config, name, arguments)
-                .await
-                .into())
+            // rmcp only signals a client cancel and keeps polling this future,
+            // so drop the frame exchange: the parent sees the hang-up and ends
+            // the call, including one parked on a consent card.
+            let result = tokio::select! {
+                result = comu_tools::call_tool(config, name, arguments) => result,
+                () = cancelled.cancelled() => CallToolResult::error(vec![ContentBlock::text(
+                    "the Computer Use call was cancelled by the client",
+                )]),
+            };
+            Ok(result)
         })
     })
 }

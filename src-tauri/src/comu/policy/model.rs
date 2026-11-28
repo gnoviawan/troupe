@@ -157,14 +157,29 @@ pub fn normalize_app_entry(raw: &str) -> Result<String, ComuPolicyRefusal> {
     Ok(trimmed.to_string())
 }
 
+/// Comparison key for an app identity. Bundle IDs, AUMIDs and display names
+/// match ignoring ASCII case. An executable path keeps its case except on
+/// Windows: `/opt/Editor` and `/opt/editor` can be different programs on a
+/// case-sensitive filesystem.
+#[must_use]
+pub fn app_identity_key(identity: &str) -> String {
+    let identity = identity.trim();
+    let is_path = identity.contains('/') || identity.contains('\\');
+    if is_path && !cfg!(windows) {
+        identity.to_string()
+    } else {
+        identity.to_ascii_lowercase()
+    }
+}
+
 #[must_use]
 pub fn app_entry_matches(saved: &str, candidate_id: &str, candidate_name: &str) -> bool {
-    let s = saved.trim();
-    if s.is_empty() {
+    if saved.trim().is_empty() {
         return false;
     }
-    (!candidate_id.is_empty() && s.eq_ignore_ascii_case(candidate_id.trim()))
-        || (!candidate_name.is_empty() && s.eq_ignore_ascii_case(candidate_name.trim()))
+    let saved = app_identity_key(saved);
+    (!candidate_id.trim().is_empty() && saved == app_identity_key(candidate_id))
+        || (!candidate_name.trim().is_empty() && saved == app_identity_key(candidate_name))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

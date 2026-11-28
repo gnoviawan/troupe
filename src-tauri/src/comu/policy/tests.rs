@@ -173,3 +173,21 @@ async fn app_policy_file_without_screen_indicator_field_defaults_it_on() {
     assert!(!policy.cursor_enabled);
     assert!(policy.screen_indicator_enabled);
 }
+
+#[test]
+fn app_identities_fold_case_except_for_executable_paths() {
+    assert!(app_entry_matches("com.Apple.Calculator", "com.apple.calculator", ""));
+    assert!(app_entry_matches(
+        "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App",
+        "microsoft.windowscalculator_8wekyb3d8bbwe!app",
+        ""
+    ));
+    assert!(app_entry_matches("Helper", "", "helper"));
+    assert!(app_entry_matches("/opt/Editor", "/opt/Editor", ""));
+    // Case-sensitive filesystems can hold both paths as different programs.
+    assert_eq!(
+        app_entry_matches("/opt/Editor", "/opt/editor", ""),
+        cfg!(windows)
+    );
+    assert!(app_entry_matches("C:\\Tools\\Helper.exe", "C:\\Tools\\Helper.exe", ""));
+}

@@ -15,7 +15,7 @@ use troupe_comu_engine::WindowOwnerInfo;
 use crate::acp::host_ticket::{ComuConsentAction, ComuTicketRequest, HostTickets};
 use crate::browser_automation::core::ports::{ConsentOption, TicketId, TicketOutcome};
 
-use super::policy::{validate_project_id, ComuPolicyService};
+use super::policy::{app_identity_key, validate_project_id, ComuPolicyService};
 
 /// Maximum total time an agent call waits across all interactive Comu consent prompts.
 pub const CONSENT_WAIT_TIMEOUT: Duration = Duration::from_secs(300);
@@ -58,7 +58,7 @@ enum AppGrantKey {
 impl AppGrantKey {
     fn from_target(target: &ResolvedAppTarget) -> Self {
         if target.has_stable_id {
-            Self::StableId(target.app_id.to_ascii_lowercase())
+            Self::StableId(app_identity_key(&target.app_id))
         } else {
             Self::UnidentifiedName(target.app_name.to_ascii_lowercase())
         }
@@ -133,11 +133,8 @@ impl ComuConsentGate {
         let lock = self.session_prompt_lock(session_id);
         let _guard = lock.lock().await;
 
-        // 1. Clipboard plain-text read check.
-        if (tool_name == "comu_clipboard_read" || tool_name == "clipboard_read")
-            && args.get("include_text").and_then(Value::as_bool) == Some(true)
-            && app_policy.ask_before_clipboard_read
-        {
+        // 1. Clipboard plain-text read check, also for reads inside `comu_run_steps`.
+        if app_policy.ask_before_clipboard_read && reads_clipboard_text(tool_name, args, 0) {
             self.prompt_once(
                 session_id,
                 project_id,
@@ -149,7 +146,9 @@ impl ComuConsentGate {
                 deadline,
             )
             .await?;
-            return Ok(());
+            if !is_batch(tool_name) {
+                return Ok(());
+            }
         }
 
         // 2. Foreground / whole-desktop check.
@@ -401,6 +400,31 @@ fn requires_foreground_or_desktop(tool_name: &str, args: &Value) -> bool {
 }
 
 const MAX_STEP_CONSENT_DEPTH: usize = 4;
+
+fn is_batch(tool_name: &str) -> bool {
+    tool_name == "comu_run_steps" || tool_name == "run_steps"
+}
+
+/// Whether the call reads clipboard plain text, directly or in a batch step.
+fn reads_clipboard_text(tool_name: &str, args: &Value, depth: usize) -> bool {
+    if (tool_name == "comu_clipboard_read" || tool_name == "clipboard_read")
+        && args.get("include_text").and_then(Value::as_bool) == Some(true)
+    {
+        return true;
+    }
+    depth < MAX_STEP_CONSENT_DEPTH
+        && is_batch(tool_name)
+        && args
+            .get("steps")
+            .and_then(Value::as_array)
+            .is_some_and(|steps| {
+                steps.iter().any(|step| {
+                    let st = step.get("tool").and_then(Value::as_str).unwrap_or_default();
+                    let sa = step.get("args").unwrap_or(&Value::Null);
+                    reads_clipboard_text(st, sa, depth + 1)
+                })
+            })
+}
 
 fn collect_target_apps(
     tool_name: &str,
