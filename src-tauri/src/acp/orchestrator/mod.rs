@@ -73,6 +73,7 @@ pub fn wake_sink() -> Arc<WakeSink> {
 /// from contexts that hold no runtime (driver threads, `Drop`).
 /// `project_roots` scopes the startup sweep of abandoned subagent
 /// worktrees.
+#[allow(clippy::too_many_arguments)]
 pub fn install(
     manager: Arc<AcpManager>,
     relay: Arc<WsRelaySink>,
