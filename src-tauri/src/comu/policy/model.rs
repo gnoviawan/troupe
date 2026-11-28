@@ -173,6 +173,7 @@ pub struct ComuAppPolicy {
     pub read_only: bool,
     pub enabled: bool,
     pub cursor_enabled: bool,
+    pub screen_indicator_enabled: bool,
     pub ask_before_driving_apps: bool,
     pub ask_before_foreground_desktop: bool,
     pub ask_before_clipboard_read: bool,
@@ -186,6 +187,7 @@ impl Default for ComuAppPolicy {
             read_only: false,
             enabled: true,
             cursor_enabled: true,
+            screen_indicator_enabled: true,
             ask_before_driving_apps: true,
             ask_before_foreground_desktop: true,
             ask_before_clipboard_read: true,
@@ -205,6 +207,7 @@ pub struct ComuProjectPolicy {
 pub enum ComuAppOp {
     SetEnabled(bool),
     SetCursorEnabled(bool),
+    SetScreenIndicatorEnabled(bool),
     SetAskBeforeDrivingApps(bool),
     SetAskBeforeForegroundDesktop(bool),
     SetAskBeforeClipboardRead(bool),
@@ -233,6 +236,9 @@ pub fn parse_app_op(value: &Value) -> Result<ComuAppOp, ComuPolicyRefusal> {
     match op {
         "set_enabled" => Ok(ComuAppOp::SetEnabled(bool_field("enabled")?)),
         "set_cursor_enabled" => Ok(ComuAppOp::SetCursorEnabled(bool_field("enabled")?)),
+        "set_screen_indicator_enabled" => {
+            Ok(ComuAppOp::SetScreenIndicatorEnabled(bool_field("enabled")?))
+        }
         "set_ask_before_driving_apps" => {
             Ok(ComuAppOp::SetAskBeforeDrivingApps(bool_field("enabled")?))
         }
@@ -290,6 +296,9 @@ pub fn apply_app_mutation(
     let changed = match op {
         ComuAppOp::SetEnabled(v) => replace_bool(&mut policy.enabled, v),
         ComuAppOp::SetCursorEnabled(v) => replace_bool(&mut policy.cursor_enabled, v),
+        ComuAppOp::SetScreenIndicatorEnabled(v) => {
+            replace_bool(&mut policy.screen_indicator_enabled, v)
+        }
         ComuAppOp::SetAskBeforeDrivingApps(v) => {
             replace_bool(&mut policy.ask_before_driving_apps, v)
         }
@@ -357,6 +366,7 @@ pub struct ComuAppPolicyView {
     pub read_only: bool,
     pub enabled: bool,
     pub cursor_enabled: bool,
+    pub screen_indicator_enabled: bool,
     pub ask_before_driving_apps: bool,
     pub ask_before_foreground_desktop: bool,
     pub ask_before_clipboard_read: bool,
@@ -370,6 +380,7 @@ impl From<&ComuAppPolicy> for ComuAppPolicyView {
             read_only: policy.read_only,
             enabled: policy.enabled,
             cursor_enabled: policy.cursor_enabled,
+            screen_indicator_enabled: policy.screen_indicator_enabled,
             ask_before_driving_apps: policy.ask_before_driving_apps,
             ask_before_foreground_desktop: policy.ask_before_foreground_desktop,
             ask_before_clipboard_read: policy.ask_before_clipboard_read,

@@ -8924,6 +8924,7 @@ dependencies = [
  "parking_lot",
  "portable-pty",
  "qrcode",
+ "raw-window-handle",
  "regex",
  "reqwest 0.13.4",
  "rmcp",

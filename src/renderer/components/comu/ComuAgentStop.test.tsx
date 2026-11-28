@@ -74,6 +74,7 @@ function makeAppPolicy(overrides: Partial<AppComuPolicy> = {}): AppComuPolicy {
     readOnly: false,
     enabled: true,
     cursorEnabled: true,
+    screenIndicatorEnabled: true,
     askBeforeDrivingApps: true,
     askBeforeForegroundDesktop: true,
     askBeforeClipboardRead: true,
@@ -286,6 +287,35 @@ describe('Comu reconnect state & permissions error retry', () => {
     })
     await waitFor(() => {
       expect(screen.getByText('System access ready')).toBeInTheDocument()
+    })
+  })
+})
+
+describe('ComuAppPolicy screen-edge indicator switch', () => {
+  it('reflects the policy and sends set_screen_indicator_enabled when toggled', async () => {
+    mockInvoke.mockImplementation(async (command: string) => {
+      if (command === 'comu_policy_get_app') {
+        return { success: true, data: makeAppPolicy() }
+      }
+      if (command === 'comu_policy_apply_app') {
+        return {
+          success: true,
+          data: makeAppPolicy({ revision: 1, screenIndicatorEnabled: false })
+        }
+      }
+      return { success: false, code: 'INTERNAL_ERROR', error: 'not under test' }
+    })
+
+    render(<ComuAppPolicy />)
+    const toggle = await screen.findByRole('switch', { name: 'Show screen-edge indicator' })
+    expect(toggle).toBeChecked()
+
+    await act(async () => {
+      fireEvent.click(toggle)
+    })
+    expect(mockInvoke).toHaveBeenCalledWith('comu_policy_apply_app', {
+      expectedRevision: 0,
+      op: { op: 'set_screen_indicator_enabled', enabled: false }
     })
   })
 })

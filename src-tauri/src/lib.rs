@@ -20,6 +20,7 @@ mod commands;
 // Local Computer Use (Troupe Comu): runtime-neutral policy + ComuHost trait
 // shared with web routes; DesktopComuHost is registered only in desktop setup.
 pub mod comu;
+mod comu_screen_overlay;
 // One host per durable path (AD-14): sidecar `File::try_lock` locks taken before
 // any store opens. Tauri-free so the desktop and `termul-server` share it.
 pub mod data_lock;
@@ -2028,6 +2029,9 @@ pub fn run() {
                 comu_project_of,
             ) {
                 Ok(comu_host) => {
+                    comu_host.install_screen_indicator(comu_screen_overlay::ScreenOverlay::new(
+                        handle.clone(),
+                    ));
                     comu::set_comu_host(comu_host);
                     log::info!("[comu] desktop Computer Use host registered");
                 }

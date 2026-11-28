@@ -26,6 +26,15 @@ Troupe Comu gives ACP agents inside Troupe structured, per-app-consented local d
 
 When **Show virtual agent cursor** is enabled in **Settings → Agents → Computer Use** (default: **On**), Troupe renders a click-through agent cursor overlay with the active agent's name over target windows during pointer and keyboard actions, hiding it automatically on turn end, **Stop**, or session close. On macOS, the overlay attaches directly to Tauri's existing main-thread `NSApplication` runloop (`attach_to_existing_appkit()`).
 
+## Screen-Edge Indicator
+
+While an agent drives this computer, Troupe draws a blue glow along the edges of every monitor and a label at the top edge naming the agent ("Claude is using this computer", or "2 agents are using this computer"). Turn it off with **Show screen-edge indicator** in **Settings → Agents → Computer Use** (default: **On**). The setting applies from the agent's next action.
+
+- **When it shows**: from an agent's first acting `comu_*` call in a turn (clicks, typing, window changes; read-only probes such as `comu_list_windows` do not count) until that turn or the agent's own background work ends, **Stop** is pressed, or the chat closes. It stays while any chat is still driving.
+- **How (`src-tauri/src/comu_screen_overlay.rs`)**: one transparent, click-through, always-on-top window per monitor loads `comu-overlay.html`. The windows never take focus, stay out of the taskbar and window switcher, are excluded from screen capture (`content_protected`, macOS and Windows), and have no capability or IPC. Rust pushes state with `eval`. `DesktopComuHost` only sees the `comu::indicator::ComuScreenIndicator` port, so `troupe-server` links no window code.
+- **Self-target guard**: the desktop-coordinate hit-test in `self_guard.rs` skips the indicator windows (by native window id), so an agent can still click anywhere on the desktop. Targeting them by window id or pid stays blocked.
+- **Limits**: not shown on Linux Wayland sessions (no window positioning). Monitors added while the indicator is up get it on its next show. macOS needs Tauri's `macOSPrivateApi` for the transparent window.
+
 ## OS Permissions
 
 - **macOS**: Requires **Accessibility** (window inspection & synthetic input) and **Screen Recording** (window/display screenshots). **Settings → Agents → Computer Use** displays live grant status with **Grant Accessibility**, **Grant Screen Recording**, and **Recheck** controls.

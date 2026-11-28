@@ -40,11 +40,16 @@ fn is_self_name(candidate: &str) -> bool {
 
 /// Check whether `tool_name` + `args` targets Troupe itself (`own_pid` or any
 /// window owned by `own_pid`). Returns `Err(reason)` if blocked.
+///
+/// `hit_test_ignored` lists Troupe windows the desktop-coordinate hit-test
+/// skips: the click-through screen-edge indicator covers every monitor.
+/// Targeting those windows by id or pid stays blocked.
 pub fn check_not_self_target(
     own_pid: u32,
     tool_name: &str,
     args: &Value,
     windows: &[WindowOwnerInfo],
+    hit_test_ignored: &[i64],
 ) -> Result<(), String> {
     let own_pid_i64 = i64::from(own_pid);
 
@@ -78,10 +83,11 @@ pub fn check_not_self_target(
     //    refuse if any coordinate lands inside a Troupe window.
     if is_desktop_coordinate_call(tool_name, args) {
         for (x, y) in extract_screen_points(args) {
-            if windows
-                .iter()
-                .any(|w| (w.pid == own_pid_i64 || is_self_window(w)) && w.contains_point(x, y))
-            {
+            if windows.iter().any(|w| {
+                (w.pid == own_pid_i64 || is_self_window(w))
+                    && !hit_test_ignored.contains(&w.window_id)
+                    && w.contains_point(x, y)
+            }) {
                 return Err(
                     "Troupe Comu cannot click or move onto Troupe's own window".to_string(),
                 );
@@ -115,7 +121,7 @@ pub fn check_not_self_target(
                         }
                     }
                 }
-                check_not_self_target(own_pid, step_tool, &merged, windows)?;
+                check_not_self_target(own_pid, step_tool, &merged, windows, hit_test_ignored)?;
             }
         }
     }

@@ -22,6 +22,7 @@ use troupe_comu_engine::{
 use crate::web::EventSink;
 
 use super::consent::{ComuAuthRefusal, ComuConsentGate, ComuTicketPort};
+use super::indicator::{ComuScreenIndicator, IndicatorState};
 use super::policy::ComuPolicyService;
 use super::self_guard::check_not_self_target;
 use super::stop::{ComuStopRegistry, ComuStopToken};
@@ -151,6 +152,7 @@ pub struct DesktopComuHost {
     project_of: ProjectResolver,
     agent_names: Mutex<HashMap<String, String>>,
     cursor_coord: Arc<CursorCoordinators>,
+    indicator: IndicatorState,
     runtime: Option<tokio::runtime::Handle>,
     own_pid: u32,
 }
@@ -218,9 +220,16 @@ impl DesktopComuHost {
             project_of,
             agent_names: Mutex::new(HashMap::new()),
             cursor_coord: Arc::new(CursorCoordinators::default()),
+            indicator: IndicatorState::default(),
             runtime,
             own_pid,
         })
+    }
+
+    /// Install the desktop screen-edge indicator (`lib.rs` setup). Only the
+    /// first call takes effect.
+    pub fn install_screen_indicator(&self, port: Arc<dyn ComuScreenIndicator>) {
+        self.indicator.install(port);
     }
 
     fn agent_badge(&self, agent_id: &str) -> String {
@@ -353,9 +362,13 @@ impl DesktopComuHost {
 
             if needs_window_snapshot(step_tool) {
                 let fresh_windows = self.backend.list_windows_snapshot(session_id).await;
-                if let Err(reason) =
-                    check_not_self_target(self.own_pid, step_tool, &merged, &fresh_windows)
-                {
+                if let Err(reason) = check_not_self_target(
+                    self.own_pid,
+                    step_tool,
+                    &merged,
+                    &fresh_windows,
+                    &self.indicator.window_ids(),
+                ) {
                     return Some(ComuCallOutput::error_text("self_target_blocked", reason));
                 }
             }
@@ -479,7 +492,13 @@ impl DesktopComuHost {
             Vec::new()
         };
 
-        if let Err(reason) = check_not_self_target(self.own_pid, tool_name, &args, &windows) {
+        if let Err(reason) = check_not_self_target(
+            self.own_pid,
+            tool_name,
+            &args,
+            &windows,
+            &self.indicator.window_ids(),
+        ) {
             log::warn!(
                 "[comu] blocked self-target: tool={tool_name} agent={agent_id} session={redacted_sid}"
             );
@@ -513,9 +532,13 @@ impl DesktopComuHost {
         // so window movement while the consent card was open cannot hit Troupe.
         if needs_window_snapshot(tool_name) {
             let post_windows = self.backend.list_windows_snapshot(session_id).await;
-            if let Err(reason) =
-                check_not_self_target(self.own_pid, tool_name, &args, &post_windows)
-            {
+            if let Err(reason) = check_not_self_target(
+                self.own_pid,
+                tool_name,
+                &args,
+                &post_windows,
+                &self.indicator.window_ids(),
+            ) {
                 log::warn!(
                     "[comu] blocked self-target post-consent: tool={tool_name} agent={agent_id} session={redacted_sid}"
                 );
@@ -529,6 +552,11 @@ impl DesktopComuHost {
 
         if !is_passive_probe(tool_name) {
             self.stop.mark_active(session_id);
+            self.indicator.session_driving(
+                session_id,
+                &self.agent_badge(agent_id),
+                app_policy.screen_indicator_enabled,
+            );
         }
 
         if uses_agent_cursor(tool_name) {
@@ -610,6 +638,7 @@ impl ComuHost for DesktopComuHost {
 
     fn stop(&self, session_id: &str) -> bool {
         let newly_stopped = self.stop.stop(session_id);
+        self.indicator.session_released(session_id);
         self.consent.cancel_pending_prompts(session_id);
         let gen_at_stop = self.cursor_coord.bump(session_id);
         self.spawn_cursor_disable(session_id, gen_at_stop);
@@ -627,12 +656,14 @@ impl ComuHost for DesktopComuHost {
 
     fn turn_ended(&self, session_id: &str) {
         self.stop.mark_inactive(session_id);
+        self.indicator.session_released(session_id);
         let gen_at_end = self.cursor_coord.current(session_id);
         self.spawn_cursor_disable(session_id, gen_at_end);
     }
 
     fn session_ended(&self, session_id: &str) {
         self.stop.forget_session(session_id);
+        self.indicator.session_released(session_id);
         self.consent.revoke_session(session_id);
         self.cursor_coord.forget(session_id);
         let backend = Arc::clone(&self.backend);

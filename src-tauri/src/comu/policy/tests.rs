@@ -136,3 +136,40 @@ async fn isolates_case_variant_project_ids_and_fails_closed_on_future_schema() {
     );
 }
 
+
+#[tokio::test]
+async fn screen_indicator_defaults_on_toggles_and_survives_reload() {
+    let dir = tempfile::tempdir().unwrap();
+    let service = ComuPolicyService::new(dir.path().to_path_buf(), Vec::new());
+    assert!(service.read_app_policy().await.screen_indicator_enabled);
+
+    let updated = service
+        .apply_app(
+            &ComuCallerScope::App,
+            0,
+            &json!({ "op": "set_screen_indicator_enabled", "enabled": false }),
+        )
+        .await
+        .unwrap();
+    assert!(!updated.screen_indicator_enabled);
+    assert_eq!(updated.revision, 1);
+
+    let reopened = ComuPolicyService::new(dir.path().to_path_buf(), Vec::new());
+    assert!(!reopened.read_app_policy().await.screen_indicator_enabled);
+}
+
+/// A policy file written before the screen indicator existed keeps it on.
+#[tokio::test]
+async fn app_policy_file_without_screen_indicator_field_defaults_it_on() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("app.json"),
+        br#"{"version":1,"revision":4,"enabled":true,"cursorEnabled":false}"#,
+    )
+    .unwrap();
+    let service = ComuPolicyService::new(dir.path().to_path_buf(), Vec::new());
+    let policy = service.read_app_policy().await;
+    assert!(!policy.read_only);
+    assert!(!policy.cursor_enabled);
+    assert!(policy.screen_indicator_enabled);
+}

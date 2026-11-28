@@ -693,3 +693,155 @@ fn turn_end_clears_the_active_computer_use_indicator() {
     assert_eq!(*sink.0.lock(), vec![true, false, true]);
     registry.forget_session(session);
 }
+
+#[derive(Default)]
+struct RecordingIndicator {
+    calls: Mutex<Vec<String>>,
+    ids: Vec<i64>,
+}
+
+impl super::indicator::ComuScreenIndicator for RecordingIndicator {
+    fn show(&self, label: &str) {
+        self.calls.lock().push(format!("show:{label}"));
+    }
+    fn hide(&self) {
+        self.calls.lock().push("hide".to_string());
+    }
+    fn window_ids(&self) -> Vec<i64> {
+        self.ids.clone()
+    }
+}
+
+fn indicator_host(
+    windows: Vec<WindowOwnerInfo>,
+    policy: Arc<ComuPolicyService>,
+    indicator: Arc<RecordingIndicator>,
+) -> Arc<DesktopComuHost> {
+    let tickets = ScriptedTickets::new(
+        std::iter::repeat_n(TicketOutcome::Answered(ConsentOption::AllowSession), 8),
+    );
+    let host = DesktopComuHost::with_backend(
+        FakeComuBackend::new(windows),
+        vec![],
+        tickets,
+        policy,
+        Arc::new(|_| "proj-1".to_string()),
+        OWN_PID,
+    );
+    host.install_screen_indicator(indicator);
+    host
+}
+
+fn calculator_click() -> Value {
+    json!({ "window_id": 200, "x": 950.0, "y": 150.0 })
+}
+
+/// The screen-edge indicator shows while a session drives the computer and
+/// goes away on turn end, Stop, and close.
+#[tokio::test]
+async fn screen_indicator_follows_driving_sessions() {
+    let dir = TempDir::new().unwrap();
+    let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
+    let indicator = Arc::new(RecordingIndicator::default());
+    let host = indicator_host(sample_windows(), policy, indicator.clone());
+    host.name_agent("a1", "Claude");
+
+    // Passive probes do not count as driving.
+    assert!(host.execute("s1", "a1", "comu_list_windows", json!({})).await.ok);
+    assert!(indicator.calls.lock().is_empty());
+
+    assert!(host.execute("s1", "a1", "comu_click", calculator_click()).await.ok);
+    host.turn_ended("s1");
+
+    assert!(host.execute("s2", "a1", "comu_click", calculator_click()).await.ok);
+    host.stop("s2");
+
+    assert!(host.execute("s3", "a1", "comu_click", calculator_click()).await.ok);
+    host.session_ended("s3");
+
+    assert_eq!(
+        *indicator.calls.lock(),
+        vec![
+            "show:Claude is using this computer",
+            "hide",
+            "show:Claude is using this computer",
+            "hide",
+            "show:Claude is using this computer",
+            "hide",
+        ]
+    );
+}
+
+#[tokio::test]
+async fn screen_indicator_respects_the_policy_toggle() {
+    let dir = TempDir::new().unwrap();
+    let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
+    policy
+        .apply_app(
+            &ComuCallerScope::App,
+            0,
+            &json!({ "op": "set_screen_indicator_enabled", "enabled": false }),
+        )
+        .await
+        .unwrap();
+    let indicator = Arc::new(RecordingIndicator::default());
+    let host = indicator_host(sample_windows(), policy, indicator.clone());
+
+    assert!(host.execute("s1", "a1", "comu_click", calculator_click()).await.ok);
+    host.turn_ended("s1");
+    assert!(indicator.calls.lock().is_empty());
+}
+
+/// The indicator covers every monitor and is click-through, so a desktop
+/// click under it must not count as clicking Troupe. Troupe's main window and
+/// targeting the indicator directly stay blocked.
+#[tokio::test]
+async fn self_guard_hit_test_skips_the_screen_indicator_window() {
+    const OVERLAY_ID: i64 = 300;
+    let mut windows = sample_windows();
+    windows.push(WindowOwnerInfo {
+        window_id: OVERLAY_ID,
+        pid: i64::from(OWN_PID),
+        app_name: "Troupe".to_string(),
+        bundle_id: Some("com.termul-manager.app".to_string()),
+        bounds: Some([0.0, 0.0, 3000.0, 2000.0]),
+    });
+    let desktop_click = json!({ "x": 1500.0, "y": 900.0 });
+    let dir = TempDir::new().unwrap();
+    let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
+
+    // Without the indicator's ids the overlay blocks every desktop click.
+    let unaware = indicator_host(
+        windows.clone(),
+        Arc::clone(&policy),
+        Arc::new(RecordingIndicator::default()),
+    );
+    let out = unaware.execute("s1", "a1", "comu_click", desktop_click.clone()).await;
+    assert_eq!(refusal_code(&out), Some("self_target_blocked"));
+
+    let host = indicator_host(
+        windows,
+        policy,
+        Arc::new(RecordingIndicator {
+            ids: vec![OVERLAY_ID],
+            ..RecordingIndicator::default()
+        }),
+    );
+    let out = host.execute("s1", "a1", "comu_click", desktop_click).await;
+    assert_ne!(refusal_code(&out), Some("self_target_blocked"));
+
+    let main_window = host
+        .execute("s1", "a1", "comu_click", json!({ "x": 200.0, "y": 200.0 }))
+        .await;
+    assert_eq!(refusal_code(&main_window), Some("self_target_blocked"));
+
+    let overlay_by_id = host
+        .execute(
+            "s1",
+            "a1",
+            "comu_click",
+            json!({ "window_id": OVERLAY_ID, "x": 10.0, "y": 10.0 }),
+        )
+        .await;
+    assert_eq!(refusal_code(&overlay_by_id), Some("self_target_blocked"));
+}
