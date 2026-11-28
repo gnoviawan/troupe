@@ -695,3 +695,36 @@ async fn a_resumed_run_wakes_the_parent_again_when_it_settles() {
     assert_eq!(wakes.len(), 2, "the second settle after a resume wakes again");
     assert!(wakes[1].1.contains("Resumed Run"), "body: {}", wakes[1].1);
 }
+
+#[test]
+fn retry_backs_off_to_a_cap_and_resets_on_an_accepted_prompt() {
+    let wake = WakeRegistry::new();
+    assert_eq!(wake.arm_retry(CHAT), None, "no mailbox, no retry");
+    let notice = WakeNotice {
+        run_id: RunId("run-retry".to_string()),
+        title: "Retry".to_string(),
+        agent_name: "Codex".to_string(),
+        state: RunState::Completed,
+        result: Some("done".to_string()),
+        error: None,
+        workspace: None,
+    };
+    assert!(wake.enqueue(CHAT, notice));
+
+    let mut delays = Vec::new();
+    for _ in 0..6 {
+        delays.push(wake.arm_retry(CHAT).expect("retry armed").as_secs());
+        assert_eq!(wake.arm_retry(CHAT), None, "one timer at a time");
+        wake.disarm_retry(CHAT);
+    }
+    assert_eq!(delays, vec![5, 10, 20, 40, 60, 60]);
+
+    for _ in 6..MAX_RETRIES {
+        assert!(wake.arm_retry(CHAT).is_some());
+        wake.disarm_retry(CHAT);
+    }
+    assert_eq!(wake.arm_retry(CHAT), None, "retries exhausted");
+
+    wake.on_prompt_accepted(CHAT, Some("user-turn"));
+    assert_eq!(wake.arm_retry(CHAT).map(|d| d.as_secs()), Some(5));
+}
