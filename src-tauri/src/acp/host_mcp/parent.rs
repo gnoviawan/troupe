@@ -528,10 +528,12 @@ impl HostPlanServer {
 
     /// Dispatch accepts only the exact registration captured during authentication.
     fn registration_is_live(&self, token: &str, auth: &SessionAuth) -> bool {
-        self.sessions
-            .lock()
-            .get(token)
-            .is_some_and(|current| current.generation == auth.generation && !current.reopen_pending)
+        self.sessions.lock().get(token).is_some_and(|current| {
+            current.generation == auth.generation
+                && current.real_session_id == auth.real_session_id
+                && current.agent_id == auth.agent_id
+                && !current.reopen_pending
+        })
     }
 
     /// Authenticate + dispatch a validated frame. Returns the reply (ok/err).
@@ -607,6 +609,13 @@ impl HostPlanServer {
             }
             current.agent_id == auth.agent_id
                 && current.real_session_id.as_deref() == Some(&bound_session_id)
+                && sessions
+                    .values()
+                    .filter(|entry| {
+                        !entry.reopen_pending
+                            && entry.real_session_id.as_deref() == Some(&bound_session_id)
+                    })
+                    .all(|entry| entry.agent_id == auth.agent_id)
         };
         let real_session_id = {
             let active_turns = self.active_turns.lock();

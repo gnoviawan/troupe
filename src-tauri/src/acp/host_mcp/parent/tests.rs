@@ -1708,3 +1708,28 @@ fn dispatch_rejects_removed_or_replaced_authenticated_registration() {
     server.sessions.lock().insert(token.clone(), replacement);
     assert!(!server.registration_is_live(&token, &authenticated));
 }
+
+#[test]
+fn foreign_binding_is_refused_without_fallback_turn() {
+    let server = HostPlanServer::start(vec![], None);
+    let (port, token, provisional) = server.register_session("agent-1");
+    server.bind_session(&token, "sess-real");
+    let (_, foreign, _) = server.register_session("agent-2");
+    server.bind_session(&foreign, "sess-real");
+    let reply = Runtime::new().unwrap().block_on(connect_and_send(
+        port,
+        &serde_json::json!({
+            "token": token, "session_id": provisional, "todos": []
+        }),
+    ));
+    assert_eq!(reply["code"], "NO_ACTIVE_TURN");
+    server.begin_turn("agent-1", "sess-a");
+    server.begin_turn("agent-1", "sess-b");
+    let reply = Runtime::new().unwrap().block_on(connect_and_send(
+        port,
+        &serde_json::json!({
+            "token": token, "session_id": provisional, "todos": []
+        }),
+    ));
+    assert_eq!(reply["code"], "AMBIGUOUS_SESSION");
+}
