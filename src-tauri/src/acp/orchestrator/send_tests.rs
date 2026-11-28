@@ -363,6 +363,55 @@ async fn resume_after_complete_loads_kept_session_and_returns_to_running() {
     assert_eq!(first.state, RunState::Completed);
     assert_eq!(first.result.as_deref(), Some("turn1-done"));
 
+    {
+        use crate::acp::orchestrator::profiles::SubagentApprovals;
+        let mut ledger = engine.ledger.lock();
+        let entry = ledger.runs.get_mut(&run).unwrap();
+        let (config, profile, model) = entry.execution_policy.clone().unwrap();
+        let mut meta = super::ResumeMeta {
+            root: entry.root.clone(),
+            parent_agent: entry.parent_agent.clone(),
+            parent_session_id: entry.parent_session_id.clone(),
+            parent_run: None,
+            depth: 1,
+            profile_id: entry.profile_id.clone(),
+            execution_policy: Some((config.clone(), profile.clone(), model.clone())),
+            child_cwd: entry.child_cwd.clone(),
+            workspace_mode: entry.workspace.mode,
+            session_id: entry.session_id.clone().unwrap(),
+            capture: entry.capture.clone(),
+        };
+        drop(ledger);
+        let mut current = profile.clone();
+        current.approvals = SubagentApprovals::AllowAll;
+        engine
+            .update_settings(|settings| settings.profiles = vec![current])
+            .unwrap();
+        // Broadened current profile must not override original Ask.
+        let mut original = profile.clone();
+        original.approvals = SubagentApprovals::Ask;
+        meta.execution_policy = Some((config.clone(), original, model.clone()));
+        assert_eq!(
+            engine.resume_checks(&meta).unwrap().profile.approvals,
+            SubagentApprovals::Ask
+        );
+        // Current Ask must win over the original AllowAll.
+        engine
+            .update_settings(|settings| {
+                for profile in &mut settings.profiles {
+                    profile.approvals = SubagentApprovals::Ask;
+                }
+            })
+            .unwrap();
+        let mut original = profile;
+        original.approvals = SubagentApprovals::AllowAll;
+        meta.execution_policy = Some((config, original, model));
+        assert_eq!(
+            engine.resume_checks(&meta).unwrap().profile.approvals,
+            SubagentApprovals::Ask
+        );
+    }
+
     let resumed = engine
         .send(
             caller.clone(),
@@ -544,6 +593,7 @@ async fn ownership_failed_run_and_input_limits_are_enforced() {
         },
         profile_id: "mock-sub".to_string(),
         requested_model: None,
+        execution_policy: None,
         child_cwd: "/tmp".to_string(),
         session_id: Some(SessionId("child-1".to_string())),
         title: "Mock Sub".to_string(),
@@ -582,6 +632,50 @@ async fn ownership_failed_run_and_input_limits_are_enforced() {
             },
         ));
     }
+
+    // A depth-two caller shares the root but does not own its parent's sibling.
+    let nested_id = RunId("sub-nested".into());
+    let mut nested = make_entry(
+        nested_id,
+        RunBody::Live {
+            child_agent: AgentId("nested-agent".into()),
+            session: SessionId("nested-session".into()),
+            awaiting_permission: false,
+        },
+    );
+    nested.depth = 2;
+    nested.parent_session_id = "parent-child-session".into();
+    engine.ledger.lock().insert(nested);
+    assert_eq!(
+        engine
+            .send(
+                CallerRef {
+                    agent: AgentId("nested-agent".into()),
+                    session: SessionId("nested-session".into()),
+                },
+                SendRequest {
+                    subagent_id: live_run.0.clone(),
+                    message: "hijack".into(),
+                    interrupt: true
+                }
+            )
+            .await,
+        Err(SendError::NotFound)
+    );
+    assert!(engine
+        .send(
+            CallerRef {
+                agent: AgentId("reopened-parent".into()),
+                session: caller.session.clone(),
+            },
+            SendRequest {
+                subagent_id: live_run.0.clone(),
+                message: "continue".into(),
+                interrupt: false
+            }
+        )
+        .await
+        .is_ok());
 
     // Another chat cannot send to this chat's run.
     let other_chat = CallerRef {

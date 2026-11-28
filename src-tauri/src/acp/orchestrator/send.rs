@@ -17,7 +17,7 @@ use crate::acp::orchestrator::lifecycle::ChildLease;
 use crate::acp::orchestrator::profiles::{self, SubagentApprovals, SubagentProfile};
 use crate::acp::orchestrator::run::{
     bounded, CallerRef, QueuedPrompt, RunBody, RunCapture, RunEnd, RunId, RunState, SendError,
-    SendOutcome, SendRequest, StartError, Starting, MAX_QUEUED_PROMPTS,
+    SendOutcome, SendRequest, Starting, MAX_QUEUED_PROMPTS,
 };
 use crate::acp::orchestrator::sinks::{RerouteFilter, RunWatcher};
 use crate::acp::subagents::{SubagentAgent, SubagentWorkspaceMode};
@@ -50,7 +50,6 @@ impl OrchestratorEngine {
         }
 
         let run = RunId(subagent_id.to_string());
-        let root = self.caller_root(&caller);
         let sender = self.caller_sender_name(&caller);
 
         enum Decision {
@@ -74,7 +73,7 @@ impl OrchestratorEngine {
                 let Some(entry) = ledger.runs.get_mut(&run) else {
                     return Err(SendError::NotFound);
                 };
-                if entry.root != root {
+                if entry.parent_session_id != caller.session.0 {
                     return Err(SendError::NotFound);
                 }
                 if entry.session() == Some(&caller.session)
@@ -145,7 +144,7 @@ impl OrchestratorEngine {
                             parent_run: entry.parent_run.clone(),
                             depth: entry.depth,
                             profile_id: entry.profile_id.clone(),
-                            requested_model: entry.requested_model.clone(),
+                            execution_policy: entry.execution_policy.clone(),
                             child_cwd: entry.child_cwd.clone(),
                             workspace_mode: entry.workspace.mode,
                             session_id,
@@ -289,16 +288,23 @@ impl OrchestratorEngine {
         if !profile.enabled {
             return Err(SendError::AgentNotAllowed(profile.id));
         }
-        let config = self
-            .resolve_agent(&profile.agent_id)
-            .map_err(|error| match error {
-                StartError::UnknownAgent { agent, .. } => SendError::UnknownAgent(agent),
-                other => SendError::SpawnFailed(other.to_string()),
-            })?;
-        let model = meta
-            .requested_model
-            .clone()
-            .or_else(|| profile.model.clone());
+        let Some((config, mut original, model)) = meta.execution_policy.clone() else {
+            return Err(SendError::NotResumable(
+                "original execution policy unavailable",
+            ));
+        };
+        if profile.agent_id != original.agent_id
+            || profile.mode != original.mode
+            || profile.config_options != original.config_options
+        {
+            return Err(SendError::NotResumable(
+                "execution policy changed; start a new run",
+            ));
+        }
+        if profile.approvals == SubagentApprovals::Ask {
+            original.approvals = SubagentApprovals::Ask;
+        }
+        let profile = original;
         Ok(ResumeChecks {
             config,
             model,
@@ -557,7 +563,7 @@ struct ResumeMeta {
     parent_run: Option<RunId>,
     depth: u8,
     profile_id: String,
-    requested_model: Option<String>,
+    execution_policy: Option<(AgentConfig, SubagentProfile, Option<String>)>,
     child_cwd: String,
     workspace_mode: SubagentWorkspaceMode,
     session_id: SessionId,

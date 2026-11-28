@@ -310,7 +310,8 @@ impl OrchestratorEngine {
                     let run = (*run).clone();
                     let progress = Arc::clone(&progress);
                     tokio::spawn(async move {
-                        let prepared = crate::acp::orchestrator::worktree::prepare(&cwd, &run).await?;
+                        let prepared =
+                            crate::acp::orchestrator::worktree::prepare(&cwd, &run).await?;
                         if let (Some(path), Some(branch)) =
                             (&prepared.workspace.path, &prepared.workspace.branch)
                         {
@@ -352,14 +353,12 @@ impl OrchestratorEngine {
         ];
         let run_log = crate::logging::redact_session_id(run.as_str());
         let chat_log = crate::logging::redact_session_id(&root);
-        log::info!(
-            "[orchestrator] run {run_log} starting in chat {chat_log} (depth {depth})"
-        );
+        log::info!("[orchestrator] run {run_log} starting in chat {chat_log} (depth {depth})");
         let project_id = self.project_id(&root);
         let spawned = self
             .manager
             .spawn_private(
-                config,
+                config.clone(),
                 project_id.as_deref(),
                 // The chat's own Claude account, as its agent runs on.
                 &crate::acp::claude_agent::LaunchChat::Existing(SessionId(root.clone())),
@@ -393,6 +392,7 @@ impl OrchestratorEngine {
             },
             profile_id: profile.id.clone(),
             requested_model: req.model.clone(),
+            execution_policy: Some((config.clone(), profile.clone(), model.clone())),
             child_cwd: child_cwd.clone(),
             session_id: None,
             title: req.title.clone().unwrap_or_else(|| {
@@ -475,7 +475,12 @@ impl OrchestratorEngine {
 
         // Announce: from here on, failures settle through the card path,
         // even while the announce itself is still queued on the driver.
-        let announce = self.ledger.lock().runs.get(&run).map(|entry| entry.record());
+        let announce = self
+            .ledger
+            .lock()
+            .runs
+            .get(&run)
+            .map(|entry| entry.record());
         if let Some(record) = announce {
             progress.lock().announced = true;
             if let Err(error) = self
@@ -535,13 +540,12 @@ impl OrchestratorEngine {
         run: RunId,
         budget: Duration,
     ) -> Result<WaitOutcome, RunLookupError> {
-        let root = self.caller_root(&caller);
         let waiter = {
             let mut ledger = self.ledger.lock();
             let Some(entry) = ledger.runs.get_mut(&run) else {
                 return Err(RunLookupError);
             };
-            if entry.root != root {
+            if entry.parent_session_id != caller.session.0 {
                 return Err(RunLookupError);
             }
             if !entry.is_live() {
@@ -600,7 +604,7 @@ impl OrchestratorEngine {
                     let Some(entry) = ledger.runs.get(&run) else {
                         return Err(RunLookupError);
                     };
-                    if entry.root != root {
+                    if entry.parent_session_id != caller.session.0 {
                         return Err(RunLookupError);
                     }
                     summaries.push(entry.summary());
@@ -610,6 +614,7 @@ impl OrchestratorEngine {
             None => Ok(ledger
                 .runs_of_root(&root)
                 .into_iter()
+                .filter(|entry| entry.parent_session_id == caller.session.0)
                 .map(|entry| entry.summary())
                 .collect()),
         }
@@ -623,6 +628,15 @@ impl OrchestratorEngine {
         run: RunId,
     ) -> Result<StopOutcome, StopError> {
         let root = self.caller_root(&caller);
+        if !self
+            .ledger
+            .lock()
+            .runs
+            .get(&run)
+            .is_some_and(|entry| entry.parent_session_id == caller.session.0)
+        {
+            return Err(StopError::NotFound);
+        }
         self.stop_run(&run, &root)
             .await
             .unwrap_or(Err(StopError::NotFound))

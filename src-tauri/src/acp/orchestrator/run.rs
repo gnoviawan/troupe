@@ -120,7 +120,11 @@ impl RunCapture {
     pub(crate) fn note_chunk(&self, text: &str) {
         let mut capture = self.inner.lock();
         capture.text.push_str(text);
-        let overflow = capture.text.chars().count().saturating_sub(MAX_RESULT_CHARS);
+        let overflow = capture
+            .text
+            .chars()
+            .count()
+            .saturating_sub(MAX_RESULT_CHARS);
         if overflow > 0 {
             let cut = capture
                 .text
@@ -166,6 +170,11 @@ pub(crate) struct ChildRun {
     pub(crate) profile_id: String,
     /// Explicit model passed to `subagent_start` (overrides the profile's default).
     pub(crate) requested_model: Option<String>,
+    pub(crate) execution_policy: Option<(
+        crate::acp::config::AgentConfig,
+        super::profiles::SubagentProfile,
+        Option<String>,
+    )>,
     /// Working directory the child session ran in (worktree path or shared cwd).
     pub(crate) child_cwd: String,
     /// Kept ACP session id so `subagent_send` can reload the session after settle.
@@ -214,7 +223,8 @@ impl ChildRun {
                 RunState::Running
             }
             RunBody::Live {
-                awaiting_permission, ..
+                awaiting_permission,
+                ..
             } => {
                 if *awaiting_permission {
                     RunState::RequiresAction
@@ -280,7 +290,8 @@ impl ChildRun {
     /// true when the flag changed.
     pub(crate) fn set_awaiting(&mut self, awaiting: bool) -> bool {
         let RunBody::Live {
-            awaiting_permission, ..
+            awaiting_permission,
+            ..
         } = &mut self.body
         else {
             return false;
@@ -316,7 +327,8 @@ impl ChildRun {
                 SubagentState::Running
             }
             RunBody::Live {
-                awaiting_permission, ..
+                awaiting_permission,
+                ..
             } => {
                 if *awaiting_permission {
                     SubagentState::RequiresAction

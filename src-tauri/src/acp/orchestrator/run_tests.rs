@@ -27,6 +27,7 @@ fn child_run(body: RunBody) -> ChildRun {
         },
         profile_id: "acp-registry:codex-acp".to_string(),
         requested_model: None,
+        execution_policy: None,
         child_cwd: "/repo/.termul/worktrees/sub-9f2c1a".to_string(),
         session_id,
         title: "Codex".to_string(),
@@ -134,8 +135,14 @@ fn the_derived_record_carries_the_orchestrated_shape() {
             usage: true,
         }
     );
-    assert_eq!(record.description.as_deref(), Some("Run the test sweep and report failures."));
-    assert_eq!(record.prompt.as_deref(), Some("Run the test sweep and report failures."));
+    assert_eq!(
+        record.description.as_deref(),
+        Some("Run the test sweep and report failures.")
+    );
+    assert_eq!(
+        record.prompt.as_deref(),
+        Some("Run the test sweep and report failures.")
+    );
     assert_eq!(
         record.agent,
         Some(SubagentAgent {
@@ -366,10 +373,17 @@ fn settling_a_live_run_then_evicting_holds_the_cap() {
         ledger.insert(run);
     }
     let live = RunId("sub-0000ff".to_string());
-    assert!(ledger.runs.get_mut(&live).expect("live").settle(RunEnd::Completed, 500));
+    assert!(ledger
+        .runs
+        .get_mut(&live)
+        .expect("live")
+        .settle(RunEnd::Completed, 500));
     ledger.evict_settled("chat-1");
     assert_eq!(ledger.runs.len(), 64);
-    assert!(ledger.runs.contains_key(&live), "the run that just settled stays");
+    assert!(
+        ledger.runs.contains_key(&live),
+        "the run that just settled stays"
+    );
     assert!(!ledger.runs.contains_key(&RunId("sub-000000".to_string())));
 }
 
